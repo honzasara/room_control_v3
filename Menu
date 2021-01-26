@@ -1,0 +1,15 @@
+Setup screen:
+  ukazat inicializaci jednotlivych komponent 
+     - zelena fajfka
+     - cerveny krizek chyby
+  - aktualni verzi SW, cas buildu, cas bootloaderu
+     - musi se upravit bootloader, aby umel zapsat do eepromky
+
+Hlavni menu
+  ukazovat cas/datum/den
+  ukazovat aktualni teplotu
+  tlacitko zhasni screenu
+  ikonku funkcniho spojeni
+
+  atmega256 + externi ram 
+
