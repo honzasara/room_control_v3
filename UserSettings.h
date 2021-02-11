@@ -18,11 +18,12 @@
 #define time_offset 1
 #define set_default_values 90
 #define my_default_ring 92
+#define my_default_show_temp 93
 
 
 #define MAX_RTDS 10
 #define RTDS_DEVICE_TOTAL_LEN 20
-#define RTDS_DEVICE_STRING_LEN 19
+#define RTDS_DEVICE_STRING_LEN 18
 #define RTDS_DEVICE_ACTIVE_BYTE_POS 19
 
 #define remote_tds_name0  1450
@@ -36,8 +37,12 @@
 #define remote_tds_name8  1630
 #define remote_tds_name9  1650
 
+#define ram_remote_tds_store_size 3
+#define ram_remote_tds_store_data_low 100
+#define ram_remote_tds_store_data_high 101
+#define ram_remote_tds_store_last_update 102
 
-
+#define ram_remote_tds_store_last (ram_remote_tds_store_data_low+(ram_remote_tds_store_size*MAX_RTDS))
 
 
 #define tds_extend_temp_history_first_pos 1
@@ -48,6 +53,7 @@
 #define VERTICAL  0
 #define HORIZONTAL 1
 #define HORIZONTAL_NEW_LINE 2
+#define VERTICAL_NEW_LINE 2
 
 
 #define INDEX_DYN_MENU_ASSOCIATE_ONEWIRE 1
@@ -64,6 +70,7 @@
 #define MENU_REGULATOR 5
 #define MENU_LIST_NASTAVENI_RTDS 6
 #define MENU_NASTAVENI_RTDS_DETAIL 7
+#define MENU_SELECT_DEFAULT_TEMP 8
 
 #define MENU_DIALOG_YES_NO  100
 #define MENU_DIALOG_KEYBOARD_NUMBER 101
@@ -81,6 +88,7 @@
 
 #define MENU_SLIDER_ONE_WIRE 0
 #define MENU_SLIDER_RTDS 1
+#define MENU_SLIDER_DEFAULT_TEMP 2
 
 /*  r     g    b */
 #define BLACK        0x0000  /*   0,   0,   0 */
@@ -157,6 +165,11 @@ const char nastaveni_delete_sensor[] PROGMEM = "Vymazat cidlo";
 const char nastaveni_tds_period[] PROGMEM = "Merici perioda";
 const char nastaveni_name_sensor[] PROGMEM = "Nastavit nazev";
 const char nastaveni_tds_offset[] PROGMEM = "Nastavit offset";
+const char nastaveni_rtds_subscribe[] PROGMEM = "MQTT prihlaseni";
+const char text_nazev[] PROGMEM = "Nazev:";
+const char text_online[] PROGMEM = "Online";
+const char text_last_update[] PROGMEM = "Posledni aktualizace:";
+const char text_select_default_temp[] PROGMEM = "Vyber zobrazeni teplomeru";
 
 const char text_upozorneni[] PROGMEM = "Upozorneni";
 const char text_klavesnice[] PROGMEM = "Klavesnice";
@@ -175,6 +188,9 @@ const char text_upper_case[] PROGMEM = "A";
 const char text_lower_case[] PROGMEM = "a";
 const char text_special_case[] PROGMEM = "@";
 
+
+
+
 const char global_time_set[] PROGMEM = "global/time/set";
 const char global_time_ntp[] PROGMEM = "global/time/ntp";
 const char global_time_offset[] PROGMEM = "global/time/ntp_offset";
@@ -192,14 +208,14 @@ const char termbig_subscribe[] PROGMEM = "/ctl/termbig/subscribe";
 
 #define KEYBOARD_SIZE_CHAR_UPPER 26
 #define KEYBOARD_SIZE_CHAR_LOWER 26
-#define KEYBOARD_SIZE_CHAR_SPECIAL 27
+#define KEYBOARD_SIZE_CHAR_SPECIAL 26
 #define KEYBOARD_TYPE_UPPER 0
 #define KEYBOARD_TYPE_LOWER 1
 #define KEYBOARD_TYPE_SPECIAL 2
 
 const char keyboad_number_char_upper[KEYBOARD_SIZE_CHAR_UPPER] PROGMEM =     {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
 const char keyboad_number_char_lower[KEYBOARD_SIZE_CHAR_LOWER] PROGMEM =     {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
-const char keyboad_number_char_special[KEYBOARD_SIZE_CHAR_SPECIAL] PROGMEM = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '!', '@', '#', '$', '%', '^', '&', '*', '|', '\\', '+', '-', '_','?',',','.', '/'};
+const char keyboad_number_char_special[KEYBOARD_SIZE_CHAR_SPECIAL] PROGMEM = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '!', '@', '#', '$', '%', '^', '&', '*', '|', '+', '-', '_','?',',','.', '/'};
 
 
 
@@ -209,16 +225,19 @@ typedef void (*fptr_args)(uint16_t args1, uint16_t args2);
 typedef uint8_t (*ret_fptr)(uint16_t args1, uint16_t args2);
 
 
+
 //#define REDRAW_FORCE 3
 #define REDRAW_EVERY_500MS 0
 #define REDRAW_EXTERNAL_EVENT 1
 #define REDRAW_EVERY_10SEC 2
 
 #define REDRAW_CLASS_SHOW_TIME (1<<REDRAW_FORCE | 1<<REDRAW_EVERY_500MS)
-#define REDRAW_BUTTON (1<<REDRAW_FORCE)
+
 #define REDRAW_PROGRAM_BUTTON (1<<REDRAW_EXTERNAL_EVENT| 1<<REDRAW_FORCE)
 #define REDRAW_CLASS_SHOW (1<<REDRAW_FORCE | 1<< REDRAW_EVERY_10SEC)
 
+
+#define REDRAW_BUTTON (1<<REDRAW_FORCE)
 
 #define REDRAW_FORCE 3
 #define REDRAW_CLASS_0 0
@@ -231,10 +250,10 @@ typedef struct t_Element_Function_1
   uint16_t y;
   uint8_t args;
   fptr_coordinate_xy fnt_coordinate_xy;
-  //ret_fptr redraw;
   uint16_t size_x;
   uint16_t size_y;
   uint8_t redraw_class;
+  fptr_args onclick;
 } Element_Function_1;
 
 
@@ -247,7 +266,8 @@ typedef struct t_Element_Dyn_Button_1
   uint16_t size_x;
   uint16_t size_y;
   uint8_t font_size;
-  uint8_t step_xy;
+  uint8_t step_x;
+  uint8_t step_y;
   uint8_t direction;
   uint8_t max_button_count;
   uint8_t slider_args;
@@ -255,7 +275,7 @@ typedef struct t_Element_Dyn_Button_1
   ret_string_fptr get_status_string;
   fptr_args dyn_button_onclick;
   ret_fptr function_for_max_items;
-  ret_fptr dyn_button_active;
+  //ret_fptr dyn_button_active;
   uint8_t redraw_class;
 } Element_Dyn_Button_1;
 
@@ -267,7 +287,8 @@ typedef struct t_Element_Dyn_Symbol_1
   uint16_t size_x;
   uint16_t size_y;
   uint8_t font_size;
-  uint8_t step_xy;
+  uint8_t step_x;
+  uint8_t step_y;
   uint8_t direction;
   uint8_t max_button_count;
   uint8_t slider_args;
@@ -275,9 +296,31 @@ typedef struct t_Element_Dyn_Symbol_1
   ret_string_fptr get_status_string;
   fptr_args dyn_symbol_onclick;
   ret_fptr function_for_max_items;
-  ret_fptr dyn_symbol_active;
   uint8_t redraw_class;
 } Element_Dyn_Symbol_1;
+
+typedef struct t_Element_Dyn_Select_1
+{
+  uint16_t first_x;
+  uint16_t first_y;
+  uint16_t size_x;
+  uint16_t size_y;
+  uint8_t font_size_1;
+  uint8_t font_size_2;
+  uint16_t color_active;
+  uint16_t color_inactive;
+  uint8_t step_x;
+  uint8_t step_y;
+  uint8_t direction;
+  uint8_t max_items_count;
+  uint8_t slider_args;
+  uint8_t args;
+  ret_string_fptr get_status_string;
+  fptr_args dyn_symbol_onclick;
+  ret_fptr function_for_max_items;
+  ret_fptr get_status_fnt;
+  uint8_t redraw_class;
+} Element_Dyn_Select_1;
 
 
 typedef struct t_Element_Symbol_1
@@ -322,6 +365,24 @@ typedef struct t_Element_Button_2
   uint8_t redraw_class;
 } Element_Button_2;
 
+/*
+typedef struct t_Element_Select_Box_1
+{
+  char *name;
+  uint16_t x;
+  uint16_t y;
+  uint16_t size_x;
+  uint16_t size_y;
+  uint8_t font_size;
+  uint16_t color_active;
+  uint16_t color_inactive;
+  uint8_t args;
+  fptr_args onclick;
+  ret_fptr get_status_fnt;
+  uint8_t redraw_class;
+} Element_Select_Box_1;
+*/
+
 typedef struct t_Element_Switch_1
 {
   char *name;
@@ -352,6 +413,7 @@ typedef struct t_Menu1
   Element_Dyn_Button_1 dyn_button[1];
   Element_Symbol_1 symbol_button_1[2];
   Element_Dyn_Symbol_1 dyn_symbol_1[3];
+  Element_Dyn_Select_1 dyn_select_box_1[1];
   uint8_t len_button_1;
   uint8_t len_button_2;
   uint8_t len_function_1;
@@ -359,6 +421,7 @@ typedef struct t_Menu1
   uint8_t len_dyn_button_1;
   uint8_t len_symbol_button_1;
   uint8_t len_dyn_symbol_1;
+  uint8_t len_dyn_select_box_1;
   uint8_t idx;
   uint16_t x;
   uint16_t y;
@@ -366,7 +429,6 @@ typedef struct t_Menu1
   uint16_t size_y;
   uint8_t atributes;
   uint16_t color_background;
-  uint8_t *args;
   uint8_t redraw_class;
   ret_fptr redraw_class_0;
   ret_fptr redraw_class_1;
@@ -380,8 +442,10 @@ typedef struct t_MenuAll
 {
   uint8_t len_menu1;
   uint8_t len_menu2;
-  Menu1 ListMenu1[10];
+  uint8_t len_menu3;
+  Menu1 ListMenu1[6];
   Menu1 ListMenu2[6];
+  Menu1 ListMenu3[6];
 } MenuAll;
 
 
