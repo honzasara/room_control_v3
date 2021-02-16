@@ -3,6 +3,9 @@
 
 #include <avr/pgmspace.h>
 
+#define H_TRUE 1
+#define H_FALSE 0
+
 #define MAX_THERMOSTAT 5
 
 #define HW_ONEWIRE_MAXROMS 6
@@ -71,12 +74,14 @@
 #define MENU_LIST_NASTAVENI_RTDS 6
 #define MENU_NASTAVENI_RTDS_DETAIL 7
 #define MENU_SELECT_DEFAULT_TEMP 8
+#define MENU_NASTAVENI_RING_SCREEN 9
 
 #define MENU_DIALOG_YES_NO  100
 #define MENU_DIALOG_KEYBOARD_NUMBER 101
 #define MENU_DIALOG_SET_VARIABLE 102
 #define MENU_DIALOG_KEYBOARD_ALFA 103
 
+#define MENU_DIALOG_SELECT_TERM_MODE 104
 
 #define MENU_ATTRIBUTES_CLEAN_DISPLAY 0
 #define MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE 1
@@ -89,6 +94,7 @@
 #define MENU_SLIDER_ONE_WIRE 0
 #define MENU_SLIDER_RTDS 1
 #define MENU_SLIDER_DEFAULT_TEMP 2
+#define MENU_SLIDER_OFF 255
 
 /*  r     g    b */
 #define BLACK        0x0000  /*   0,   0,   0 */
@@ -136,8 +142,12 @@ const char current_temp[] PROGMEM = "Aktualni teplota:";
 const char current_temp_short[] PROGMEM = "teplota:";
 const char temp_offset_short[] PROGMEM = "offset:";
 const char nastaveni_text[] PROGMEM = "Nastaveni";
+const char nastaveni_ring_text[] PROGMEM = "Nastaveni okruhu";
 const char funkce_text[] PROGMEM = "Funkce";
 const char regulator_text[] PROGMEM = "Regulator";
+const char regulator_default_text[] PROGMEM = "Vychozi regulator:";
+const char ring_text_setup[] PROGMEM = "Nastaveni";
+
 const char budik_text[] PROGMEM = "Budik";
 const char button_zpet[] PROGMEM = "Zpet";
 
@@ -146,6 +156,9 @@ const char button_term_max[] PROGMEM = "MAX";
 const char button_term_min[] PROGMEM = "MIN";
 const char button_term_prog[] PROGMEM = "PROG";
 const char button_term_man[] PROGMEM = "MAN";
+const char button_mode_heat[] PROGMEM = "Topeni";
+const char button_mode_cool[] PROGMEM = "Chlazeni";
+const char button_term_fan[] PROGMEM = "FAN";
 
 const char nastaveni_site[] PROGMEM = "Nastaveni site";
 const char nastaveni_nrf[] PROGMEM = "NRF pripojeni";
@@ -158,6 +171,9 @@ const char text_tds_sensors[] PROGMEM = "Vlastnosti lokalniho cidla";
 const char text_associovat_tds[] PROGMEM = "Priradit nove cidlo";
 const char text_nastavit_tds[] PROGMEM = "Nastavit TDS cidlo";
 const char text_nastavit_rtds[] PROGMEM = "Nastavit vzdalene cidlo";
+const char text_assocoivat[] PROGMEM = "Nastavit cidlo";
+const char text_assocoivat_output[] PROGMEM = "Nastavit vystup";
+const char text_nastavit_pid[] PROGMEM = "PID volby";
 const char text_rtds_prefix[] PROGMEM = "/";
 const char text_not_used[] PROGMEM = "Neni pouzito";
 const char text_rtds_novy[] PROGMEM = "Pridat nove vzdalene cidlo";
@@ -170,6 +186,7 @@ const char text_nazev[] PROGMEM = "Nazev:";
 const char text_online[] PROGMEM = "Online";
 const char text_last_update[] PROGMEM = "Posledni aktualizace:";
 const char text_select_default_temp[] PROGMEM = "Vyber zobrazeni teplomeru";
+const char text_select_term_mode[] PROGMEM = "Vyber modu regulatoru";
 
 const char text_upozorneni[] PROGMEM = "Upozorneni";
 const char text_klavesnice[] PROGMEM = "Klavesnice";
@@ -215,14 +232,14 @@ const char termbig_subscribe[] PROGMEM = "/ctl/termbig/subscribe";
 
 const char keyboad_number_char_upper[KEYBOARD_SIZE_CHAR_UPPER] PROGMEM =     {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
 const char keyboad_number_char_lower[KEYBOARD_SIZE_CHAR_LOWER] PROGMEM =     {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
-const char keyboad_number_char_special[KEYBOARD_SIZE_CHAR_SPECIAL] PROGMEM = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '!', '@', '#', '$', '%', '^', '&', '*', '|', '+', '-', '_','?',',','.', '/'};
+const char keyboad_number_char_special[KEYBOARD_SIZE_CHAR_SPECIAL] PROGMEM = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '!', '@', '#', '$', '%', '^', '&', '*', '|', '+', '-', '_', '?', ',', '.', '/'};
 
 
 
 typedef void (*ret_string_fptr)(uint8_t args1, uint8_t args2, char *line1, char *line2);
 typedef void (*fptr_coordinate_xy)(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2);
 typedef void (*fptr_args)(uint16_t args1, uint16_t args2);
-typedef uint8_t (*ret_fptr)(uint16_t args1, uint16_t args2);
+typedef uint8_t (*ret_fptr)(uint16_t args1, uint16_t args2, uint8_t args3);
 
 
 
@@ -254,6 +271,7 @@ typedef struct t_Element_Function_1
   uint16_t size_y;
   uint8_t redraw_class;
   fptr_args onclick;
+  ret_fptr enable_show;
 } Element_Function_1;
 
 
@@ -269,13 +287,13 @@ typedef struct t_Element_Dyn_Button_1
   uint8_t step_x;
   uint8_t step_y;
   uint8_t direction;
-  uint8_t max_button_count;
+  uint8_t max_items_count;
+  uint8_t max_row_count;
   uint8_t slider_args;
   uint8_t args;
   ret_string_fptr get_status_string;
   fptr_args dyn_button_onclick;
   ret_fptr function_for_max_items;
-  //ret_fptr dyn_button_active;
   uint8_t redraw_class;
 } Element_Dyn_Button_1;
 
@@ -290,7 +308,8 @@ typedef struct t_Element_Dyn_Symbol_1
   uint8_t step_x;
   uint8_t step_y;
   uint8_t direction;
-  uint8_t max_button_count;
+  uint8_t max_items_count;
+  uint8_t max_row_count;
   uint8_t slider_args;
   uint8_t args;
   ret_string_fptr get_status_string;
@@ -313,6 +332,7 @@ typedef struct t_Element_Dyn_Select_1
   uint8_t step_y;
   uint8_t direction;
   uint8_t max_items_count;
+  uint8_t max_row_count;
   uint8_t slider_args;
   uint8_t args;
   ret_string_fptr get_status_string;
@@ -334,6 +354,7 @@ typedef struct t_Element_Symbol_1
   uint8_t args;
   fptr_args onclick;
   uint8_t redraw_class;
+  ret_fptr enable_show;
 } Element_Symbol_1;
 
 typedef struct t_Element_Button_1
@@ -347,6 +368,7 @@ typedef struct t_Element_Button_1
   uint8_t args;
   fptr_args onclick;
   uint8_t redraw_class;
+  ret_fptr enable_show;
 } Element_Button_1;
 
 typedef struct t_Element_Button_2
@@ -363,11 +385,12 @@ typedef struct t_Element_Button_2
   fptr_args onclick;
   ret_fptr get_status_fnt;
   uint8_t redraw_class;
+  ret_fptr enable_show;
 } Element_Button_2;
 
 /*
-typedef struct t_Element_Select_Box_1
-{
+  typedef struct t_Element_Select_Box_1
+  {
   char *name;
   uint16_t x;
   uint16_t y;
@@ -380,7 +403,7 @@ typedef struct t_Element_Select_Box_1
   fptr_args onclick;
   ret_fptr get_status_fnt;
   uint8_t redraw_class;
-} Element_Select_Box_1;
+  } Element_Select_Box_1;
 */
 
 typedef struct t_Element_Switch_1
@@ -410,7 +433,7 @@ typedef struct t_Menu1
   Element_Button_2 button_2[5];
   Element_Function_1 function_1[3];
   Element_Switch_1 switch_1[3];
-  Element_Dyn_Button_1 dyn_button[1];
+  Element_Dyn_Button_1 dyn_button[2];
   Element_Symbol_1 symbol_button_1[2];
   Element_Dyn_Symbol_1 dyn_symbol_1[3];
   Element_Dyn_Select_1 dyn_select_box_1[1];
@@ -433,6 +456,7 @@ typedef struct t_Menu1
   ret_fptr redraw_class_0;
   ret_fptr redraw_class_1;
   ret_fptr redraw_class_2;
+  ret_fptr preload_function;
 } Menu1;
 
 
