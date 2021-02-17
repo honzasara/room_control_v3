@@ -217,6 +217,7 @@ void display_element_dialog_set_string(uint16_t x, uint16_t y, uint16_t size_x, 
 
 void display_function_set_variable(uint16_t now, uint16_t min, uint16_t max, uint8_t step, uint8_t args, uint16_t divider, uint8_t update_now);
 
+
 uint16_t display_function_get_variable(void);
 void display_function_set_variable_plus(void);
 void display_function_set_variable_minus(void);
@@ -228,10 +229,11 @@ void display_function_set_variable_minus(void);
 
 
 
-uint8_t button_status_term_has_mode(uint8_t args1, uint8_t args2, uint8_t args3);
+uint8_t button_status_default_ring_term_has_mode(uint8_t args1, uint8_t args2, uint8_t args3);
+void button_click_default_term_set_mode(uint8_t args1, uint8_t args2, uint8_t args3);
 
-void button_click_term_set_mode(uint8_t args1, uint8_t args2, uint8_t args3);
-void click_thermostat_set_mode_via_dialog(uint8_t args1, uint8_t args2, uint8_t args3);
+
+
 void click_thermostat_set_ring_via_dialog(uint8_t args1, uint8_t args2, uint8_t args3);
 
 void click_rtds_add_sensor(uint8_t args1, uint8_t args);
@@ -296,33 +298,46 @@ void click_select_default_temp(uint8_t args1, uint8_t args2);
 
 
 void button_get_show_default_temp(uint8_t args1, uint8_t args2, char *line1, char *line2);
-void click_function_default_temp(uint8_t args1, uint8_t args2, uint8_t args3);
+void button_click_set_show_default_temp(uint8_t args1, uint8_t args2, uint8_t args3);
 uint8_t button_get_show_default_temp_max_items(uint16_t args1, uint16_t args2, uint8_t args3);
 uint8_t button_get_show_default_temp_active(uint16_t args1, uint16_t args2, uint8_t args3);
 
-uint8_t get_function_thermostat_mode_max_items(uint16_t args1, uint16_t args2, uint8_t args3);
-uint8_t get_function_thermostat_mode_is_selected(uint16_t args1, uint16_t args2, uint8_t args3);
-void click_function_thermostat_set_mode(uint8_t args1, uint8_t args2, uint8_t args3);
-void button_get_term_mode_labels(uint8_t args1, uint8_t args2, char *line1, char *line2);
-
-
-void get_funtion_default_ring_temp_mode(uint8_t args1, uint8_t args2, char *line1, char *line2);
-uint8_t get_function_thermostat_ring_is_selected(uint16_t args1, uint16_t args2, uint8_t args3);
-void get_funtion_default_ring(uint8_t args1, uint8_t args2, char *line1, char *line2);
-
-
-void get_funtion_change_default_ring_button_labels(uint8_t args1, uint8_t args2, char *line1, char *line2);
 
 
 
+
+
+
+void button_get_default_ring_term_mode_labels(uint8_t args1, uint8_t args2, char *line1, char *line2);
+uint8_t button_get_term_ring_is_selected(uint16_t args1, uint16_t args2, uint8_t args3);
+void button_get_default_ring_labels(uint8_t args1, uint8_t args2, char *line1, char *line2);
+
+
+void button_change_default_ring_labels_in_dialog(uint8_t args1, uint8_t args2, char *line1, char *line2);
+void button_click_set_new_default_ring_in_dialog(uint16_t args1, uint16_t args2, uint8_t args3);
+
+/* primitivni pomocne funkce pro nastavovani manualniho modu topi/chladi */
 void button_click_set_term_heat_or_cool(uint8_t args1, uint8_t args2, uint8_t args3);
 uint8_t button_get_term_heat_or_cool(uint16_t args1, uint16_t args2, uint8_t args3);
 uint8_t display_enable_show_term_mode_man(uint16_t args1, uint16_t args2, uint8_t args3);
 
+
+
+/* primitivni pomocne funkce */
 uint8_t display_enable_show(uint8_t args1, uint8_t args2);
 uint8_t get_function_return_args_1(uint16_t args1, uint16_t args2, uint8_t args3);
-
 uint8_t preload_regulator_menu(uint16_t args1, uint16_t args2, uint8_t args3);
+/////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+/* primitivni funkce obsluha tlacitek dialogu vyberu modu regurlatoru */
+void button_click_term_set_mode_via_dialog(uint8_t args1, uint8_t args2, uint8_t args3);
+///
+uint8_t button_get_term_mode_is_selected(uint16_t args1, uint16_t args2, uint8_t args3);
+void button_click_term_set_mode(uint8_t args1, uint8_t args2, uint8_t args3);
+void button_get_term_mode_labels(uint8_t args1, uint8_t args2, char *line1, char *line2);
+////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -436,14 +451,14 @@ const Element_Dyn_Select_1 button_select_show_default_temp PROGMEM = {
   .slider_args = MENU_SLIDER_DEFAULT_TEMP,
   .args = 0,
   .get_status_string = button_get_show_default_temp,
-  .dyn_symbol_onclick =  click_function_default_temp,
+  .dyn_symbol_onclick =  button_click_set_show_default_temp,
   .function_for_max_items = button_get_show_default_temp_max_items,
   .get_status_fnt = button_get_show_default_temp_active,
   .redraw_class = REDRAW_BUTTON,
 };
 
 
-const Element_Dyn_Select_1 select_term_mode PROGMEM = {
+const Element_Dyn_Select_1 button_select_term_mode PROGMEM = {
   .first_x = 230,
   .first_y = 40,
   .size_x = 200,
@@ -460,9 +475,9 @@ const Element_Dyn_Select_1 select_term_mode PROGMEM = {
   .slider_args = MENU_SLIDER_OFF,
   .args = 5,
   .get_status_string = button_get_term_mode_labels,
-  .dyn_symbol_onclick =  click_function_thermostat_set_mode,
+  .dyn_symbol_onclick =  button_click_term_set_mode,
   .function_for_max_items = get_function_return_args_1,
-  .get_status_fnt = get_function_thermostat_mode_is_selected,
+  .get_status_fnt = button_get_term_mode_is_selected,
   .redraw_class = REDRAW_BUTTON,
 };
 
@@ -513,8 +528,8 @@ const Element_Button_2 button_term_state_off PROGMEM = {
   .color_active = GRAY,
   .color_inactive = WHITE,
   .args = TERM_MODE_OFF,
-  .onclick = button_click_term_set_mode,
-  .get_status_fnt = button_status_term_has_mode,
+  .onclick = button_click_default_term_set_mode,
+  .get_status_fnt = button_status_default_ring_term_has_mode,
   .redraw_class = REDRAW_PROGRAM_BUTTON,
   .enable_show = display_enable_show,
 };
@@ -529,8 +544,8 @@ const Element_Button_2 button_term_state_max PROGMEM = {
   .color_active = RED,
   .color_inactive = WHITE,
   .args = TERM_MODE_MAX,
-  .onclick = button_click_term_set_mode,
-  .get_status_fnt = button_status_term_has_mode,
+  .onclick = button_click_default_term_set_mode,
+  .get_status_fnt = button_status_default_ring_term_has_mode,
   .redraw_class = REDRAW_PROGRAM_BUTTON,
   .enable_show = display_enable_show,
 };
@@ -545,8 +560,8 @@ const Element_Button_2 button_term_state_min PROGMEM = {
   .color_active = BLUE,
   .color_inactive = WHITE,
   .args = TERM_MODE_MIN,
-  .onclick = button_click_term_set_mode,
-  .get_status_fnt = button_status_term_has_mode,
+  .onclick = button_click_default_term_set_mode,
+  .get_status_fnt = button_status_default_ring_term_has_mode,
   .redraw_class = REDRAW_PROGRAM_BUTTON,
   .enable_show = display_enable_show,
 };
@@ -561,8 +576,8 @@ const Element_Button_2 button_term_state_prog PROGMEM = {
   .color_active = YELLOW,
   .color_inactive = WHITE,
   .args = TERM_MODE_PROG,
-  .onclick = button_click_term_set_mode,
-  .get_status_fnt = button_status_term_has_mode,
+  .onclick = button_click_default_term_set_mode,
+  .get_status_fnt = button_status_default_ring_term_has_mode,
   .redraw_class = REDRAW_PROGRAM_BUTTON,
   .enable_show = display_enable_show,
 };
@@ -577,14 +592,14 @@ const Element_Button_2 button_term_state_man PROGMEM = {
   .color_active = GREEN,
   .color_inactive = WHITE,
   .args = TERM_MODE_MAN,
-  .onclick = button_click_term_set_mode,
-  .get_status_fnt = button_status_term_has_mode,
+  .onclick = button_click_default_term_set_mode,
+  .get_status_fnt = button_status_default_ring_term_has_mode,
   .redraw_class = REDRAW_PROGRAM_BUTTON,
   .enable_show = display_enable_show,
 };
 
 
-const Element_Dyn_Button_1 button_change_term_mode PROGMEM = {
+const Element_Dyn_Button_1 button_change_term_mode_via_dialog PROGMEM = {
   .first_x = 10,
   .first_y = 100,
   .size_x = 190,
@@ -597,8 +612,8 @@ const Element_Dyn_Button_1 button_change_term_mode PROGMEM = {
   .max_row_count = 1,
   .slider_args = 0,
   .args = 1,
-  .get_status_string = get_funtion_default_ring_temp_mode,
-  .dyn_button_onclick = click_thermostat_set_mode_via_dialog,
+  .get_status_string = button_get_default_ring_term_mode_labels,
+  .dyn_button_onclick = button_click_term_set_mode_via_dialog,
   .function_for_max_items = get_function_return_args_1,
   .redraw_class = (1 << REDRAW_FORCE)
 };
@@ -606,7 +621,7 @@ const Element_Dyn_Button_1 button_change_term_mode PROGMEM = {
 
 
 
-const Element_Dyn_Button_1 button_change_ring PROGMEM = {
+const Element_Dyn_Button_1 button_change_default_ring_via_dialog PROGMEM = {
   .first_x = 10,
   .first_y = 40,
   .size_x = 190,
@@ -619,13 +634,13 @@ const Element_Dyn_Button_1 button_change_ring PROGMEM = {
   .max_row_count = 1,
   .slider_args = 0,
   .args = 1,
-  .get_status_string = get_funtion_default_ring,
+  .get_status_string = button_get_default_ring_labels,
   .dyn_button_onclick =  click_thermostat_set_ring_via_dialog,
   .function_for_max_items = get_function_return_args_1,
   .redraw_class = REDRAW_BUTTON,
 };
 
-const Element_Dyn_Select_1 button_change_default_ring PROGMEM = {
+const Element_Dyn_Select_1 button_change_default_ring_in_dialog PROGMEM = {
   .first_x = 10,
   .first_y = 40,
   .size_x = 120,
@@ -640,11 +655,11 @@ const Element_Dyn_Select_1 button_change_default_ring PROGMEM = {
   .max_items_count = 3,
   .max_row_count = 3,
   .slider_args = MENU_SLIDER_OFF,
-  .args = 5,
-  .get_status_string =  get_funtion_change_default_ring_button_labels,
-  .dyn_symbol_onclick =  nullfceargs,
+  .args = MAX_THERMOSTAT,
+  .get_status_string =  button_change_default_ring_labels_in_dialog,
+  .dyn_symbol_onclick =  button_click_set_new_default_ring_in_dialog,
   .function_for_max_items = get_function_return_args_1,
-  .get_status_fnt = get_function_thermostat_ring_is_selected,
+  .get_status_fnt = button_get_term_ring_is_selected,
   .redraw_class = REDRAW_BUTTON,
 };
 
@@ -1443,7 +1458,7 @@ const Menu1 RegulatorMenu PROGMEM = {
   .button_2 = {button_term_ring_mode_heat, button_term_ring_mode_cool},
   .function_1 = {f_show_date, f_show_default_ring, f_default_ring_set_temp},
   .switch_1 = {NULL},
-  .dyn_button = {button_change_ring, button_change_term_mode},
+  .dyn_button = {button_change_default_ring_via_dialog, button_change_term_mode_via_dialog},
   .symbol_button_1 = {dialog_set_default_ring_temp_plus, dialog_set_default_ring_temp_minus},
   .dyn_symbol_1 = {NULL},
   .dyn_select_box_1 = {NULL},
@@ -1547,7 +1562,7 @@ const Menu1 DialogSelectTermMode PROGMEM = {
   .dyn_button = {NULL},
   .symbol_button_1 = {NULL},
   .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {select_term_mode},
+  .dyn_select_box_1 = {button_select_term_mode},
   .len_button_1 = 1,
   .len_button_2 = 0,
   .len_function_1 = 0,
@@ -1580,7 +1595,7 @@ const Menu1 DialogSelectRing PROGMEM = {
   .dyn_button = {NULL},
   .symbol_button_1 = {NULL},
   .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {button_change_default_ring},
+  .dyn_select_box_1 = {button_change_default_ring_in_dialog},
   .len_button_1 = 1,
   .len_button_2 = 0,
   .len_function_1 = 0,
@@ -1609,7 +1624,7 @@ const MenuAll Menu_All PROGMEM = {
   .len_menu3 = 4,
   .ListMenu1 = {HlavniMenu, NastaveniMenu, FunkceMenu, OneWireMenu, TDSMenu, DialogSetVariable},
   .ListMenu2 = {DialogKyeboardAlfa, DialogKyeboardNumber, DialogYESNO, RegulatorMenu, List_RTDS_Menu, RTDS_Menu_Detail},
-  .ListMenu3 = {SelectMenuDefaultTemp, RingSetup, DialogSelectTermMode,DialogSelectRing},
+  .ListMenu3 = {SelectMenuDefaultTemp, RingSetup, DialogSelectTermMode, DialogSelectRing},
 };
 
 
@@ -2186,12 +2201,10 @@ void MenuPrepareStyle(void)
 /////////////////////////////////////////////////////////////////////////////////////
 void MenuHistoryPrevMenu(void)
 {
-
   if (MenuHistoryIndex > 0)
   {
     MenuHistoryIndex--;
     MenuPrepareStyle();
-
   }
 }
 ///
@@ -2204,6 +2217,11 @@ void MenuHistoryNextMenu(uint8_t id, uint8_t args1)
     Global_menu_args1[MenuHistoryIndex] = args1;
     MenuPrepareStyle();
   }
+}
+///
+void MenuHistoryUpdateArgs1(uint8_t args1)
+{
+  Global_menu_args1[MenuHistoryIndex] = args1;
 }
 ///
 void MenuHistoryInit(void)
@@ -2242,9 +2260,9 @@ Menu1 *MenuHistoryGetMenu(uint8_t *args1)
       return menus;
     }
   }
-
-
 }
+
+///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 void DisplayClean(uint16_t color)
 {
@@ -4050,6 +4068,9 @@ void convert_mode_text(uint8_t mode, char *str)
   if (mode == TERM_MODE_FAN)   strcpy(str, "fan_only");
 }
 
+/*
+   prevodni funkce id modu na textovy popisek
+*/
 void convert_mode_text_1(uint8_t mode, char *str)
 {
   if (mode == TERM_MODE_OFF)   strcpy_P(str, text_button_term_off);
@@ -5381,7 +5402,7 @@ void click_rtds_setting_sensor(uint8_t args1, uint8_t args2, uint8_t loop_idx)
   char name[RTDS_DEVICE_STRING_LEN];
   uint8_t active;
   //printf("pr %d %d %d\n", args1, args2, loop_idx);
-  
+
   remote_tds_get_active(loop_idx, &active);
   if (active == 1)
   {
@@ -5498,7 +5519,7 @@ button_get_show_default_temp_end:
    args2 -- globalni argument celeho menu
    args3 -- id polozky menu kliku
 */
-void click_function_default_temp(uint8_t args1, uint8_t args2, uint8_t args3)
+void button_click_set_show_default_temp(uint8_t args1, uint8_t args2, uint8_t args3)
 {
   default_show_temp = args3;
   set_default_show_temp(args3);
@@ -5522,24 +5543,85 @@ uint8_t button_get_show_default_temp_active(uint16_t args1, uint16_t args2, uint
 
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*
- * args1 ... loop_id z menu
- * args2 ... globalni parametr z menu
- */
-void get_funtion_change_default_ring_button_labels(uint8_t args1, uint8_t args2, char *line1, char *line2)
+
+/////
+/////
+void click_thermostat_set_ring_via_dialog(uint8_t args1, uint8_t args2, uint8_t args3)
 {
-  printf("%d %d\n", args1, args2);
-  char name[10];
-  thermostat_ring_get_name(args1, name);
-  sprintf(line2, "Regulator %d - %s", args1, name);
-  strcpy(line1, "Ahoj");
+  MenuHistoryNextMenu(MENU_NASTAVENI_SELECT_RING_SCREEN, default_ring);
 }
 
 
-void get_funtion_default_ring(uint8_t args1, uint8_t args2, char *line1, char *line2)
+/////////////////////////////////////
+/*
+   funkce vraci 1, kdyz se rovna id prvku s promenou default_ring. Default_ring je vybrany
+   args1 ... globalni argument z definice menu
+   args2 ... zde je cislo ringu
+   args3 ... id polozky dynamickeho menu
+*/
+uint8_t button_get_term_ring_is_selected(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  if (args3 == default_ring)
+    return 1;
+  return 0;
+}
+////
+void term_ring_do_activate(uint8_t args1, uint8_t args2, uint8_t args3)
+{
+  //printf("activate %d %d %d\n", args1, args2, args3);
+  thermostat_ring_set_active(args1, 1);
+}
+
+////
+/*
+   funkce pro nastaveni vychozi ringu z menu, v promene args3 mam id polozky tlacitka z menu
+   ulozim rovnou do promene default ring
+   ulozim do globalniho parametru menu
+*/
+void button_click_set_new_default_ring_in_dialog(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  if (thermostat_ring_get_active(args3) != 255)
+  {
+    default_ring = args3;
+    MenuHistoryUpdateArgs1(args3);
+  }
+  else
+  {
+    MenuHistoryNextMenu(MENU_DIALOG_YES_NO, 0);
+    dialog_yes_function = &term_ring_do_activate;
+    dialog_yes_args1 = args3;
+    strcpy_P(dialog_text, text_term_do_activate);
+  }
+}
+
+
+
+/*
+   funkce zobrazi zakladni informace v dialogu vyberu defaultniho ringu
+   informace aktivni/neaktivni regulacni okruh
+   args1 ... loop_id z menu
+   args2 ... globalni parametr z menu
+*/
+void button_change_default_ring_labels_in_dialog(uint8_t args1, uint8_t args2, char *line1, char *line2)
+{
+  char name[10];
+  char active[12];
+  if (thermostat_ring_get_active(args1) != 255)
+    strcpy_P(active, text_term_active);
+  else
+    strcpy_P(active, text_term_deactive);
+  thermostat_ring_get_name(args1, name);
+  sprintf(line2, "Reg. %d %s", args1, active);
+  strcpy(line1, name);
+}
+
+/*
+   funkce zobrazi vychozi popisek dynamickeho tlacitka v menu
+   nazev vychoziho ringu
+   index vychoziho ringu
+   zadne vstupni argumenty
+*/
+void button_get_default_ring_labels(uint8_t args1, uint8_t args2, char *line1, char *line2)
 {
   char name[10];
   thermostat_ring_get_name(default_ring, name);
@@ -5547,21 +5629,30 @@ void get_funtion_default_ring(uint8_t args1, uint8_t args2, char *line1, char *l
   strcpy_P(line1, text_change_default_ring);
 }
 
-void get_funtion_default_ring_temp_mode(uint8_t args1, uint8_t args2, char *line1, char *line2)
-{
-  strcpy_P(line1, text_current_ring_mode);
-  convert_mode_text_1(thermostat_ring_get_mode(default_ring), line2);
-}
 
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/********************************************************/
+/*
+     Obsluzne funkce dynamickeho tlacitka vyberu vychoziho modu ringu
+
+*/
+
+/////
 /*
    funkce pro zjisteni, zda mode v args1 je aktivni a nebo ne
+   obsluzna funkce pro zobrazeni modu
    args1 .. parametr z definice prvku
    args2 .. parametr z definice menu
    args3 .. index prvku v menu
    return
      - uint8_t 1... activni, 0... neaktivni
 */
-uint8_t button_status_term_has_mode(uint8_t args1, uint8_t args2, uint8_t args3)
+uint8_t button_status_default_ring_term_has_mode(uint8_t args1, uint8_t args2, uint8_t args3)
 {
   uint8_t ret = 0;
   if (thermostat_ring_get_active(default_ring) != 255)
@@ -5572,12 +5663,12 @@ uint8_t button_status_term_has_mode(uint8_t args1, uint8_t args2, uint8_t args3)
 
 /////////////////////////////////////////////////////////
 /*
- * funkce pro nastaveni modu regulatoru pouze ve vychozim ringu
- * args1 ... parametr z definice prvku
- * args2 ... parametr z defini menu 
- * args3 ... index prvku v menu
- */
-void button_click_term_set_mode(uint8_t args1, uint8_t args2, uint8_t args3)
+   funkce pro nastaveni modu regulatoru pouze ve vychozim ringu
+   args1 ... parametr z definice prvku
+   args2 ... parametr z defini menu
+   args3 ... index prvku v menu
+*/
+void button_click_default_term_set_mode(uint8_t args1, uint8_t args2, uint8_t args3)
 {
   if (thermostat_ring_get_active(default_ring) != 255)
   {
@@ -5585,90 +5676,62 @@ void button_click_term_set_mode(uint8_t args1, uint8_t args2, uint8_t args3)
     change_term_mode = 1;
   }
 }
+////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/************************************************************************************************************************/
 /*
- * funkce pro zjisteni, jestli manualni rezim je pro topeni a nebo chlazeni
- * args1 ... paramentr z definice prvku 
- * args2 ... paramentr z define menu
- * args3 ... index prvku v menu
- */
-uint8_t button_get_term_heat_or_cool(uint16_t args1, uint16_t args2, uint8_t args3)
-{
-  uint8_t ret = 0;
-  uint8_t b;
-  if (thermostat_ring_get_active(default_ring) != 255)
-  {
-    b = thermostat_ring_get_status_bites(default_ring, STATUS_BIT_HEAT_OR_COOL);
-    if (b == 0 && args1 == TERM_MODE_MAN_HEAT)
-      ret = 1;
-    if (b != 0 && args1 == TERM_MODE_MAN_COOL)
-      ret = 1;
-  }
-  return ret;
-}
-/*
- * funkce pro nastaveni manualniho rezimu topeni a nebo chlazeni
- * args1 ... parametr z definice prvku
- * args2 ... parametr z menu
- * args3 ... index prvku v poradi menu
- */
-void button_click_set_term_heat_or_cool(uint8_t args1, uint8_t args2, uint8_t args3)
-{
-  if (thermostat_ring_get_active(default_ring) != 255)
-  {
-    if (args1 == TERM_MODE_MAN_HEAT)
-      thermostat_ring_update_bites(default_ring, STATUS_BIT_HEAT_OR_COOL, 0);
-    if (args1 == TERM_MODE_MAN_COOL)
-      thermostat_ring_update_bites(default_ring, STATUS_BIT_HEAT_OR_COOL, 1);
-  }
-}
 
-uint8_t display_enable_show_term_mode_man(uint16_t args1, uint16_t args2, uint8_t args3)
-{
-  uint8_t mode = thermostat_ring_get_mode(default_ring);
-  if (mode == TERM_MODE_MAN_HEAT || mode == TERM_MODE_MAN_COOL || mode == TERM_MODE_MAN)
-    return 1;
-
-  return 0;
-}
-
-/////
-/////
-void click_thermostat_set_ring_via_dialog(uint8_t args1, uint8_t args2, uint8_t args3)
-{
-MenuHistoryNextMenu(MENU_NASTAVENI_SELECT_RING_SCREEN, default_ring);
-}
-
-uint8_t get_function_thermostat_ring_is_selected(uint16_t args1, uint16_t args2, uint8_t args3)
-{
-  return 1;
-}
-
-
-
-
-
-
-/////
-void click_thermostat_set_mode_via_dialog(uint8_t args1, uint8_t args2, uint8_t args3)
-{
-  MenuHistoryNextMenu(MENU_DIALOG_SELECT_TERM_MODE, default_ring);
-}
-
-/*
-uint8_t get_function_thermostat_mode_max_items(uint16_t args1, uint16_t args2, uint8_t args3)
-{
-  return 5;
-}
+    Funkce pro nastavovani modu termostatu z menu dialog
+    Obsluha tlacitek
 */
 
 /*
+   funkce pro prepnuti na dialog vyberu modu
+*/
+void button_click_term_set_mode_via_dialog(uint8_t args1, uint8_t args2, uint8_t args3)
+{
+  MenuHistoryNextMenu(MENU_DIALOG_SELECT_TERM_MODE, default_ring);
+}
+/*
+   prevodni funkce pro dynamicke tlacitko popisku vybraneho operacniho modu
+   prevede id modu na textovy popisek
+   zadne vstupni parametry
+*/
+void button_get_default_ring_term_mode_labels(uint8_t args1, uint8_t args2, char *line1, char *line2)
+{
+  strcpy_P(line1, text_current_ring_mode);
+  convert_mode_text_1(thermostat_ring_get_mode(default_ring), line2);
+}
+///
+/*
+   funkce ktera vraci 1 na aktualne vybrany mod podle indexu prvku v menu. Pozor na pevne stanovene poradi modu
    args1 ... globalni argument z definice menu
    args2 ... zde je cislo ringu
    args3 ... id polozky dynamickeho menu
 */
-uint8_t get_function_thermostat_mode_is_selected(uint16_t args1, uint16_t args2, uint8_t args3)
+uint8_t button_get_term_mode_is_selected(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   uint8_t mode;
   uint8_t ret = 0;
@@ -5680,13 +5743,14 @@ uint8_t get_function_thermostat_mode_is_selected(uint16_t args1, uint16_t args2,
   if (args3 == 4 && (mode == TERM_MODE_MAN || mode == TERM_MODE_MAN_HEAT || mode == TERM_MODE_MAN_COOL)) ret = 1;
   return ret;
 }
-
+///
 /*
+   ulozeni vybraneho modu, pozor na pevne stanovene poradi
    args1 ... globalni argument z definice menu
-   args2 ... zde je cislo ringu
+   args2 ... zde je cislo ringu,
    args3 ... id polozky menu
 */
-void click_function_thermostat_set_mode(uint8_t args1, uint8_t args2, uint8_t args3)
+void button_click_term_set_mode(uint8_t args1, uint8_t args2, uint8_t args3)
 {
   if (args3 == 0) thermostat_ring_set_mode(args2, TERM_MODE_OFF);
   if (args3 == 1) thermostat_ring_set_mode(args2, TERM_MODE_MAX);
@@ -5694,8 +5758,14 @@ void click_function_thermostat_set_mode(uint8_t args1, uint8_t args2, uint8_t ar
   if (args3 == 3) thermostat_ring_set_mode(args2, TERM_MODE_PROG);
   if (args3 == 4) thermostat_ring_set_mode(args2, TERM_MODE_MAN);
 }
-
-
+///
+/*
+   prevodni funkce
+   id polozky menu na id modu. Je pevne stanovene poradi
+   off,max,min,prog,man
+   line1 ... kratke pojmenovani modu
+   line2 ... komentar
+*/
 void button_get_term_mode_labels(uint8_t args1, uint8_t args2, char *line1, char *line2)
 {
   if (args1 == 0)
@@ -5725,56 +5795,68 @@ void button_get_term_mode_labels(uint8_t args1, uint8_t args2, char *line1, char
   }
 }
 
+
+
+
+
+
+
+
+///////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+/************************************************************************************************************/
 /*
 
+     funkce pro povoleni zakazani polozek z menu
+     zde se resi rucni mod chlazeni/topeni
 
-
-       te = remote_tds_get_data(args2) / 1000.0;
-    dtostrf(te, 4, 2, str1);
-    strcat(str1, "C");
-    strcpy_P(str2, current_temp_short);
-    strcat(str2, str1);
-    show_string(str2, x + 5, y + 60 , 2, BLACK, WHITE, 0);
-    /// posledni aktualizace
-    last_update = remote_tds_get_last_update(args2);
-    strcpy_P(str2, text_last_update);
-    sprintf(str1, "%s: %d", str2, last_update);
-    show_string(str1, x + 5, y + 80 , 1, BLACK, WHITE, 0);
-    active = 1;
-    if (last_update >= 250) active = 0;
-    strcpy_P(str2, text_online);
-    sprintf(str1, "%s: %d", str2, active);
-    show_string(str1, x + 5, y + 100 , 2, BLACK, WHITE, 0);
-
-
-  for (uint8_t idx = 0; idx < HW_ONEWIRE_MAXROMS; idx++)
-  {
-    if (tds_used(idx) == 1)
-    {
-      if (cri == args1)
-      {
-        tds_get_name(idx, name);
-        strcpy(line2, name);
-        strcpy_P(line1, nastaveni_onewire);
-        goto get_function_default_temp_end;
-      }
-      cri++;
-    }
-  }
-  ///
-  for (uint8_t idx = 0; idx < MAX_RTDS; idx++)
-  {
-    remote_tds_get_active(idx, &active);
-    if (active == 1)
-    {
-      if (cri == args1)
-      {
-        remote_tds_get_complete(idx, &active, name);
-        strcpy(line2, name);
-        strcpy_P(line1, nastaveni_rtds);
-        goto get_function_default_temp_end;
-      }
-      cri++;
-    }
-  }
 */
+/*
+   funkce pro zjisteni, jestli manualni rezim je pro topeni a nebo chlazeni
+   args1 ... paramentr z definice prvku
+   args2 ... paramentr z define menu
+   args3 ... index prvku v menu
+*/
+uint8_t button_get_term_heat_or_cool(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t ret = 0;
+  uint8_t b;
+  if (thermostat_ring_get_active(default_ring) != 255)
+  {
+    b = thermostat_ring_get_status_bites(default_ring, STATUS_BIT_HEAT_OR_COOL);
+    if (b == 0 && args1 == TERM_MODE_MAN_HEAT)
+      ret = 1;
+    if (b != 0 && args1 == TERM_MODE_MAN_COOL)
+      ret = 1;
+  }
+  return ret;
+}
+/*
+   funkce pro nastaveni manualniho rezimu topeni a nebo chlazeni
+   args1 ... parametr z definice prvku
+   args2 ... parametr z menu
+   args3 ... index prvku v poradi menu
+*/
+void button_click_set_term_heat_or_cool(uint8_t args1, uint8_t args2, uint8_t args3)
+{
+  if (thermostat_ring_get_active(default_ring) != 255)
+  {
+    if (args1 == TERM_MODE_MAN_HEAT)
+      thermostat_ring_update_bites(default_ring, STATUS_BIT_HEAT_OR_COOL, 0);
+    if (args1 == TERM_MODE_MAN_COOL)
+      thermostat_ring_update_bites(default_ring, STATUS_BIT_HEAT_OR_COOL, 1);
+  }
+}
+/*
+   funkce vraci 1 kdyz mame vybrany z nasledujich modu, rucni rizeni a jeho alternativy
+   kdyz 0 tak se nezobrazuji polozky v menu
+   args1, args2, args3 nejsou zatim potreba
+*/
+uint8_t display_enable_show_term_mode_man(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t mode = thermostat_ring_get_mode(default_ring);
+  if (mode == TERM_MODE_MAN_HEAT || mode == TERM_MODE_MAN_COOL || mode == TERM_MODE_MAN)
+    return 1;
+
+  return 0;
+}

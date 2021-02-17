@@ -170,6 +170,11 @@ const char text_button_mode_heat[] PROGMEM = "Topeni";
 const char text_button_mode_cool[] PROGMEM = "Chlazeni";
 const char text_button_term_fan[] PROGMEM = "FAN";
 
+const char text_term_active[] PROGMEM = "Aktivni";
+const char text_term_deactive[] PROGMEM = "Neaktivni";
+const char text_term_do_activate[] PROGMEM = "Aktivovat novy regulator?";
+
+
 const char nastaveni_site[] PROGMEM = "Nastaveni site";
 const char nastaveni_nrf[] PROGMEM = "NRF pripojeni";
 const char nastaveni_default[] PROGMEM = "Reset nastaveni";
