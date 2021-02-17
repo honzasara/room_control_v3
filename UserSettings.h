@@ -56,7 +56,7 @@
 #define VERTICAL  0
 #define HORIZONTAL 1
 #define HORIZONTAL_NEW_LINE 2
-#define VERTICAL_NEW_LINE 2
+#define VERTICAL_NEW_LINE 3
 
 
 #define INDEX_DYN_MENU_ASSOCIATE_ONEWIRE 1
@@ -75,6 +75,7 @@
 #define MENU_NASTAVENI_RTDS_DETAIL 7
 #define MENU_SELECT_DEFAULT_TEMP 8
 #define MENU_NASTAVENI_RING_SCREEN 9
+#define MENU_NASTAVENI_SELECT_RING_SCREEN 10
 
 #define MENU_DIALOG_YES_NO  100
 #define MENU_DIALOG_KEYBOARD_NUMBER 101
@@ -119,7 +120,7 @@
 #define PINK         0xF81F  /* 255,   0, 255 */
 #define GRAY 54938
 
-const char term_title[] PROGMEM = "Pokojovy termostat v3";
+const char term_title[] PROGMEM = "Pokojovy regulator v3";
 const char text_touchscreen[] PROGMEM = "touchscreen";
 const char text_nastaveni_systemu[] PROGMEM = "nastaveni systemu";
 const char text_onewire_rozhrani[] PROGMEM = "1wire rozhrani";
@@ -142,7 +143,9 @@ const char current_temp[] PROGMEM = "Aktualni teplota:";
 const char current_temp_short[] PROGMEM = "teplota:";
 const char temp_offset_short[] PROGMEM = "offset:";
 const char nastaveni_text[] PROGMEM = "Nastaveni";
-const char nastaveni_ring_text[] PROGMEM = "Nastaveni okruhu";
+const char nastaveni_ring_text[] PROGMEM = "Nastaveni regulatoru";
+const char text_current_ring_mode[] PROGMEM =  "Aktualni mod regulatoru";
+const char text_change_default_ring[] PROGMEM = "Zmenit vychozi regulatoru";
 const char funkce_text[] PROGMEM = "Funkce";
 const char regulator_text[] PROGMEM = "Regulator";
 const char regulator_default_text[] PROGMEM = "Vychozi regulator:";
@@ -151,14 +154,21 @@ const char ring_text_setup[] PROGMEM = "Nastaveni";
 const char budik_text[] PROGMEM = "Budik";
 const char button_zpet[] PROGMEM = "Zpet";
 
-const char button_term_off[] PROGMEM = "OFF";
-const char button_term_max[] PROGMEM = "MAX";
-const char button_term_min[] PROGMEM = "MIN";
-const char button_term_prog[] PROGMEM = "PROG";
-const char button_term_man[] PROGMEM = "MAN";
-const char button_mode_heat[] PROGMEM = "Topeni";
-const char button_mode_cool[] PROGMEM = "Chlazeni";
-const char button_term_fan[] PROGMEM = "FAN";
+const char text_button_term_off[] PROGMEM = "OFF";
+const char text_button_term_off_comment[] PROGMEM = "Vypnuto, ochranny mod";
+const char text_button_term_max[] PROGMEM = "MAX";
+const char text_button_term_max_comment[] PROGMEM = "Zapnuto, bez regulace";
+const char text_button_term_min[] PROGMEM = "MIN";
+const char text_button_term_min_comment[] PROGMEM = "Chlazeni, bez regulace";
+const char text_button_term_prog[] PROGMEM = "PROG";
+const char text_button_term_prog_comment[] PROGMEM = "Automaticky program";
+const char text_button_term_man[] PROGMEM = "MAN";
+const char text_button_term_man_comment[] PROGMEM = "Rucni ovladani";
+
+
+const char text_button_mode_heat[] PROGMEM = "Topeni";
+const char text_button_mode_cool[] PROGMEM = "Chlazeni";
+const char text_button_term_fan[] PROGMEM = "FAN";
 
 const char nastaveni_site[] PROGMEM = "Nastaveni site";
 const char nastaveni_nrf[] PROGMEM = "NRF pripojeni";
@@ -187,6 +197,7 @@ const char text_online[] PROGMEM = "Online";
 const char text_last_update[] PROGMEM = "Posledni aktualizace:";
 const char text_select_default_temp[] PROGMEM = "Vyber zobrazeni teplomeru";
 const char text_select_term_mode[] PROGMEM = "Vyber modu regulatoru";
+const char text_select_term_default_ring[] PROGMEM = "Vyber vychoziho regulatoru";
 
 const char text_upozorneni[] PROGMEM = "Upozorneni";
 const char text_klavesnice[] PROGMEM = "Klavesnice";
@@ -238,7 +249,7 @@ const char keyboad_number_char_special[KEYBOARD_SIZE_CHAR_SPECIAL] PROGMEM = {'0
 
 typedef void (*ret_string_fptr)(uint8_t args1, uint8_t args2, char *line1, char *line2);
 typedef void (*fptr_coordinate_xy)(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2);
-typedef void (*fptr_args)(uint16_t args1, uint16_t args2);
+typedef void (*fptr_args)(uint16_t args1, uint16_t args2, uint8_t args3);
 typedef uint8_t (*ret_fptr)(uint16_t args1, uint16_t args2, uint8_t args3);
 
 

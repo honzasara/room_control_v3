@@ -228,9 +228,11 @@ void display_function_set_variable_minus(void);
 
 
 
-uint8_t get_function_thermostat_has_mode(uint8_t args);
-void click_thermostat_set_mode(uint8_t args);
-void click_thermostat_set_mode_via_dialog(uint8_t args1, uint8_t args2);
+uint8_t button_status_term_has_mode(uint8_t args1, uint8_t args2, uint8_t args3);
+
+void button_click_term_set_mode(uint8_t args1, uint8_t args2, uint8_t args3);
+void click_thermostat_set_mode_via_dialog(uint8_t args1, uint8_t args2, uint8_t args3);
+void click_thermostat_set_ring_via_dialog(uint8_t args1, uint8_t args2, uint8_t args3);
 
 void click_rtds_add_sensor(uint8_t args1, uint8_t args);
 
@@ -242,22 +244,22 @@ void display_function_vertical_slider_get(uint8_t *start, uint8_t *stop);
 
 
 void get_function_one_wire_associate_or_setting_text_button(uint8_t args1, uint8_t args2, char *line1, char *line2);
-uint8_t get_function_one_wire_last_index_for_menu(uint8_t idx);
-void click_tds_associate_or_setting_onewire(uint8_t args1, uint8_t idx);
+uint8_t get_function_one_wire_last_index_for_menu(uint16_t idx, uint16_t args2, uint8_t args3);
+void click_tds_associate_or_setting_onewire(uint8_t args1, uint8_t args2, uint8_t idx);
 
-void click_rtds_setting_sensor(uint8_t args1, uint8_t idx);
+void click_rtds_setting_sensor(uint8_t args1, uint8_t args2, uint8_t loop_idx);
 
 void click_tds_deassociate_onewire(uint8_t args1, uint8_t idx);
 void click_rtds_deassociate_onewire(uint8_t args1, uint8_t idx);
 void click_rtds_subscribe(uint8_t args1, uint8_t idx);
 
 uint8_t get_function_rtds_active_items(uint8_t args1, uint8_t args2);
-uint8_t get_function_rtds_last_index_for_menu(uint8_t args1, uint8_t args2);
+uint8_t get_function_rtds_last_index_for_menu(uint16_t args1, uint16_t args2, uint8_t args3);
 void get_function_rtds_text_button(uint8_t args1, uint8_t args2, char *line1, char *line2);
 
 
 uint8_t get_function_budik_enabled(uint8_t args);
-void get_function_budik_text_state(uint8_t args1, uint8_t args2, char *text);
+void get_function_budik_text_state(uint8_t args1, uint8_t args2, char *line1, char *line2);
 
 
 void click_dialog_button_yes(uint8_t args1, uint8_t args2);
@@ -280,48 +282,144 @@ void display_element_get_string(char *str);
 void display_element_set_string(char *str, uint8_t max_length);
 void display_element_set_string_del_char(uint8_t args1, uint8_t args2);
 
-uint8_t get_function_keyboard_number_max_keys(uint8_t args1, uint8_t args2, uint8_t args3);
-void click_keyboard_number(uint8_t args1, uint8_t args2);
+uint8_t get_function_keyboard_number_max_keys(uint16_t args1, uint16_t args2, uint8_t args3);
+void click_keyboard_number(uint8_t args1, uint8_t args2, uint8_t args3);
 void get_function_keyboard_number_char(uint8_t args1, uint8_t args2, char *line1, char *line2);
 
 
 void get_function_keyboard_alfa_char(uint8_t args1, uint8_t args2, char *line1, char *line2);
-void click_keyboard_alfa(uint8_t args1, uint8_t args2);
-uint8_t get_function_keyboard_alfa_max_keys(uint8_t idx);
+void click_keyboard_alfa(uint8_t args1, uint8_t args2, uint8_t args3);
+uint8_t get_function_keyboard_alfa_max_keys(uint16_t args1, uint16_t args2, uint8_t args3);
 
 void click_select_default_temp(uint8_t args1, uint8_t args2);
 
 
 
-void get_function_default_temp(uint8_t args1, uint8_t args2, char *line1, char *line2);
-void click_function_default_temp(uint8_t args1, uint8_t args2);
-uint8_t get_function_default_temp_max_items(uint8_t args1, uint8_t args2);
-uint8_t get_function_default_temp_active(uint8_t args1, uint8_t args2, uint8_t args3);
+void button_get_show_default_temp(uint8_t args1, uint8_t args2, char *line1, char *line2);
+void click_function_default_temp(uint8_t args1, uint8_t args2, uint8_t args3);
+uint8_t button_get_show_default_temp_max_items(uint16_t args1, uint16_t args2, uint8_t args3);
+uint8_t button_get_show_default_temp_active(uint16_t args1, uint16_t args2, uint8_t args3);
 
-uint8_t get_function_thermostat_mode_max_items(uint8_t args1, uint8_t args2, args3);
+uint8_t get_function_thermostat_mode_max_items(uint16_t args1, uint16_t args2, uint8_t args3);
+uint8_t get_function_thermostat_mode_is_selected(uint16_t args1, uint16_t args2, uint8_t args3);
+void click_function_thermostat_set_mode(uint8_t args1, uint8_t args2, uint8_t args3);
+void button_get_term_mode_labels(uint8_t args1, uint8_t args2, char *line1, char *line2);
+
 
 void get_funtion_default_ring_temp_mode(uint8_t args1, uint8_t args2, char *line1, char *line2);
+uint8_t get_function_thermostat_ring_is_selected(uint16_t args1, uint16_t args2, uint8_t args3);
 void get_funtion_default_ring(uint8_t args1, uint8_t args2, char *line1, char *line2);
-void set_function_thermostat_heat_or_cool(uint8_t args);
-uint8_t get_function_thermostat_heat_or_cool(uint8_t args);
+
+
+void get_funtion_change_default_ring_button_labels(uint8_t args1, uint8_t args2, char *line1, char *line2);
+
+
+
+void button_click_set_term_heat_or_cool(uint8_t args1, uint8_t args2, uint8_t args3);
+uint8_t button_get_term_heat_or_cool(uint16_t args1, uint16_t args2, uint8_t args3);
 uint8_t display_enable_show_term_mode_man(uint16_t args1, uint16_t args2, uint8_t args3);
 
 uint8_t display_enable_show(uint8_t args1, uint8_t args2);
-uint8_t get_function_return_args_1(uint8_t args1, uint8_t args2);
+uint8_t get_function_return_args_1(uint16_t args1, uint16_t args2, uint8_t args3);
 
-uint8_t preload_regulator_menu(uint8_t args1, uint8_t args2, uint8_t args3);
+uint8_t preload_regulator_menu(uint16_t args1, uint16_t args2, uint8_t args3);
 
 ///////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const Element_Dyn_Symbol_1 keyboard_number PROGMEM = {
+  .first_x = 10,
+  .first_y = 60,
+  .size_x = 30,
+  .size_y = 30,
+  .font_size = 2,
+  .step_x = 40,
+  .step_y = 40,
+  .direction = HORIZONTAL_NEW_LINE,
+  .max_items_count = 9,
+  .max_row_count = 0,
+  .slider_args = 0,
+  .args = INDEX_DYN_MENU_KEYBOARD_NUMBER,
+  .get_status_string = get_function_keyboard_number_char,
+  .dyn_symbol_onclick =  click_keyboard_number,
+  .function_for_max_items = get_function_keyboard_number_max_keys,
+  .redraw_class = REDRAW_BUTTON,
+};
+
+const Element_Dyn_Symbol_1 keyboard_alfa PROGMEM = {
+  .first_x = 10,
+  .first_y = 80,
+  .size_x = 30,
+  .size_y = 30,
+  .font_size = 2,
+  .step_x = 40,
+  .step_y = 40,
+  .direction = HORIZONTAL_NEW_LINE,
+  .max_items_count = 10,
+  .max_row_count = 0,
+  .slider_args = 0,
+  .args = INDEX_DYN_MENU_KEYBOARD_ALFA,
+  .get_status_string = get_function_keyboard_alfa_char,
+  .dyn_symbol_onclick =  click_keyboard_alfa,
+  .function_for_max_items = get_function_keyboard_alfa_max_keys,
+  .redraw_class = REDRAW_BUTTON,
+};
 
 
-const Element_Dyn_Symbol_1 keyboard_number PROGMEM = {.first_x = 10, .first_y = 60, .size_x = 30, .size_y = 30, .font_size = 2, .step_x = 40, .step_y = 40, .direction = HORIZONTAL_NEW_LINE, .max_items_count = 9, .max_row_count = 0, .slider_args = 0, .args = INDEX_DYN_MENU_KEYBOARD_NUMBER, .get_status_string = get_function_keyboard_number_char, .dyn_symbol_onclick =  click_keyboard_number, .function_for_max_items = get_function_keyboard_number_max_keys, .redraw_class = REDRAW_BUTTON,};
-const Element_Dyn_Symbol_1 keyboard_alfa PROGMEM = {.first_x = 10, .first_y = 80, .size_x = 30, .size_y = 30, .font_size = 2, .step_x = 40, .step_y = 40, .direction = HORIZONTAL_NEW_LINE, .max_items_count = 10, .max_row_count = 0, .slider_args = 0, .args = INDEX_DYN_MENU_KEYBOARD_ALFA, .get_status_string = get_function_keyboard_alfa_char, .dyn_symbol_onclick =  click_keyboard_alfa, .function_for_max_items = get_function_keyboard_alfa_max_keys, .redraw_class = REDRAW_BUTTON,};
-const Element_Button_1 button_keyboard_upper PROGMEM = {.name = text_upper_case, .x = 320, .y = 35, .size_x = 40, .size_y = 40, .font_size = 2, .args = KEYBOARD_TYPE_UPPER, .onclick = click_keyboard_type, .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show, };
-const Element_Button_1 button_keyboard_lower PROGMEM = {.name = text_lower_case, .x = 365, .y = 35, .size_x = 40, .size_y = 40, .font_size = 2, .args = KEYBOARD_TYPE_LOWER, .onclick = click_keyboard_type, .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show,};
-const Element_Button_1 button_keyboard_special PROGMEM = {.name = text_special_case, .x = 410, .y = 35, .size_x = 40, .size_y = 40, .font_size = 2, .args = KEYBOARD_TYPE_SPECIAL, .onclick = click_keyboard_type, .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show,};
-const Element_Button_1 button_delete_char PROGMEM = {.name = text_delete_char, .x = 300, .y = 200, .size_x = 130, .size_y = 40, .font_size = 2, .args = 0, .onclick = display_element_set_string_del_char,  .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show,};
+const Element_Button_1 button_keyboard_upper PROGMEM = {
+  .name = text_upper_case,
+  .x = 320,
+  .y = 35,
+  .size_x = 40,
+  .size_y = 40,
+  .font_size = 2,
+  .args = KEYBOARD_TYPE_UPPER,
+  .onclick = click_keyboard_type,
+  .redraw_class = REDRAW_BUTTON,
+  .enable_show = display_enable_show,
+};
 
-const Element_Dyn_Select_1 select_default_temp PROGMEM = {
+const Element_Button_1 button_keyboard_lower PROGMEM = {
+  .name = text_lower_case,
+  .x = 365,
+  .y = 35,
+  .size_x = 40,
+  .size_y = 40,
+  .font_size = 2,
+  .args = KEYBOARD_TYPE_LOWER,
+  .onclick = click_keyboard_type,
+  .redraw_class = REDRAW_BUTTON,
+  .enable_show = display_enable_show,
+};
+
+const Element_Button_1 button_keyboard_special PROGMEM = {
+  .name = text_special_case,
+  .x = 410,
+  .y = 35,
+  .size_x = 40,
+  .size_y = 40,
+  .font_size = 2,
+  .args = KEYBOARD_TYPE_SPECIAL,
+  .onclick = click_keyboard_type,
+  .redraw_class = REDRAW_BUTTON,
+  .enable_show = display_enable_show,
+};
+
+const Element_Button_1 button_delete_char PROGMEM = {
+  .name = text_delete_char,
+  .x = 300,
+  .y = 200,
+  .size_x = 130,
+  .size_y = 40,
+  .font_size = 2,
+  .args = 0,
+  .onclick = display_element_set_string_del_char,
+  .redraw_class = REDRAW_BUTTON,
+  .enable_show = display_enable_show,
+};
+
+/////
+const Element_Dyn_Select_1 button_select_show_default_temp PROGMEM = {
   .first_x = 10,
   .first_y = 40,
   .size_x = 120,
@@ -337,20 +435,20 @@ const Element_Dyn_Select_1 select_default_temp PROGMEM = {
   .max_row_count = 2,
   .slider_args = MENU_SLIDER_DEFAULT_TEMP,
   .args = 0,
-  .get_status_string = get_function_default_temp,
+  .get_status_string = button_get_show_default_temp,
   .dyn_symbol_onclick =  click_function_default_temp,
-  .function_for_max_items = get_function_default_temp_max_items,
-  .get_status_fnt = get_function_default_temp_active,
+  .function_for_max_items = button_get_show_default_temp_max_items,
+  .get_status_fnt = button_get_show_default_temp_active,
   .redraw_class = REDRAW_BUTTON,
 };
 
 
 const Element_Dyn_Select_1 select_term_mode PROGMEM = {
-  .first_x = 10,
-  .first_y = 20,
-  .size_x = 120,
+  .first_x = 230,
+  .first_y = 40,
+  .size_x = 200,
   .size_y = 40,
-  .font_size_1 = 1,
+  .font_size_1 = 2,
   .font_size_2 = 1,
   .color_active = GREEN,
   .color_inactive = WHITE,
@@ -360,32 +458,200 @@ const Element_Dyn_Select_1 select_term_mode PROGMEM = {
   .max_items_count = 5,
   .max_row_count = 1,
   .slider_args = MENU_SLIDER_OFF,
-  .args = 0,
-  .get_status_string = get_function_default_temp,
-  .dyn_symbol_onclick =  click_function_default_temp,
-  .function_for_max_items = get_function_thermostat_mode_max_items,
-  .get_status_fnt = get_function_default_temp_active,
+  .args = 5,
+  .get_status_string = button_get_term_mode_labels,
+  .dyn_symbol_onclick =  click_function_thermostat_set_mode,
+  .function_for_max_items = get_function_return_args_1,
+  .get_status_fnt = get_function_thermostat_mode_is_selected,
   .redraw_class = REDRAW_BUTTON,
 };
 
 
-const Element_Dyn_Button_1 onewire_associace_button PROGMEM = {.first_x = 230, .first_y = 35, .size_x = 170, .size_y = 55, .font_size = 1, .step_x = 60, .step_y = 60, .direction = VERTICAL, .max_items_count = 3, .max_row_count = 1, .slider_args = MENU_SLIDER_ONE_WIRE, .args = INDEX_DYN_MENU_ASSOCIATE_ONEWIRE, .get_status_string = get_function_one_wire_associate_or_setting_text_button, .dyn_button_onclick =  click_tds_associate_or_setting_onewire, .function_for_max_items = get_function_one_wire_last_index_for_menu, .redraw_class = REDRAW_BUTTON,};
+const Element_Dyn_Button_1 onewire_associace_button PROGMEM = {
+  .first_x = 230,
+  .first_y = 35,
+  .size_x = 170,
+  .size_y = 55,
+  .font_size = 1,
+  .step_x = 60, .step_y = 60,
+  .direction = VERTICAL,
+  .max_items_count = 3,
+  .max_row_count = 1,
+  .slider_args = MENU_SLIDER_ONE_WIRE,
+  .args = INDEX_DYN_MENU_ASSOCIATE_ONEWIRE,
+  .get_status_string = get_function_one_wire_associate_or_setting_text_button,
+  .dyn_button_onclick =  click_tds_associate_or_setting_onewire,
+  .function_for_max_items = get_function_one_wire_last_index_for_menu,
+  .redraw_class = REDRAW_BUTTON,
+};
 
-const Element_Switch_1 switch_budik PROGMEM = {.name = budik_text, .x = 10, .y = 40, .size_x = 190, .size_y = 120, .font_size = 2, .color_active = 0, .color_inactive = 0, .args = SWITCH_BUDIK, .onclick = nullfce, .get_status_fnt = get_function_budik_enabled, .get_status_string = get_function_budik_text_state, .redraw_class = REDRAW_BUTTON,};
+const Element_Switch_1 switch_budik PROGMEM = {
+  .name = budik_text,
+  .x = 10,
+  .y = 40,
+  .size_x = 190,
+  .size_y = 120,
+  .font_size = 2,
+  .color_active = 0,
+  .color_inactive = 0,
+  .args = SWITCH_BUDIK,
+  .onclick = nullfce,
+  .get_status_fnt = get_function_budik_enabled,
+  .get_status_string = get_function_budik_text_state,
+  .redraw_class = REDRAW_BUTTON,
+};
 
 
 
-const Element_Button_2 button_term_state_off PROGMEM = { .name = button_term_off, .x = 10, .y = 220, .size_x = 82, .size_y = 60, .font_size = 3, .color_active = GRAY, .color_inactive = WHITE, .args = TERM_MODE_OFF, .onclick = click_thermostat_set_mode, .get_status_fnt = get_function_thermostat_has_mode,  .redraw_class = REDRAW_PROGRAM_BUTTON, .enable_show = display_enable_show,};
-const Element_Button_2 button_term_state_max PROGMEM = {.name = button_term_max, .x = 100, .y = 220, .size_x = 82, .size_y = 60, .font_size = 3, .color_active = RED, .color_inactive = WHITE, .args = TERM_MODE_MAX, .onclick = click_thermostat_set_mode, .get_status_fnt = get_function_thermostat_has_mode,  .redraw_class = REDRAW_PROGRAM_BUTTON, .enable_show = display_enable_show,};
-const Element_Button_2 button_term_state_min PROGMEM = {.name = button_term_min, .x = 190, .y = 220, .size_x = 82, .size_y = 60, .font_size = 3, .color_active = BLUE, .color_inactive = WHITE, .args = TERM_MODE_MIN, .onclick = click_thermostat_set_mode, .get_status_fnt = get_function_thermostat_has_mode,  .redraw_class = REDRAW_PROGRAM_BUTTON, .enable_show = display_enable_show,};
-const Element_Button_2 button_term_state_prog PROGMEM = {.name = button_term_prog, .x = 280, .y = 220, .size_x = 82, .size_y = 60, .font_size = 3, .color_active = YELLOW, .color_inactive = WHITE, .args = TERM_MODE_PROG, .onclick = click_thermostat_set_mode, .get_status_fnt = get_function_thermostat_has_mode,  .redraw_class = REDRAW_PROGRAM_BUTTON, .enable_show = display_enable_show,};
-const Element_Button_2 button_term_state_man PROGMEM = {.name = button_term_man, .x = 370, .y = 220, .size_x = 82, .size_y = 60, .font_size = 3, .color_active = GREEN, .color_inactive = WHITE, .args = TERM_MODE_MAN, .onclick = click_thermostat_set_mode, .get_status_fnt = get_function_thermostat_has_mode,  .redraw_class = REDRAW_PROGRAM_BUTTON, .enable_show = display_enable_show,};
+const Element_Button_2 button_term_state_off PROGMEM = {
+  .name = text_button_term_off,
+  .x = 10,
+  .y = 220,
+  .size_x = 82,
+  .size_y = 60,
+  .font_size = 3,
+  .color_active = GRAY,
+  .color_inactive = WHITE,
+  .args = TERM_MODE_OFF,
+  .onclick = button_click_term_set_mode,
+  .get_status_fnt = button_status_term_has_mode,
+  .redraw_class = REDRAW_PROGRAM_BUTTON,
+  .enable_show = display_enable_show,
+};
 
-const Element_Dyn_Button_1 button_change_term_mode PROGMEM = {.first_x = 10, .first_y = 100, .size_x = 190, .size_y = 40, .font_size = 1, .step_x = 1, .step_y = 1, .direction = VERTICAL, .max_items_count = 1, .max_row_count = 1, .slider_args = 0, .args = 1, .get_status_string = get_funtion_default_ring_temp_mode, .dyn_button_onclick = click_thermostat_set_mode_via_dialog,  .function_for_max_items = get_function_return_args_1, .redraw_class = (1 << REDRAW_FORCE) };
-const Element_Dyn_Button_1 button_change_ring PROGMEM = {.first_x = 10, .first_y = 40, .size_x = 190, .size_y = 40, .font_size = 1, .step_x = 1, .step_y = 1, .direction = VERTICAL, .max_items_count = 1, .max_row_count = 1, .slider_args = 0, .args = 1, .get_status_string = get_funtion_default_ring, .dyn_button_onclick = nullfce,  .function_for_max_items = get_function_return_args_1, .redraw_class = (1 << REDRAW_FORCE) };
-const Element_Button_2 button_term_mode_heat PROGMEM = {.name = button_mode_heat, .x = 240, .y = 90, .size_x = 100, .size_y = 40, .font_size = 1, .color_active = RED, .color_inactive = WHITE, .args = TERM_MODE_MAN_HEAT, .onclick = set_function_thermostat_heat_or_cool, .get_status_fnt = get_function_thermostat_heat_or_cool,  .redraw_class = REDRAW_PROGRAM_BUTTON, .enable_show = display_enable_show_term_mode_man};
-const Element_Button_2 button_term_mode_cool PROGMEM = {.name = button_mode_cool, .x = 360, .y = 90, .size_x = 100, .size_y = 40, .font_size = 1, .color_active = BLUE, .color_inactive = WHITE, .args = TERM_MODE_MAN_COOL, .onclick = set_function_thermostat_heat_or_cool, .get_status_fnt = get_function_thermostat_heat_or_cool,  .redraw_class = REDRAW_PROGRAM_BUTTON, .enable_show = display_enable_show_term_mode_man};
-const Element_Button_1 button_nastaveni_ring PROGMEM = { .name = nastaveni_ring_text, .x = 10, .y = 160, .size_x = 190, .size_y = 40, .font_size = 1, .args = MENU_NASTAVENI_RING_SCREEN, .onclick = MenuHistoryNextMenu,  .redraw_class = (1 << REDRAW_FORCE), .enable_show = display_enable_show,};
+const Element_Button_2 button_term_state_max PROGMEM = {
+  .name = text_button_term_max,
+  .x = 100,
+  .y = 220,
+  .size_x = 82,
+  .size_y = 60,
+  .font_size = 3,
+  .color_active = RED,
+  .color_inactive = WHITE,
+  .args = TERM_MODE_MAX,
+  .onclick = button_click_term_set_mode,
+  .get_status_fnt = button_status_term_has_mode,
+  .redraw_class = REDRAW_PROGRAM_BUTTON,
+  .enable_show = display_enable_show,
+};
+
+const Element_Button_2 button_term_state_min PROGMEM = {
+  .name = text_button_term_min,
+  .x = 190,
+  .y = 220,
+  .size_x = 82,
+  .size_y = 60,
+  .font_size = 3,
+  .color_active = BLUE,
+  .color_inactive = WHITE,
+  .args = TERM_MODE_MIN,
+  .onclick = button_click_term_set_mode,
+  .get_status_fnt = button_status_term_has_mode,
+  .redraw_class = REDRAW_PROGRAM_BUTTON,
+  .enable_show = display_enable_show,
+};
+
+const Element_Button_2 button_term_state_prog PROGMEM = {
+  .name = text_button_term_prog,
+  .x = 280,
+  .y = 220,
+  .size_x = 82,
+  .size_y = 60,
+  .font_size = 3,
+  .color_active = YELLOW,
+  .color_inactive = WHITE,
+  .args = TERM_MODE_PROG,
+  .onclick = button_click_term_set_mode,
+  .get_status_fnt = button_status_term_has_mode,
+  .redraw_class = REDRAW_PROGRAM_BUTTON,
+  .enable_show = display_enable_show,
+};
+
+const Element_Button_2 button_term_state_man PROGMEM = {
+  .name = text_button_term_man,
+  .x = 370,
+  .y = 220,
+  .size_x = 82,
+  .size_y = 60,
+  .font_size = 3,
+  .color_active = GREEN,
+  .color_inactive = WHITE,
+  .args = TERM_MODE_MAN,
+  .onclick = button_click_term_set_mode,
+  .get_status_fnt = button_status_term_has_mode,
+  .redraw_class = REDRAW_PROGRAM_BUTTON,
+  .enable_show = display_enable_show,
+};
+
+
+const Element_Dyn_Button_1 button_change_term_mode PROGMEM = {
+  .first_x = 10,
+  .first_y = 100,
+  .size_x = 190,
+  .size_y = 40,
+  .font_size = 1,
+  .step_x = 1,
+  .step_y = 1,
+  .direction = VERTICAL,
+  .max_items_count = 1,
+  .max_row_count = 1,
+  .slider_args = 0,
+  .args = 1,
+  .get_status_string = get_funtion_default_ring_temp_mode,
+  .dyn_button_onclick = click_thermostat_set_mode_via_dialog,
+  .function_for_max_items = get_function_return_args_1,
+  .redraw_class = (1 << REDRAW_FORCE)
+};
+
+
+
+
+const Element_Dyn_Button_1 button_change_ring PROGMEM = {
+  .first_x = 10,
+  .first_y = 40,
+  .size_x = 190,
+  .size_y = 40,
+  .font_size = 1,
+  .step_x = 1,
+  .step_y = 1,
+  .direction = VERTICAL,
+  .max_items_count = 1,
+  .max_row_count = 1,
+  .slider_args = 0,
+  .args = 1,
+  .get_status_string = get_funtion_default_ring,
+  .dyn_button_onclick =  click_thermostat_set_ring_via_dialog,
+  .function_for_max_items = get_function_return_args_1,
+  .redraw_class = REDRAW_BUTTON,
+};
+
+const Element_Dyn_Select_1 button_change_default_ring PROGMEM = {
+  .first_x = 10,
+  .first_y = 40,
+  .size_x = 120,
+  .size_y = 50,
+  .font_size_1 = 2,
+  .font_size_2 = 1,
+  .color_active = GREEN,
+  .color_inactive = WHITE,
+  .step_x = 130,
+  .step_y = 60,
+  .direction = HORIZONTAL_NEW_LINE,
+  .max_items_count = 3,
+  .max_row_count = 3,
+  .slider_args = MENU_SLIDER_OFF,
+  .args = 5,
+  .get_status_string =  get_funtion_change_default_ring_button_labels,
+  .dyn_symbol_onclick =  nullfceargs,
+  .function_for_max_items = get_function_return_args_1,
+  .get_status_fnt = get_function_thermostat_ring_is_selected,
+  .redraw_class = REDRAW_BUTTON,
+};
+
+
+const Element_Button_2 button_term_ring_mode_heat PROGMEM = {.name = text_button_mode_heat, .x = 240, .y = 90, .size_x = 100, .size_y = 40, .font_size = 1, .color_active = RED, .color_inactive = WHITE, .args = TERM_MODE_MAN_HEAT, .onclick = button_click_set_term_heat_or_cool, .get_status_fnt = button_get_term_heat_or_cool,  .redraw_class = REDRAW_PROGRAM_BUTTON, .enable_show = display_enable_show_term_mode_man};
+const Element_Button_2 button_term_ring_mode_cool PROGMEM = {.name = text_button_mode_cool, .x = 360, .y = 90, .size_x = 100, .size_y = 40, .font_size = 1, .color_active = BLUE, .color_inactive = WHITE, .args = TERM_MODE_MAN_COOL, .onclick = button_click_set_term_heat_or_cool, .get_status_fnt = button_get_term_heat_or_cool,  .redraw_class = REDRAW_PROGRAM_BUTTON, .enable_show = display_enable_show_term_mode_man};
+const Element_Button_1 button_term_ring_setting_menu PROGMEM = { .name = nastaveni_ring_text, .x = 10, .y = 160, .size_x = 190, .size_y = 40, .font_size = 1, .args = MENU_NASTAVENI_RING_SCREEN, .onclick = MenuHistoryNextMenu,  .redraw_class = (1 << REDRAW_FORCE), .enable_show = display_enable_show,};
 
 const Element_Button_1 button_nastaveni_ring_nazev PROGMEM = { .name = nastaveni_name_sensor, .x = 280, .y = 40, .size_x = 190, .size_y = 40, .font_size = 1, .args = 0, .onclick = nullfce,  .redraw_class = (1 << REDRAW_FORCE), .enable_show = display_enable_show,};
 const Element_Button_1 button_nastaveni_ring_input_sensor PROGMEM = { .name = text_assocoivat, .x = 280, .y = 100, .size_x = 190, .size_y = 40, .font_size = 1, .args = 0, .onclick = nullfce,  .redraw_class = (1 << REDRAW_FORCE), .enable_show = display_enable_show,};
@@ -394,9 +660,9 @@ const Element_Button_1 button_nastaveni_ring_pid PROGMEM = { .name = text_nastav
 
 
 
-const Element_Button_1 button_nastaveni PROGMEM = { .name = nastaveni_text, .x = 290, .y = 30, .size_x = 170, .size_y = 40, .font_size = 2, .args = MENU_NASTAVENI_SCREEN, .onclick = MenuHistoryNextMenu,  .redraw_class = (1 << REDRAW_FORCE), .enable_show = display_enable_show,};
-const Element_Button_1 button_funkce PROGMEM = {.name = funkce_text, .x = 290, .y = 90, .size_x = 170, .size_y = 40, .font_size = 2, .args = MENU_FUNKCE_SCREEN, .onclick = MenuHistoryNextMenu,  .redraw_class = (1 << REDRAW_FORCE), .enable_show = display_enable_show,};
-const Element_Button_1 button_regulator PROGMEM = {.name = regulator_text, .x = 290, .y = 150, .size_x = 170, .size_y = 40, .font_size = 2, .args = MENU_REGULATOR, .onclick = MenuHistoryNextMenu,  .redraw_class = (1 << REDRAW_FORCE), .enable_show = display_enable_show,};
+const Element_Button_1 button_global_setting PROGMEM = { .name = nastaveni_text, .x = 290, .y = 30, .size_x = 170, .size_y = 40, .font_size = 2, .args = MENU_NASTAVENI_SCREEN, .onclick = MenuHistoryNextMenu,  .redraw_class = (1 << REDRAW_FORCE), .enable_show = display_enable_show,};
+const Element_Button_1 button_global_functions PROGMEM = {.name = funkce_text, .x = 290, .y = 90, .size_x = 170, .size_y = 40, .font_size = 2, .args = MENU_FUNKCE_SCREEN, .onclick = MenuHistoryNextMenu,  .redraw_class = (1 << REDRAW_FORCE), .enable_show = display_enable_show,};
+const Element_Button_1 button_global_regulator PROGMEM = {.name = regulator_text, .x = 290, .y = 150, .size_x = 170, .size_y = 40, .font_size = 2, .args = MENU_REGULATOR, .onclick = MenuHistoryNextMenu,  .redraw_class = (1 << REDRAW_FORCE), .enable_show = display_enable_show,};
 
 const Element_Dyn_Button_1 rtds_stat_button PROGMEM = {
   .first_x = 230,
@@ -482,45 +748,303 @@ const Element_Button_1 button_rtds_subscribe PROGMEM = {.name = nastaveni_rtds_s
 const Element_Function_1 f_show_rtds_info_dynamics PROGMEM = {.x = 20, .y = 20, .args = 0, .fnt_coordinate_xy = display_element_show_rtds_info_dynamics,  .size_x = 0, .size_y = 0, .redraw_class = REDRAW_CLASS_SHOW, .onclick = nullfce, .enable_show = display_enable_show,};
 const Element_Function_1 f_show_rtds_decorate PROGMEM = {.x = 220, .y = 20, .args = 0, .fnt_coordinate_xy = display_element_rectangle,  .size_x = 240, .size_y = 240, .redraw_class = REDRAW_BUTTON, .onclick = nullfce, .enable_show = display_enable_show,};
 const Element_Function_1 f_vertical_slider_rtds PROGMEM = {  .x = 410, .y = 72, .args = MENU_SLIDER_RTDS, .fnt_coordinate_xy = display_element_vertical_slider,  .size_x = 40, .size_y = 126, .redraw_class = REDRAW_BUTTON, .onclick = nullfce, .enable_show = display_enable_show,};
-const Element_Symbol_1 slider_menu_plus_rtds PROGMEM =  {.znak = '+', .x = 410, .y = 30, .size_x = 40, .size_y = 40, .znak_size = 2, .args = MENU_SLIDER_RTDS, .onclick = display_function_vertical_slider_dec, .redraw_class = REDRAW_BUTTON,};
-const Element_Symbol_1 slider_menu_minus_rtds PROGMEM =  {.znak = '-', .x = 410, .y = 200, .size_x = 40, .size_y = 40, .znak_size = 2, .args = MENU_SLIDER_RTDS, .onclick = display_function_vertical_slider_inc,  .redraw_class = REDRAW_BUTTON,};
+
+const Element_Symbol_1 slider_menu_plus_rtds PROGMEM =  {
+  .znak = '+',
+  .x = 410,
+  .y = 30,
+  .size_x = 40,
+  .size_y = 40,
+  .znak_size = 2,
+  .args = MENU_SLIDER_RTDS,
+  .onclick = display_function_vertical_slider_dec,
+  .redraw_class = REDRAW_BUTTON,
+  .enable_show = display_enable_show,
+};
+
+const Element_Symbol_1 slider_menu_minus_rtds PROGMEM =  {
+  .znak = '-',
+  .x = 410,
+  .y = 200,
+  .size_x = 40,
+  .size_y = 40,
+  .znak_size = 2,
+  .args = MENU_SLIDER_RTDS,
+  .onclick = display_function_vertical_slider_inc,
+  .redraw_class = REDRAW_BUTTON,
+  .enable_show = display_enable_show,
+};
 
 
-const Element_Button_1 dialog_yes PROGMEM = {.name = text_yes, .x = 30, .y = 60, .size_x = 100, .size_y = 40, .font_size = 2, .args = 0, .onclick = click_dialog_button_yes, .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show,};
+const Element_Button_1 dialog_yes PROGMEM = {
+  .name = text_yes,
+  .x = 30,
+  .y = 60,
+  .size_x = 100,
+  .size_y = 40,
+  .font_size = 2,
+  .args = 0,
+  .onclick = click_dialog_button_yes,
+  .redraw_class = REDRAW_BUTTON,
+  .enable_show = display_enable_show,
+};
 
-const Element_Button_1 dialog_no PROGMEM = {.name = text_no, .x = 250, .y = 60, .size_x = 100, .size_y = 40, .font_size = 2, .args = 0, .onclick = MenuHistoryPrevMenu, .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show,};
+
+const Element_Button_1 dialog_no PROGMEM = {
+  .name = text_no,
+  .x = 250,
+  .y = 60,
+  .size_x = 100,
+  .size_y = 40,
+  .font_size = 2,
+  .args = 0,
+  .onclick = MenuHistoryPrevMenu,
+  .redraw_class = REDRAW_BUTTON,
+  .enable_show = display_enable_show,
+};
 
 
 /////
 /////
-const Element_Function_1 f_show_time PROGMEM = {.x = 10, .y = 30, .args = 0, .fnt_coordinate_xy = display_element_show_time_1, .size_x = 0, .size_y = 0, .redraw_class = (1 << REDRAW_FORCE | 1 << REDRAW_CLASS_0), .onclick = nullfce, .enable_show = display_enable_show,};
-const Element_Function_1 f_show_temp PROGMEM = {.x = 10, .y = 130, .args = 0, .fnt_coordinate_xy = display_element_show_temp_1,  .size_x = 0, .size_y = 0, .redraw_class = (1 << REDRAW_FORCE | 1 << REDRAW_CLASS_2), .onclick = nullfce, .enable_show = display_enable_show,};
-const Element_Function_1 f_show_date PROGMEM = {.x = 280, .y = 290, .args = 0, .fnt_coordinate_xy = display_element_show_date_1,  .size_x = 0, .size_y = 0, .redraw_class = REDRAW_CLASS_SHOW, .onclick = nullfce, .enable_show = display_enable_show,};
-const Element_Function_1 f_dialog_show_text PROGMEM = {.x = 20, .y = 35, .args = 0, .fnt_coordinate_xy = display_element_dialog_show_text, .size_x = 0, .size_y = 0, .redraw_class = REDRAW_BUTTON, .onclick = nullfce, .enable_show = display_enable_show,};
+const Element_Function_1 f_show_time PROGMEM = {
+  .x = 10,
+  .y = 30,
+  .args = 0,
+  .fnt_coordinate_xy = display_element_show_time_1,
+  .size_x = 0,
+  .size_y = 0,
+  .redraw_class = (1 << REDRAW_FORCE | 1 << REDRAW_CLASS_0),
+  .onclick = nullfce,
+  .enable_show = display_enable_show,
+};
 
-const Element_Function_1 f_show_default_ring PROGMEM = {.x = 140, .y = 5, .args = 0, .fnt_coordinate_xy = display_element_dialog_default_ring, .size_x = 0, .size_y = 0, .redraw_class = REDRAW_BUTTON, .onclick = nullfce, .enable_show = display_enable_show,};
-const Element_Function_1 f_default_ring_set_temp PROGMEM = {.x = 280, .y = 40, .args = 0, .fnt_coordinate_xy = display_element_default_ring_set_temp,  .size_x = 140, .size_y = 40, .redraw_class = REDRAW_BUTTON, .onclick = nullfce, .enable_show = display_enable_show_term_mode_man,};
-const Element_Symbol_1 dialog_set_default_ring_temp_plus PROGMEM =  {.znak = '+', .x = 420, .y = 40, .size_x = 40, .size_y = 40, .znak_size = 2, .args = 0, .onclick = display_function_set_variable_plus,  .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show_term_mode_man};
-const Element_Symbol_1 dialog_set_default_ring_temp_minus PROGMEM =  {.znak = '-', .x = 240, .y = 40, .size_x = 40, .size_y = 40, .znak_size = 2, .args = 0, .onclick = display_function_set_variable_minus,  .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show_term_mode_man};
+
+const Element_Function_1 f_show_temp PROGMEM = {
+  .x = 10,
+  .y = 130,
+  .args = 0,
+  .fnt_coordinate_xy = display_element_show_temp_1,
+  .size_x = 0,
+  .size_y = 0,
+  .redraw_class = (1 << REDRAW_FORCE | 1 << REDRAW_CLASS_2),
+  .onclick = nullfce,
+  .enable_show = display_enable_show,
+};
+
+const Element_Function_1 f_show_date PROGMEM = {
+  .x = 280,
+  .y = 290,
+  .args = 0,
+  .fnt_coordinate_xy = display_element_show_date_1,
+  .size_x = 0,
+  .size_y = 0,
+  .redraw_class = REDRAW_CLASS_SHOW,
+  .onclick = nullfce,
+  .enable_show = display_enable_show,
+};
+
+
+const Element_Function_1 f_dialog_show_text PROGMEM = {
+  .x = 20,
+  .y = 35,
+  .args = 0,
+  .fnt_coordinate_xy = display_element_dialog_show_text,
+  .size_x = 0,
+  .size_y = 0,
+  .redraw_class = REDRAW_BUTTON,
+  .onclick = nullfce,
+  .enable_show = display_enable_show,
+};
+
+
+const Element_Function_1 f_show_default_ring PROGMEM = {
+  .x = 140,
+  .y = 5,
+  .args = 0,
+  .fnt_coordinate_xy = display_element_dialog_default_ring,
+  .size_x = 0,
+  .size_y = 0,
+  .redraw_class = REDRAW_BUTTON,
+  .onclick = nullfce,
+  .enable_show = display_enable_show,
+};
+
+
+const Element_Function_1 f_default_ring_set_temp PROGMEM = {
+  .x = 280,
+  .y = 40,
+  .args = 0,
+  .fnt_coordinate_xy = display_element_default_ring_set_temp,
+  .size_x = 140,
+  .size_y = 40,
+  .redraw_class = REDRAW_BUTTON,
+  .onclick = nullfce,
+  .enable_show = display_enable_show_term_mode_man,
+};
+
+
+const Element_Symbol_1 dialog_set_default_ring_temp_plus PROGMEM =  {
+  .znak = '+',
+  .x = 420,
+  .y = 40,
+  .size_x = 40,
+  .size_y = 40,
+  .znak_size = 2,
+  .args = 0,
+  .onclick = display_function_set_variable_plus,
+  .redraw_class = REDRAW_BUTTON,
+  .enable_show = display_enable_show_term_mode_man
+};
+
+
+const Element_Symbol_1 dialog_set_default_ring_temp_minus PROGMEM =  {
+  .znak = '-',
+  .x = 240,
+  .y = 40,
+  .size_x = 40,
+  .size_y = 40,
+  .znak_size = 2,
+  .args = 0,
+  .onclick = display_function_set_variable_minus,
+  .redraw_class = REDRAW_BUTTON,
+  .enable_show = display_enable_show_term_mode_man
+};
 
 
 
 
 const Element_Function_1 f_vertical_slider PROGMEM = {  .x = 410, .y = 72, .args = MENU_SLIDER_ONE_WIRE, .fnt_coordinate_xy = display_element_vertical_slider,  .size_x = 40, .size_y = 126, .redraw_class = REDRAW_BUTTON, .onclick = nullfce, .enable_show = display_enable_show,};
-const Element_Symbol_1 slider_menu_plus PROGMEM =  {.znak = '+', .x = 410, .y = 30, .size_x = 40, .size_y = 40, .znak_size = 2, .args = MENU_SLIDER_ONE_WIRE, .onclick = display_function_vertical_slider_dec, .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show,};
-const Element_Symbol_1 slider_menu_minus PROGMEM =  {.znak = '-', .x = 410, .y = 200, .size_x = 40, .size_y = 40, .znak_size = 2, .args = MENU_SLIDER_ONE_WIRE, .onclick = display_function_vertical_slider_inc,  .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show,};
+const Element_Symbol_1 slider_menu_plus PROGMEM =  {
+  .znak = '+',
+  .x = 410,
+  .y = 30,
+  .size_x = 40,
+  .size_y = 40,
+  .znak_size = 2,
+  .args = MENU_SLIDER_ONE_WIRE,
+  .onclick = display_function_vertical_slider_dec,
+  .redraw_class = REDRAW_BUTTON,
+  .enable_show = display_enable_show,
+};
 
-const Element_Function_1 f_show_default_decorate PROGMEM = {.x = 5, .y = 30, .args = 0, .fnt_coordinate_xy = display_element_rectangle,  .size_x = 460, .size_y = 180, .redraw_class = REDRAW_BUTTON, .onclick = nullfce, .enable_show = display_enable_show,};
-const Element_Function_1 f_vertical_slider_default_temp PROGMEM = {  .x = 410, .y = 72, .args = MENU_SLIDER_DEFAULT_TEMP, .fnt_coordinate_xy = display_element_vertical_slider,  .size_x = 40, .size_y = 86, .redraw_class = REDRAW_BUTTON, .onclick = nullfce, .enable_show = display_enable_show,};
-const Element_Symbol_1 slider_menu_plus_default_temp PROGMEM =  {.znak = '+', .x = 410, .y = 30, .size_x = 40, .size_y = 40, .znak_size = 2, .args = MENU_SLIDER_DEFAULT_TEMP, .onclick = display_function_vertical_slider_dec, .redraw_class = REDRAW_BUTTON,};
-const Element_Symbol_1 slider_menu_minus_default_temp PROGMEM =  {.znak = '-', .x = 410, .y = 160, .size_x = 40, .size_y = 40, .znak_size = 2, .args = MENU_SLIDER_DEFAULT_TEMP, .onclick = display_function_vertical_slider_inc,  .redraw_class = REDRAW_BUTTON,};
+
+const Element_Symbol_1 slider_menu_minus PROGMEM =  {
+  .znak = '-',
+  .x = 410,
+  .y = 200,
+  .size_x = 40,
+  .size_y = 40,
+  .znak_size = 2,
+  .args = MENU_SLIDER_ONE_WIRE,
+  .onclick = display_function_vertical_slider_inc,
+  .redraw_class = REDRAW_BUTTON,
+  .enable_show = display_enable_show,
+};
 
 
-const Element_Function_1 f_dialog_set_variable PROGMEM = {.x = 100, .y = 45, .args = 0, .fnt_coordinate_xy = display_element_dialog_set_variable,  .size_x = 180, .size_y = 40, .redraw_class = REDRAW_BUTTON, .onclick = nullfce, .enable_show = display_enable_show,};
-const Element_Symbol_1 dialog_set_variable_plus PROGMEM =  {.znak = '+', .x = 60, .y = 45, .size_x = 40, .size_y = 40, .znak_size = 2, .args = 0, .onclick = display_function_set_variable_plus,  .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show,};
-const Element_Symbol_1 dialog_set_variable_minus PROGMEM =  {.znak = '-', .x = 280, .y = 45, .size_x = 40, .size_y = 40, .znak_size = 2, .args = 0, .onclick = display_function_set_variable_minus,  .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show,};
+const Element_Function_1 f_show_default_decorate PROGMEM = {
+  .x = 5,
+  .y = 30,
+  .args = 0,
+  .fnt_coordinate_xy = display_element_rectangle,
+  .size_x = 460,
+  .size_y = 180,
+  .redraw_class = REDRAW_BUTTON,
+  .onclick = nullfce,
+  .enable_show = display_enable_show,
+};
 
-const Element_Function_1 f_dialog_set_string PROGMEM = {.x = 10, .y = 35, .args = 0, .fnt_coordinate_xy = display_element_dialog_set_string,  .size_x = 300, .size_y = 40, .redraw_class = REDRAW_BUTTON, .onclick = nullfce, .enable_show = display_enable_show,};
+
+const Element_Function_1 f_vertical_slider_default_temp PROGMEM = {
+  .x = 410,
+  .y = 72,
+  .args = MENU_SLIDER_DEFAULT_TEMP,
+  .fnt_coordinate_xy = display_element_vertical_slider,
+  .size_x = 40,
+  .size_y = 86,
+  .redraw_class = REDRAW_BUTTON,
+  .onclick = nullfce,
+  .enable_show = display_enable_show,
+};
+
+
+const Element_Symbol_1 slider_menu_plus_default_temp PROGMEM =  {
+  .znak = '+',
+  .x = 410,
+  .y = 30,
+  .size_x = 40,
+  .size_y = 40,
+  .znak_size = 2,
+  .args = MENU_SLIDER_DEFAULT_TEMP,
+  .onclick = display_function_vertical_slider_dec,
+  .redraw_class = REDRAW_BUTTON,
+  .enable_show = display_enable_show,
+};
+
+const Element_Symbol_1 slider_menu_minus_default_temp PROGMEM =  {
+  .znak = '-',
+  .x = 410,
+  .y = 160,
+  .size_x = 40,
+  .size_y = 40,
+  .znak_size = 2,
+  .args = MENU_SLIDER_DEFAULT_TEMP,
+  .onclick = display_function_vertical_slider_inc,
+  .redraw_class = REDRAW_BUTTON,
+  .enable_show = display_enable_show,
+};
+
+
+const Element_Function_1 f_dialog_set_variable PROGMEM = {
+  .x = 100,
+  .y = 45,
+  .args = 0,
+  .fnt_coordinate_xy = display_element_dialog_set_variable,
+  .size_x = 180,
+  .size_y = 40,
+  .redraw_class = REDRAW_BUTTON,
+  .onclick = nullfce,
+  .enable_show = display_enable_show,
+};
+
+const Element_Symbol_1 dialog_set_variable_plus PROGMEM =  {
+  .znak = '+',
+  .x = 60,
+  .y = 45,
+  .size_x = 40,
+  .size_y = 40,
+  .znak_size = 2,
+  .args = 0,
+  .onclick = display_function_set_variable_plus,
+  .redraw_class = REDRAW_BUTTON,
+  .enable_show = display_enable_show,
+};
+
+const Element_Symbol_1 dialog_set_variable_minus PROGMEM =  {
+  .znak = '-',
+  .x = 280,
+  .y = 45,
+  .size_x = 40,
+  .size_y = 40,
+  .znak_size = 2,
+  .args = 0,
+  .onclick = display_function_set_variable_minus,
+  .redraw_class = REDRAW_BUTTON,
+  .enable_show = display_enable_show,
+};
+
+const Element_Function_1 f_dialog_set_string PROGMEM = {
+  .x = 10,
+  .y = 35,
+  .args = 0,
+  .fnt_coordinate_xy = display_element_dialog_set_string,
+  .size_x = 300,
+  .size_y = 40,
+  .redraw_class = REDRAW_BUTTON,
+  .onclick = nullfce,
+  .enable_show = display_enable_show,
+};
+
 
 const Element_Button_1 dialog_set_variable_save PROGMEM =  {
   .name = text_ulozit,
@@ -553,7 +1077,7 @@ const Element_Button_1 dialog_set_variable_cancel PROGMEM =  {
 
 const Menu1 HlavniMenu PROGMEM = {
   .name = term_title,
-  .button_1 = {button_regulator, button_funkce, button_nastaveni},
+  .button_1 = {button_global_regulator, button_global_functions, button_global_setting},
   .button_2 = {button_term_state_off, button_term_state_max, button_term_state_min, button_term_state_prog, button_term_state_man},
   .function_1 = {f_show_temp, f_show_date, f_show_time},
   .switch_1 = {NULL},
@@ -806,7 +1330,7 @@ const Menu1 DialogYESNO PROGMEM = {
   .size_y = 140,
   .atributes = (1 << MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE | 1 << MENU_ATTRIBUTES_DECORATE_MENU),
   .color_background = YELLOW,
-  .redraw_class = 0,
+  .redraw_class = (1 << REDRAW_FORCE),
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
@@ -840,7 +1364,7 @@ const Menu1 DialogSetVariable PROGMEM = {
   .size_y = 260,
   .atributes = (1 << MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE | 1 << MENU_ATTRIBUTES_DECORATE_MENU),
   .color_background = YELLOW,
-  .redraw_class = 0,
+  .redraw_class = (1 << REDRAW_FORCE),
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
@@ -873,7 +1397,7 @@ const Menu1 DialogKyeboardNumber PROGMEM = {
   .size_y = 260,
   .atributes = (1 << MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE | 1 << MENU_ATTRIBUTES_DECORATE_MENU),
   .color_background = YELLOW,
-  .redraw_class = 0,
+  .redraw_class = (1 << REDRAW_FORCE),
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
@@ -905,7 +1429,7 @@ const Menu1 DialogKyeboardAlfa PROGMEM = {
   .size_y = 260,
   .atributes = (1 << MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE | 1 << MENU_ATTRIBUTES_DECORATE_MENU),
   .color_background = YELLOW,
-  .redraw_class = 0,
+  .redraw_class = (1 << REDRAW_FORCE),
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
@@ -915,8 +1439,8 @@ const Menu1 DialogKyeboardAlfa PROGMEM = {
 
 const Menu1 RegulatorMenu PROGMEM = {
   .name = regulator_text,
-  .button_1 = {button_back, button_nastaveni_ring},
-  .button_2 = {button_term_mode_heat, button_term_mode_cool},
+  .button_1 = {button_back, button_term_ring_setting_menu},
+  .button_2 = {button_term_ring_mode_heat, button_term_ring_mode_cool},
   .function_1 = {f_show_date, f_show_default_ring, f_default_ring_set_temp},
   .switch_1 = {NULL},
   .dyn_button = {button_change_ring, button_change_term_mode},
@@ -949,14 +1473,14 @@ const Menu1 RegulatorMenu PROGMEM = {
 
 const Menu1 SelectMenuDefaultTemp PROGMEM = {
   .name = text_select_default_temp,
-  .button_1 = {button_back },
+  .button_1 = {button_back},
   .button_2 = {NULL},
   .function_1 = {f_show_date, f_vertical_slider_default_temp, f_show_default_decorate},
   .switch_1 = {NULL},
   .dyn_button = {NULL},
   .symbol_button_1 = {slider_menu_plus_default_temp, slider_menu_minus_default_temp},
   .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {select_default_temp},
+  .dyn_select_box_1 = {button_select_show_default_temp},
   .len_button_1 = 1,
   .len_button_2 = 0,
   .len_function_1 = 3,
@@ -1023,7 +1547,7 @@ const Menu1 DialogSelectTermMode PROGMEM = {
   .dyn_button = {NULL},
   .symbol_button_1 = {NULL},
   .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {NULL},
+  .dyn_select_box_1 = {select_term_mode},
   .len_button_1 = 1,
   .len_button_2 = 0,
   .len_function_1 = 0,
@@ -1031,7 +1555,7 @@ const Menu1 DialogSelectTermMode PROGMEM = {
   .len_dyn_button_1 = 0,
   .len_symbol_button_1 = 0,
   .len_dyn_symbol_1 = 0,
-  .len_dyn_select_box_1 = 0,
+  .len_dyn_select_box_1 = 1,
   .idx = MENU_DIALOG_SELECT_TERM_MODE,
   .x = 10,
   .y = 10,
@@ -1047,15 +1571,45 @@ const Menu1 DialogSelectTermMode PROGMEM = {
 };
 
 
-
+const Menu1 DialogSelectRing PROGMEM = {
+  .name = text_select_term_default_ring,
+  .button_1 = {button_back},
+  .button_2 = {NULL},
+  .function_1 = {NULL},
+  .switch_1 = {NULL},
+  .dyn_button = {NULL},
+  .symbol_button_1 = {NULL},
+  .dyn_symbol_1 = {NULL},
+  .dyn_select_box_1 = {button_change_default_ring},
+  .len_button_1 = 1,
+  .len_button_2 = 0,
+  .len_function_1 = 0,
+  .len_switch_1 = 0,
+  .len_dyn_button_1 = 0,
+  .len_symbol_button_1 = 0,
+  .len_dyn_symbol_1 = 0,
+  .len_dyn_select_box_1 = 1,
+  .idx = MENU_NASTAVENI_SELECT_RING_SCREEN,
+  .x = 10,
+  .y = 10,
+  .size_x = 460,
+  .size_y = 300,
+  .atributes = (1 << MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE | 1 << MENU_ATTRIBUTES_DECORATE_MENU),
+  .color_background = YELLOW,
+  .redraw_class = (1 << REDRAW_FORCE),
+  .redraw_class_0 = returnnullfceargs,
+  .redraw_class_1 = returnnullfceargs,
+  .redraw_class_2 = returnnullfceargs,
+  .preload_function = returnnullfceargs,
+};
 
 const MenuAll Menu_All PROGMEM = {
   .len_menu1 = 6,
   .len_menu2 = 6,
-  .len_menu3 = 3,
+  .len_menu3 = 4,
   .ListMenu1 = {HlavniMenu, NastaveniMenu, FunkceMenu, OneWireMenu, TDSMenu, DialogSetVariable},
   .ListMenu2 = {DialogKyeboardAlfa, DialogKyeboardNumber, DialogYESNO, RegulatorMenu, List_RTDS_Menu, RTDS_Menu_Detail},
-  .ListMenu3 = {SelectMenuDefaultTemp, RingSetup, DialogSelectTermMode},
+  .ListMenu3 = {SelectMenuDefaultTemp, RingSetup, DialogSelectTermMode,DialogSelectRing},
 };
 
 
@@ -1141,7 +1695,8 @@ bool draw_menu(bool redraw)
   uint8_t rdr;
   uint8_t menu_args1;
   uint8_t redraw_class;
-  uint8_t active = 0;
+  uint8_t active;
+  uint8_t slider_active;
 
   current = MenuHistoryGetMenu(&menu_args1);
 
@@ -1211,7 +1766,7 @@ bool draw_menu(bool redraw)
       if (button_click_touch(global_x + pgm_read_word(&button_1->x), global_y + pgm_read_word(&button_1->y), pgm_read_word(&button_1->size_x), pgm_read_word(&button_1->size_y), click_x, click_y) == true)
       {
         fntargs =  pgm_read_word(&button_1->onclick);
-        ((fptr_args)fntargs)(pgm_read_byte(&button_1->args), menu_args1);
+        ((fptr_args)fntargs)(pgm_read_byte(&button_1->args), menu_args1, idx);
         ret = true;
       }
   }
@@ -1221,14 +1776,14 @@ bool draw_menu(bool redraw)
   {
     button_2 = &current->button_2[idx];
     rfnt = pgm_read_word(&button_2->enable_show);
-    active = (ret_fptr(rfnt))(pgm_read_byte(&button_2->args), menu_args1, -1);
+    active = (ret_fptr(rfnt))(pgm_read_byte(&button_2->args), menu_args1, idx);
     if (active == 0) continue;
     rdr = pgm_read_byte(&button_2->redraw_class);
     if (enable_redraw(rdr, redraw_class) == true)
     {
       strcpy_P(str2, pgm_read_word(&button_2->name));
       rfnt = pgm_read_word(&button_2->get_status_fnt);
-      state = ((ret_fptr)rfnt)(pgm_read_byte(&button_2->args), menu_args1, -1);
+      state = ((ret_fptr)rfnt)(pgm_read_byte(&button_2->args), menu_args1, idx);
       str1[0] = 0;
       button_click_2( global_x + pgm_read_word(&button_2->x), \
                       global_y + pgm_read_word(&button_2->y), pgm_read_word(&button_2->size_x), \
@@ -1240,7 +1795,7 @@ bool draw_menu(bool redraw)
       if (button_click_touch(global_x + pgm_read_word(&button_2->x), global_y + pgm_read_word(&button_2->y), pgm_read_word(&button_2->size_x), pgm_read_word(&button_2->size_y), click_x, click_y) == true)
       {
         fntargs =  pgm_read_word(&button_2->onclick);
-        ((fptr_args)fntargs)(pgm_read_byte(&button_2->args), menu_args1);
+        ((fptr_args)fntargs)(pgm_read_byte(&button_2->args), menu_args1, idx);
         ret = true;
       }
   }
@@ -1250,13 +1805,13 @@ bool draw_menu(bool redraw)
   {
     function_1 = &current->function_1[idx];
     rfnt = pgm_read_word(&function_1->enable_show);
-    active = (ret_fptr(rfnt))(pgm_read_byte(&function_1->args), menu_args1, -1);
+    active = (ret_fptr(rfnt))(pgm_read_byte(&function_1->args), menu_args1, idx);
     if (active == 0) continue;
     rdr = pgm_read_byte(&function_1->redraw_class);
     if (enable_redraw(rdr, redraw_class) == true)
     {
-      fnt_coordinate_xy =  pgm_read_dword(&function_1->fnt_coordinate_xy);
-      ((fptr_coordinate_xy)fnt_coordinate_xy)(global_x + pgm_read_word(&function_1->x), global_y + pgm_read_word(&function_1->y), pgm_read_word(&function_1->size_x), pgm_read_word(&function_1->size_y), pgm_read_word(&function_1->args), menu_args1);
+      fnt_coordinate_xy =  pgm_read_word(&function_1->fnt_coordinate_xy);
+      ((fptr_coordinate_xy)fnt_coordinate_xy)(global_x + pgm_read_word(&function_1->x), global_y + pgm_read_word(&function_1->y), pgm_read_word(&function_1->size_x), pgm_read_word(&function_1->size_y), pgm_read_byte(&function_1->args), menu_args1);
     }
     if (click_x > 0 && click_y > 0)
       if (button_click_touch(global_x + pgm_read_word(&function_1->x), global_y + pgm_read_word(&function_1->y), pgm_read_word(&function_1->size_x), pgm_read_word(&function_1->size_y), click_x, click_y) == true)
@@ -1279,7 +1834,7 @@ bool draw_menu(bool redraw)
       strcpy_P(str2, pgm_read_word(&switch_1->name));
       rfnt = pgm_read_word(&switch_1->get_status_fnt);
       gss = pgm_read_word(&switch_1->get_status_string);
-      state = ((ret_fptr)rfnt)(pgm_read_byte(&switch_1->args), menu_args1, -1);
+      state = ((ret_fptr)rfnt)(pgm_read_byte(&switch_1->args), menu_args1, idx);
       str3[0] = 0;
       ((ret_string_fptr)gss)(pgm_read_byte(&switch_1->args), menu_args1, str1, str3);
       button_switch_1(global_x + pgm_read_word(&switch_1->x), \
@@ -1293,7 +1848,7 @@ bool draw_menu(bool redraw)
       if (button_click_touch(global_x + pgm_read_word(&switch_1->x), global_y + pgm_read_word(&switch_1->y), pgm_read_word(&switch_1->size_x), pgm_read_word(&switch_1->size_y), click_x, click_y) == true)
       {
         fntargs =  pgm_read_word(&switch_1->onclick);
-        ((fptr_args)fntargs)(pgm_read_byte(&switch_1->args), menu_args1);
+        ((fptr_args)fntargs)(pgm_read_byte(&switch_1->args), menu_args1, idx);
         ret = true;
       }
   }
@@ -1303,7 +1858,7 @@ bool draw_menu(bool redraw)
   {
     symbol_button_1 = &current->symbol_button_1[idx];
     rfnt = pgm_read_word(&symbol_button_1->enable_show);
-    active = (ret_fptr(rfnt))(pgm_read_byte(&symbol_button_1->args), menu_args1, -1);
+    active = (ret_fptr(rfnt))(pgm_read_byte(&symbol_button_1->args), menu_args1, idx);
     if (active == 0) continue;
     rdr = pgm_read_byte(&symbol_button_1->redraw_class);
     if (enable_redraw(rdr, redraw_class) == true)
@@ -1316,7 +1871,7 @@ bool draw_menu(bool redraw)
       if (button_click_touch(global_x + pgm_read_word(&symbol_button_1->x), global_y + pgm_read_word(&symbol_button_1->y), pgm_read_word(&symbol_button_1->size_x), pgm_read_word(&symbol_button_1->size_y), click_x, click_y) == true)
       {
         fntargs =  pgm_read_word(&symbol_button_1->onclick);
-        ((fptr_args)fntargs)(pgm_read_byte(&symbol_button_1->args), menu_args1);
+        ((fptr_args)fntargs)(pgm_read_byte(&symbol_button_1->args), menu_args1, idx);
         ret = true;
       }
   }
@@ -1332,7 +1887,7 @@ bool draw_menu(bool redraw)
       loop_t = 0;
       loop_r = 0;
       rfnt =  pgm_read_word(&dyn_symbol_1->function_for_max_items);
-      loop_cnt = ((ret_fptr)rfnt)(pgm_read_word(&dyn_symbol_1->args), menu_args1, loop_i);
+      loop_cnt = ((ret_fptr)rfnt)(pgm_read_byte(&dyn_symbol_1->args), menu_args1, loop_i);
       gss = pgm_read_word(&dyn_symbol_1->get_status_string);
       while (loop_i < loop_cnt)
       {
@@ -1371,7 +1926,7 @@ bool draw_menu(bool redraw)
       loop_t = 0;
       loop_r = 0;
       rfnt =  pgm_read_word(&dyn_symbol_1->function_for_max_items);
-      loop_cnt = ((ret_fptr)rfnt)(pgm_read_word(&dyn_symbol_1->args), menu_args1, loop_i);
+      loop_cnt = ((ret_fptr)rfnt)(pgm_read_byte(&dyn_symbol_1->args), menu_args1, loop_i);
       while (loop_i < loop_cnt)
       {
         new_x = global_x + pgm_read_word(&dyn_symbol_1->first_x);
@@ -1400,7 +1955,7 @@ bool draw_menu(bool redraw)
         if (button_click_touch(new_x, new_y, pgm_read_word(&dyn_symbol_1->size_x), pgm_read_word(&dyn_symbol_1->size_y), click_x, click_y) == true)
         {
           fntargs =  pgm_read_word(&dyn_symbol_1->dyn_symbol_onclick);
-          ((fptr_args)fntargs)(pgm_read_byte(&dyn_symbol_1->args), loop_i);
+          ((fptr_args)fntargs)(pgm_read_byte(&dyn_symbol_1->args), menu_args1, loop_i);
           ret = true;
           break;
         }
@@ -1419,9 +1974,12 @@ bool draw_menu(bool redraw)
       loop_i = 0;
       loop_t = 0;
       rfnt =  pgm_read_word(&dyn_button_1->function_for_max_items);
-      loop_cnt = ((ret_fptr)rfnt)(pgm_read_word(&dyn_button_1->args), menu_args1, loop_i);
+      loop_cnt = ((ret_fptr)rfnt)(pgm_read_byte(&dyn_button_1->args), menu_args1, loop_i);
       gss = pgm_read_word(&dyn_button_1->get_status_string);
-      process_display_element_slider(&loop_i, &loop_cnt, pgm_read_byte(&dyn_button_1->slider_args), pgm_read_byte(&dyn_button_1->max_items_count)*pgm_read_byte(&dyn_button_1->max_row_count));
+
+      slider_active = pgm_read_byte(&dyn_button_1->slider_args);
+      if (slider_active != MENU_SLIDER_OFF)
+        process_display_element_slider(&loop_i, &loop_cnt, slider_active, pgm_read_byte(&dyn_button_1->max_items_count)*pgm_read_byte(&dyn_button_1->max_row_count));
       while (loop_i < loop_cnt)
       {
         new_x = global_x + pgm_read_word(&dyn_button_1->first_x);
@@ -1441,8 +1999,11 @@ bool draw_menu(bool redraw)
       loop_i = 0;
       loop_t = 0;
       rfnt =  pgm_read_word(&dyn_button_1->function_for_max_items);
-      loop_cnt = ((ret_fptr)rfnt)(pgm_read_word(&dyn_button_1->args), menu_args1, loop_i);
-      process_display_element_slider(&loop_i, &loop_cnt, pgm_read_byte(&dyn_button_1->slider_args), pgm_read_byte(&dyn_button_1->max_items_count)*pgm_read_byte(&dyn_button_1->max_row_count));
+      loop_cnt = ((ret_fptr)rfnt)(pgm_read_byte(&dyn_button_1->args), menu_args1, loop_i);
+
+      slider_active = pgm_read_byte(&dyn_button_1->slider_args);
+      if (slider_active != MENU_SLIDER_OFF)
+        process_display_element_slider(&loop_i, &loop_cnt, slider_active, pgm_read_byte(&dyn_button_1->max_items_count)*pgm_read_byte(&dyn_button_1->max_row_count));
       while (loop_i < loop_cnt)
       {
         new_x = global_x + pgm_read_word(&dyn_button_1->first_x);
@@ -1454,7 +2015,7 @@ bool draw_menu(bool redraw)
         if (button_click_touch(new_x, new_y, pgm_read_word(&dyn_button_1->size_x), pgm_read_word(&dyn_button_1->size_y), click_x, click_y) == true)
         {
           fntargs =  pgm_read_word(&dyn_button_1->dyn_button_onclick);
-          ((fptr_args)fntargs)(pgm_read_byte(&dyn_button_1->args), loop_i);
+          ((fptr_args)fntargs)(pgm_read_byte(&dyn_button_1->args), menu_args1, loop_i);
           ret = true;
           break;
         }
@@ -1474,20 +2035,22 @@ bool draw_menu(bool redraw)
       loop_t = 0;
       loop_r = 0;
       rfnt =  pgm_read_word(&dyn_select_box_1->function_for_max_items);
-      loop_cnt = ((ret_fptr)rfnt)(pgm_read_word(&dyn_select_box_1->args), menu_args1, loop_i);
+      loop_cnt = ((ret_fptr)rfnt)(pgm_read_byte(&dyn_select_box_1->args), menu_args1, loop_i);
       gss = pgm_read_word(&dyn_select_box_1->get_status_string);
-      process_display_element_slider(&loop_i, &loop_cnt, pgm_read_byte(&dyn_select_box_1->slider_args), pgm_read_byte(&dyn_select_box_1->max_items_count)*pgm_read_byte(&dyn_select_box_1->max_row_count));
+      slider_active = pgm_read_byte(&dyn_select_box_1->slider_args);
+      if (slider_active != MENU_SLIDER_OFF)
+        process_display_element_slider(&loop_i, &loop_cnt, slider_active, pgm_read_byte(&dyn_select_box_1->max_items_count)*pgm_read_byte(&dyn_select_box_1->max_row_count));
       while (loop_i < loop_cnt)
       {
-        new_x = global_x + pgm_read_word(&dyn_select_box_1->first_x);
-        new_y = global_y + pgm_read_word(&dyn_select_box_1->first_y);
         if (pgm_read_byte(&dyn_select_box_1->direction) == VERTICAL)
         {
+          new_x = global_x + pgm_read_word(&dyn_select_box_1->first_x);
           new_y = global_y + pgm_read_word(&dyn_select_box_1->first_y) + (pgm_read_byte(&dyn_select_box_1->step_y) * loop_t);
           loop_t++;
         }
         if (pgm_read_byte(&dyn_select_box_1->direction) == HORIZONTAL)
         {
+          new_y = global_y + pgm_read_word(&dyn_select_box_1->first_y);
           new_x = global_x + pgm_read_word(&dyn_select_box_1->first_x) + (pgm_read_byte(&dyn_select_box_1->step_x) * loop_t);
           loop_t++;
         }
@@ -1518,19 +2081,21 @@ bool draw_menu(bool redraw)
       loop_t = 0;
       loop_r = 0;
       rfnt =  pgm_read_word(&dyn_select_box_1->function_for_max_items);
-      loop_cnt = ((ret_fptr)rfnt)(pgm_read_word(&dyn_select_box_1->args), menu_args1, loop_i);
-      process_display_element_slider(&loop_i, &loop_cnt, pgm_read_byte(&dyn_select_box_1->slider_args), pgm_read_byte(&dyn_select_box_1->max_items_count)*pgm_read_byte(&dyn_select_box_1->max_row_count));
+      loop_cnt = ((ret_fptr)rfnt)(pgm_read_byte(&dyn_select_box_1->args), menu_args1, loop_i);
+      slider_active = pgm_read_byte(&dyn_select_box_1->slider_args);
+      if (slider_active != MENU_SLIDER_OFF)
+        process_display_element_slider(&loop_i, &loop_cnt, slider_active, pgm_read_byte(&dyn_select_box_1->max_items_count)*pgm_read_byte(&dyn_select_box_1->max_row_count));
       while (loop_i < loop_cnt)
       {
-        new_x = global_x + pgm_read_word(&dyn_select_box_1->first_x);
-        new_y = global_y + pgm_read_word(&dyn_select_box_1->first_y);
-        if (pgm_read_byte(&dyn_symbol_1->direction) == VERTICAL)
+        if (pgm_read_byte(&dyn_select_box_1->direction) == VERTICAL)
         {
+          new_x = global_x + pgm_read_word(&dyn_select_box_1->first_x);
           new_y = global_y + pgm_read_word(&dyn_select_box_1->first_y) + (pgm_read_byte(&dyn_select_box_1->step_y) * loop_t);
           loop_t++;
         }
         if (pgm_read_byte(&dyn_select_box_1->direction) == HORIZONTAL)
         {
+          new_y = global_y + pgm_read_word(&dyn_select_box_1->first_y);
           new_x = global_x + pgm_read_word(&dyn_select_box_1->first_x) + (pgm_read_byte(&dyn_select_box_1->step_x) * loop_t);
           loop_t++;
         }
@@ -1548,7 +2113,7 @@ bool draw_menu(bool redraw)
         if (button_click_touch(new_x, new_y, pgm_read_word(&dyn_select_box_1->size_x), pgm_read_word(&dyn_select_box_1->size_y), click_x, click_y) == true)
         {
           fntargs =  pgm_read_word(&dyn_select_box_1->dyn_symbol_onclick);
-          ((fptr_args)fntargs)(pgm_read_byte(&dyn_select_box_1->args), loop_i);
+          ((fptr_args)fntargs)(pgm_read_byte(&dyn_select_box_1->args), menu_args1, loop_i);
           ret = true;
           break;
         }
@@ -1699,7 +2264,7 @@ void helper_thermostat_set_mezni(int args1, uint8_t args2)
 
 
 
-uint8_t preload_regulator_menu(uint8_t args1, uint8_t args2, uint8_t args3)
+uint8_t preload_regulator_menu(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   display_function_set_variable(thermostat_ring_get_mezni(default_ring), 160, 320, 5, default_ring, 10,  H_TRUE);
   dialog_save_variable_function = &helper_thermostat_set_mezni;
@@ -1723,7 +2288,7 @@ void display_function_set_variable_minus(void)
   {
     menu_dialog_set_variable_now = menu_dialog_set_variable_now - menu_dialog_set_variable_step;
     if (menu_dialog_set_variable_update_now == H_TRUE)
-      dialog_save_variable_function(menu_dialog_set_variable_now, menu_dialog_set_variable_args);
+      dialog_save_variable_function(menu_dialog_set_variable_now, menu_dialog_set_variable_args, 0);
   }
 }
 void display_function_set_variable_plus(void)
@@ -1732,7 +2297,7 @@ void display_function_set_variable_plus(void)
   {
     menu_dialog_set_variable_now = menu_dialog_set_variable_now + menu_dialog_set_variable_step;
     if (menu_dialog_set_variable_update_now == H_TRUE)
-      dialog_save_variable_function(menu_dialog_set_variable_now, menu_dialog_set_variable_args);
+      dialog_save_variable_function(menu_dialog_set_variable_now, menu_dialog_set_variable_args, 0);
   }
 }
 void display_function_set_variable(uint16_t now, uint16_t min, uint16_t max, uint8_t step, uint8_t args, uint16_t divider, uint8_t update_now)
@@ -1852,9 +2417,10 @@ uint8_t get_function_budik_enabled(uint8_t args)
 {
   return 1;
 }
-void get_function_budik_text_state(uint8_t args1, uint8_t args2, char *text)
+void get_function_budik_text_state(uint8_t args1, uint8_t args2, char *line1, char *line2)
 {
-  strcpy(text, "Zapnuto 06:45");
+  strcpy(line1, "Zapnuto 06:45");
+  line2[0] = 0;
 }
 
 
@@ -1865,19 +2431,20 @@ void get_function_budik_text_state(uint8_t args1, uint8_t args2, char *text)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /// funkce, ktera vraci pocet polozek dynamickeho menu
-uint8_t get_function_keyboard_number_max_keys(uint8_t args1, uint8_t args2, uint8_t args3)
+uint8_t get_function_keyboard_number_max_keys(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   return 11;
 }
 /*
    args1 ... argument ze statickeho menu nastaveni
-   args2 ... index prvku
+   args2 ... globalni argument menu
+   args3 ... index prvku
 */
-void click_keyboard_number(uint8_t args1, uint8_t args2)
+void click_keyboard_number(uint8_t args1, uint8_t args2, uint8_t args3)
 {
   char znak;
-  znak = '0' + args2;
-  if (args1 == 10) znak = '.';
+  znak = '0' + args3;
+  if (args3 == 10) znak = '.';
   display_element_set_string_add_char(znak);
 }
 ///////////////////////////
@@ -1907,22 +2474,23 @@ void get_function_keyboard_alfa_char(uint8_t args1, uint8_t args2, char *line1, 
 }
 /*
    args1 ... argument ze statickeho menu nastaveni
-   args2 ... index prvku
+   args2 ... globalni argument menu
+   args3 ... index prvku
 */
-void click_keyboard_alfa(uint8_t args1, uint8_t args2)
+void click_keyboard_alfa(uint8_t args1, uint8_t args2, uint8_t args3)
 {
   char znak;
   if (dialog_set_string_keyboard_type == KEYBOARD_TYPE_UPPER)
-    znak = pgm_read_byte(&keyboad_number_char_upper[args2]);
+    znak = pgm_read_byte(&keyboad_number_char_upper[args3]);
   if (dialog_set_string_keyboard_type == KEYBOARD_TYPE_LOWER)
-    znak = pgm_read_byte(&keyboad_number_char_lower[args2]);
+    znak = pgm_read_byte(&keyboad_number_char_lower[args3]);
   if (dialog_set_string_keyboard_type == KEYBOARD_TYPE_SPECIAL)
-    znak = pgm_read_byte(&keyboad_number_char_special[args2]);
+    znak = pgm_read_byte(&keyboad_number_char_special[args3]);
   ///
   display_element_set_string_add_char(znak);
 }
 /// vraci pocet prvku pro zobrazeni
-uint8_t get_function_keyboard_alfa_max_keys(uint8_t idx)
+uint8_t get_function_keyboard_alfa_max_keys(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   if (dialog_set_string_keyboard_type == KEYBOARD_TYPE_UPPER)
     return KEYBOARD_SIZE_CHAR_UPPER;
@@ -1945,13 +2513,13 @@ void click_keyboard_type(uint8_t args1, uint8_t args2)
 */
 void click_dialog_button_yes(uint8_t args1, uint8_t args2)
 {
-  dialog_yes_function(dialog_yes_args1, 0);
+  dialog_yes_function(dialog_yes_args1, 0, 0);
   MenuHistoryPrevMenu();
 }
 
 void dialog_set_variable_button_click(uint8_t args1, uint8_t args2)
 {
-  dialog_save_variable_function(args1, args2);
+  dialog_save_variable_function(args1, args2, 0);
   MenuHistoryPrevMenu();
 }
 
@@ -1998,7 +2566,7 @@ uint8_t menu_redraw_update_temp(uint8_t args1, uint8_t args2)
 }
 
 
-uint8_t get_function_return_args_1(uint8_t args1, uint8_t args2)
+uint8_t get_function_return_args_1(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   return args1;
 }
@@ -3484,14 +4052,14 @@ void convert_mode_text(uint8_t mode, char *str)
 
 void convert_mode_text_1(uint8_t mode, char *str)
 {
-  if (mode == TERM_MODE_OFF)   strcpy_P(str, button_term_off);
-  if (mode == TERM_MODE_MAX)   strcpy_P(str, button_term_max);
-  if (mode == TERM_MODE_MAN_HEAT)   strcpy_P(str, button_term_man);
-  if (mode == TERM_MODE_PROG)   strcpy_P(str, button_term_prog);
-  if (mode == TERM_MODE_CLIMATE_MAX)   strcpy_P(str, button_term_man);
-  if (mode == TERM_MODE_FAN)   strcpy_P(str, button_term_fan);
-  if (mode == TERM_MODE_MAN)   strcpy_P(str, button_term_man);
-  if (mode == TERM_MODE_MIN)   strcpy_P(str, button_term_min);
+  if (mode == TERM_MODE_OFF)   strcpy_P(str, text_button_term_off);
+  if (mode == TERM_MODE_MAX)   strcpy_P(str, text_button_term_max);
+  if (mode == TERM_MODE_MAN_HEAT)   strcpy_P(str, text_button_term_man);
+  if (mode == TERM_MODE_PROG)   strcpy_P(str, text_button_term_prog);
+  if (mode == TERM_MODE_CLIMATE_MAX)   strcpy_P(str, text_button_term_man);
+  if (mode == TERM_MODE_FAN)   strcpy_P(str, text_button_term_fan);
+  if (mode == TERM_MODE_MAN)   strcpy_P(str, text_button_term_man);
+  if (mode == TERM_MODE_MIN)   strcpy_P(str, text_button_term_min);
 }
 /*************************************************************************************************************************/
 
@@ -4410,8 +4978,6 @@ void display_element_dialog_set_variable(uint16_t x, uint16_t y, uint16_t size_x
     itoa(menu_dialog_set_variable_now, line1, 10);
   my_lcd.Set_Draw_color(BLACK);
 
-
-
   tmp1 = show_string_size_width(strlen(line1), 2);
   posx1 = (size_x - tmp1) / 2;
   posy1 = (size_y - show_string_size_hight(2)) / 2;
@@ -4535,31 +5101,38 @@ void button_click_2(uint16_t x, uint16_t y, uint8_t size_x, uint8_t size_y, uint
   uint16_t tmp1 = 0;
   uint16_t tmp2 = 0;
   uint8_t num_lines_const = 0;
+  uint8_t prvni = 0;
+  uint8_t druhy = 0;
   back_color = color_inactive;
   if (state == 1)
     back_color = color_active;
   my_lcd.Set_Draw_color(BLACK);
   for (uint8_t r = 0; r < 3; r++)
     my_lcd.Draw_Rectangle(x + r, y + r, x + size_x - r, y + size_y - r);
-
-
   my_lcd.Set_Draw_color(back_color);
   my_lcd.Fill_Rectangle(x + 3, y + 3, x + size_x - 3, y + size_y - 3);
-
   if (strlen(line1) > 0)
   {
+    prvni = 1;
     num_lines_const = 2;
+  }
+  if (strlen(line2) > 0)
+  {
+    druhy = 1;
+    num_lines_const = num_lines_const + 2;
+  }
+  if (prvni == 1)
+  {
     tmp1 = show_string_size_width(strlen(line1), font_size_1);
     posx1 = (size_x - tmp1) / 2;
     posy1 = (size_y - show_string_size_hight(font_size_1)) / num_lines_const;
     show_string(line1, x + posx1 , y + posy1 - 1 , font_size_1, BLACK, back_color, 0);
   }
-  if (strlen(line2) > 0)
+  if (druhy == 1)
   {
-    num_lines_const = num_lines_const + 2;
     tmp2 = show_string_size_width(strlen(line2), font_size_2);
     posx2 = (size_x - tmp2) / 2;
-    posy2 = posy1 + ((size_y - show_string_size_hight(font_size_2)) / num_lines_const);
+    posy2 = posy1 + ((size_y - show_string_size_hight(font_size_2)) * 2 / num_lines_const);
     show_string(line2, x + posx2 , y + posy2 - 1 , font_size_2, BLACK, back_color, 0);
   }
 }
@@ -4621,7 +5194,7 @@ bool button_click_touch(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y
 */
 
 /// funkce vraci pocet obsazenych rtds snimacu
-uint8_t get_function_rtds_last_index_for_menu(uint8_t args1, uint8_t args2)
+uint8_t get_function_rtds_last_index_for_menu(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   return MAX_RTDS;
   //return use_rtds;
@@ -4708,7 +5281,7 @@ void get_function_one_wire_associate_or_setting_text_button(uint8_t args1, uint8
 }
 
 /// funkce, ktera vraci pocet dynamickych polozek 1w
-uint8_t get_function_one_wire_last_index_for_menu(uint8_t idx)
+uint8_t get_function_one_wire_last_index_for_menu(uint16_t idx, uint16_t args2, uint8_t args3)
 {
   uint8_t active = 0;
   for (uint8_t cnt = 0; cnt < HW_ONEWIRE_MAXROMS; cnt++)
@@ -4716,7 +5289,7 @@ uint8_t get_function_one_wire_last_index_for_menu(uint8_t idx)
   return active;
 }
 /// funkce. ktera
-void click_tds_associate_or_setting_onewire(uint8_t args1, uint8_t idx)
+void click_tds_associate_or_setting_onewire(uint8_t args1, uint8_t args2, uint8_t idx)
 {
   //printf("%d %d\n", args1, idx);
   if (w_rom[idx].tds_idx == 255)
@@ -4800,12 +5373,15 @@ void menu_rtds_update_name(uint8_t args1, uint8_t args2)
 
 /*
     args1 - parametr z globalniho nastaveni tlacitek
+    args2 / definice menu
     loop_idx - polozka z menu
 */
-void click_rtds_setting_sensor(uint8_t args1, uint8_t loop_idx)
+void click_rtds_setting_sensor(uint8_t args1, uint8_t args2, uint8_t loop_idx)
 {
   char name[RTDS_DEVICE_STRING_LEN];
   uint8_t active;
+  //printf("pr %d %d %d\n", args1, args2, loop_idx);
+  
   remote_tds_get_active(loop_idx, &active);
   if (active == 1)
   {
@@ -4870,7 +5446,7 @@ get_global_temp_end:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// funkce, ktera vraci zpet popisek k tlacitkum
-void get_function_default_temp(uint8_t args1, uint8_t args2, char *line1, char *line2)
+void button_get_show_default_temp(uint8_t args1, uint8_t args2, char *line1, char *line2)
 {
   char name[20];
   uint8_t cri = 0;
@@ -4887,7 +5463,7 @@ void get_function_default_temp(uint8_t args1, uint8_t args2, char *line1, char *
         tds_get_name(idx, name);
         strcpy(line2, name);
         strcpy_P(line1, nastaveni_onewire);
-        goto get_function_default_temp_end;
+        goto button_get_show_default_temp_end;
       }
       cri++;
     }
@@ -4903,12 +5479,12 @@ void get_function_default_temp(uint8_t args1, uint8_t args2, char *line1, char *
         remote_tds_get_complete(idx, &active, name);
         strcpy(line2, name);
         strcpy_P(line1, nastaveni_rtds);
-        goto get_function_default_temp_end;
+        goto button_get_show_default_temp_end;
       }
       cri++;
     }
   }
-get_function_default_temp_end:
+button_get_show_default_temp_end:
   /// hack kvuli goto
   cri = 0;
 }
@@ -4917,20 +5493,25 @@ get_function_default_temp_end:
 //////////////////////////////////////////////////////////////////////////////
 /// funkce, ktera nastavi promenou vychozi teplomer
 /// funkce je povesena na klik tlacitka
-void click_function_default_temp(uint8_t args1, uint8_t args2)
+/*
+   args1 -- globalni argument z define prvku
+   args2 -- globalni argument celeho menu
+   args3 -- id polozky menu kliku
+*/
+void click_function_default_temp(uint8_t args1, uint8_t args2, uint8_t args3)
 {
-  default_show_temp = args2;
-  set_default_show_temp(args2);
+  default_show_temp = args3;
+  set_default_show_temp(args3);
 }
 //////////////////////////////////////////////////////////////////////////////
 /// funkce ktera vraci soucet vsech cidel v systemu
-uint8_t get_function_default_temp_max_items(uint8_t args1, uint8_t args2)
+uint8_t button_get_show_default_temp_max_items(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   return use_tds + use_rtds;
 }
 
 
-uint8_t get_function_default_temp_active(uint8_t args1, uint8_t args2, uint8_t args3)
+uint8_t button_get_show_default_temp_active(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   uint8_t ret = 0;
   if (default_show_temp == args3)
@@ -4944,66 +5525,101 @@ uint8_t get_function_default_temp_active(uint8_t args1, uint8_t args2, uint8_t a
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+/*
+ * args1 ... loop_id z menu
+ * args2 ... globalni parametr z menu
+ */
+void get_funtion_change_default_ring_button_labels(uint8_t args1, uint8_t args2, char *line1, char *line2)
+{
+  printf("%d %d\n", args1, args2);
+  char name[10];
+  thermostat_ring_get_name(args1, name);
+  sprintf(line2, "Regulator %d - %s", args1, name);
+  strcpy(line1, "Ahoj");
+}
 
 
 void get_funtion_default_ring(uint8_t args1, uint8_t args2, char *line1, char *line2)
 {
-  sprintf(line2, "Vychozi ring %d", default_ring);
-  sprintf(line1, "Zmenit vychozi ring");
+  char name[10];
+  thermostat_ring_get_name(default_ring, name);
+  sprintf(line2, "Regulator %d - %s", default_ring, name);
+  strcpy_P(line1, text_change_default_ring);
 }
 
 void get_funtion_default_ring_temp_mode(uint8_t args1, uint8_t args2, char *line1, char *line2)
 {
-  sprintf(line1, "Aktualni mod termostatu");
+  strcpy_P(line1, text_current_ring_mode);
   convert_mode_text_1(thermostat_ring_get_mode(default_ring), line2);
 }
 
 /*
-   funkce pro zjisteni, zda mode v args je aktivni a nebo ne
+   funkce pro zjisteni, zda mode v args1 je aktivni a nebo ne
+   args1 .. parametr z definice prvku
+   args2 .. parametr z definice menu
+   args3 .. index prvku v menu
    return
      - uint8_t 1... activni, 0... neaktivni
 */
-uint8_t get_function_thermostat_has_mode(uint8_t args)
+uint8_t button_status_term_has_mode(uint8_t args1, uint8_t args2, uint8_t args3)
 {
   uint8_t ret = 0;
   if (thermostat_ring_get_active(default_ring) != 255)
-    if (thermostat_ring_get_mode_1(default_ring, args) == true)
+    if (thermostat_ring_get_mode_1(default_ring, args1) == true)
       ret = 1;
   return ret;
 }
-void click_thermostat_set_mode(uint8_t args)
+
+/////////////////////////////////////////////////////////
+/*
+ * funkce pro nastaveni modu regulatoru pouze ve vychozim ringu
+ * args1 ... parametr z definice prvku
+ * args2 ... parametr z defini menu 
+ * args3 ... index prvku v menu
+ */
+void button_click_term_set_mode(uint8_t args1, uint8_t args2, uint8_t args3)
 {
   if (thermostat_ring_get_active(default_ring) != 255)
   {
-    thermostat_ring_set_mode(default_ring, args);
+    thermostat_ring_set_mode(default_ring, args1);
     change_term_mode = 1;
   }
 }
 
-
-uint8_t get_function_thermostat_heat_or_cool(uint8_t args)
+///////////////////////////////////////////////////////////
+/*
+ * funkce pro zjisteni, jestli manualni rezim je pro topeni a nebo chlazeni
+ * args1 ... paramentr z definice prvku 
+ * args2 ... paramentr z define menu
+ * args3 ... index prvku v menu
+ */
+uint8_t button_get_term_heat_or_cool(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   uint8_t ret = 0;
   uint8_t b;
   if (thermostat_ring_get_active(default_ring) != 255)
   {
     b = thermostat_ring_get_status_bites(default_ring, STATUS_BIT_HEAT_OR_COOL);
-    if (b == 0 && args == TERM_MODE_MAN_HEAT)
+    if (b == 0 && args1 == TERM_MODE_MAN_HEAT)
       ret = 1;
-    if (b != 0 && args == TERM_MODE_MAN_COOL)
+    if (b != 0 && args1 == TERM_MODE_MAN_COOL)
       ret = 1;
   }
   return ret;
 }
-
-void set_function_thermostat_heat_or_cool(uint8_t args)
+/*
+ * funkce pro nastaveni manualniho rezimu topeni a nebo chlazeni
+ * args1 ... parametr z definice prvku
+ * args2 ... parametr z menu
+ * args3 ... index prvku v poradi menu
+ */
+void button_click_set_term_heat_or_cool(uint8_t args1, uint8_t args2, uint8_t args3)
 {
   if (thermostat_ring_get_active(default_ring) != 255)
   {
-    if (args == TERM_MODE_MAN_HEAT)
+    if (args1 == TERM_MODE_MAN_HEAT)
       thermostat_ring_update_bites(default_ring, STATUS_BIT_HEAT_OR_COOL, 0);
-    if (args == TERM_MODE_MAN_COOL)
+    if (args1 == TERM_MODE_MAN_COOL)
       thermostat_ring_update_bites(default_ring, STATUS_BIT_HEAT_OR_COOL, 1);
   }
 }
@@ -5017,16 +5633,97 @@ uint8_t display_enable_show_term_mode_man(uint16_t args1, uint16_t args2, uint8_
   return 0;
 }
 
-void click_thermostat_set_mode_via_dialog(uint8_t args1, uint8_t args2)
+/////
+/////
+void click_thermostat_set_ring_via_dialog(uint8_t args1, uint8_t args2, uint8_t args3)
+{
+MenuHistoryNextMenu(MENU_NASTAVENI_SELECT_RING_SCREEN, default_ring);
+}
+
+uint8_t get_function_thermostat_ring_is_selected(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  return 1;
+}
+
+
+
+
+
+
+/////
+void click_thermostat_set_mode_via_dialog(uint8_t args1, uint8_t args2, uint8_t args3)
 {
   MenuHistoryNextMenu(MENU_DIALOG_SELECT_TERM_MODE, default_ring);
 }
 
-uint8_t get_function_thermostat_mode_max_items(uint8_t args1, uint8_t args2, args3)
+/*
+uint8_t get_function_thermostat_mode_max_items(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   return 5;
 }
+*/
 
+/*
+   args1 ... globalni argument z definice menu
+   args2 ... zde je cislo ringu
+   args3 ... id polozky dynamickeho menu
+*/
+uint8_t get_function_thermostat_mode_is_selected(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t mode;
+  uint8_t ret = 0;
+  mode = thermostat_ring_get_mode(args2);
+  if (args3 == 0 && mode == TERM_MODE_OFF) ret = 1;
+  if (args3 == 1 && mode == TERM_MODE_MAX) ret = 1;
+  if (args3 == 2 && mode == TERM_MODE_MIN) ret = 1;
+  if (args3 == 3 && mode == TERM_MODE_PROG) ret = 1;
+  if (args3 == 4 && (mode == TERM_MODE_MAN || mode == TERM_MODE_MAN_HEAT || mode == TERM_MODE_MAN_COOL)) ret = 1;
+  return ret;
+}
+
+/*
+   args1 ... globalni argument z definice menu
+   args2 ... zde je cislo ringu
+   args3 ... id polozky menu
+*/
+void click_function_thermostat_set_mode(uint8_t args1, uint8_t args2, uint8_t args3)
+{
+  if (args3 == 0) thermostat_ring_set_mode(args2, TERM_MODE_OFF);
+  if (args3 == 1) thermostat_ring_set_mode(args2, TERM_MODE_MAX);
+  if (args3 == 2) thermostat_ring_set_mode(args2, TERM_MODE_MIN);
+  if (args3 == 3) thermostat_ring_set_mode(args2, TERM_MODE_PROG);
+  if (args3 == 4) thermostat_ring_set_mode(args2, TERM_MODE_MAN);
+}
+
+
+void button_get_term_mode_labels(uint8_t args1, uint8_t args2, char *line1, char *line2)
+{
+  if (args1 == 0)
+  {
+    strcpy_P(line1, text_button_term_off);
+    strcpy_P(line2, text_button_term_off_comment);
+  }
+  if (args1 == 1)
+  {
+    strcpy_P(line1, text_button_term_max);
+    strcpy_P(line2, text_button_term_max_comment);
+  }
+  if (args1 == 2)
+  {
+    strcpy_P(line1, text_button_term_min);
+    strcpy_P(line2, text_button_term_min_comment);
+  }
+  if (args1 == 3)
+  {
+    strcpy_P(line1, text_button_term_prog);
+    strcpy_P(line2, text_button_term_prog_comment);
+  }
+  if (args1 == 4)
+  {
+    strcpy_P(line1, text_button_term_man);
+    strcpy_P(line2, text_button_term_man_comment);
+  }
+}
 
 /*
 
