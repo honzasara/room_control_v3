@@ -76,6 +76,8 @@
 #define MENU_SELECT_DEFAULT_TEMP 8
 #define MENU_NASTAVENI_RING_SCREEN 9
 #define MENU_NASTAVENI_SELECT_RING_SCREEN 10
+#define MENU_NASTAVENI_SELECT_INPUT_SENSORS 11
+#define MENU_NASTAVENI_SELECT_PID_PARAMETRS 12
 
 #define MENU_DIALOG_YES_NO  100
 #define MENU_DIALOG_KEYBOARD_NUMBER 101
@@ -95,7 +97,16 @@
 #define MENU_SLIDER_ONE_WIRE 0
 #define MENU_SLIDER_RTDS 1
 #define MENU_SLIDER_DEFAULT_TEMP 2
+#define MENU_SLIDER_INPUT_TEMP 3
 #define MENU_SLIDER_OFF 255
+
+
+#define INPUT_SENSOR_SHOW_ALL 1
+#define INPUT_SENSOR_SHOW_ACTIVE 0
+#define INPUT_SENSOR_SHOW_DEACTIVE 2
+
+#define NUMBER_TYPE_FLOAT 0
+#define NUMBER_TYPE_INT 1
 
 /*  r     g    b */
 #define BLACK        0x0000  /*   0,   0,   0 */
@@ -239,6 +250,13 @@ const char lightctl_header_out[] PROGMEM  = "/lightctl-out/";
 const char thermctl_subscribe[] PROGMEM = "/ctl/thermctl/subscribe";
 const char termbig_subscribe[] PROGMEM = "/ctl/termbig/subscribe";
 
+
+#define DIALOG_SET_VARIABLE_GENERAL 0
+#define DIALOG_SET_VARIABLE_PID_P 0
+#define DIALOG_SET_VARIABLE_PID_I 1
+#define DIALOG_SET_VARIABLE_PID_D 2
+#define DIALOG_SET_VARIABLE_PID_T 3
+
 #define KEYBOARD_SIZE_CHAR_UPPER 26
 #define KEYBOARD_SIZE_CHAR_LOWER 26
 #define KEYBOARD_SIZE_CHAR_SPECIAL 26
@@ -252,11 +270,12 @@ const char keyboad_number_char_special[KEYBOARD_SIZE_CHAR_SPECIAL] PROGMEM = {'0
 
 
 
-typedef void (*ret_string_fptr)(uint8_t args1, uint8_t args2, char *line1, char *line2);
+typedef void (*ret_string_fptr)(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2);
 typedef void (*fptr_coordinate_xy)(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2);
 typedef void (*fptr_args)(uint16_t args1, uint16_t args2, uint8_t args3);
 typedef uint8_t (*ret_fptr)(uint16_t args1, uint16_t args2, uint8_t args3);
 
+typedef void (*fptr_save_function)(uint16_t args, float now, uint8_t now1);
 
 
 //#define REDRAW_FORCE 3
@@ -447,10 +466,10 @@ typedef struct t_Menu1
   char *name;
   Element_Button_1 button_1[10];
   Element_Button_2 button_2[5];
-  Element_Function_1 function_1[3];
+  Element_Function_1 function_1[4];
   Element_Switch_1 switch_1[3];
   Element_Dyn_Button_1 dyn_button[2];
-  Element_Symbol_1 symbol_button_1[2];
+  Element_Symbol_1 symbol_button_1[8];
   Element_Dyn_Symbol_1 dyn_symbol_1[3];
   Element_Dyn_Select_1 dyn_select_box_1[1];
   uint8_t len_button_1;
