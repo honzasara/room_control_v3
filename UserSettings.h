@@ -233,6 +233,11 @@ const char text_lower_case[] PROGMEM = "a";
 const char text_special_case[] PROGMEM = "@";
 
 
+const char char_P[] PROGMEM = "P";
+const char char_I[] PROGMEM = "I";
+const char char_D[] PROGMEM = "D";
+const char char_T[] PROGMEM = "T";
+const char char_NULL[] PROGMEM = "";
 
 
 const char global_time_set[] PROGMEM = "global/time/set";
@@ -271,7 +276,7 @@ const char keyboad_number_char_special[KEYBOARD_SIZE_CHAR_SPECIAL] PROGMEM = {'0
 
 
 typedef void (*ret_string_fptr)(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2);
-typedef void (*fptr_coordinate_xy)(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2);
+typedef void (*fptr_coordinate_xy)(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
 typedef void (*fptr_args)(uint16_t args1, uint16_t args2, uint8_t args3);
 typedef uint8_t (*ret_fptr)(uint16_t args1, uint16_t args2, uint8_t args3);
 
@@ -307,6 +312,7 @@ typedef struct t_Element_Function_1
   uint8_t redraw_class;
   fptr_args onclick;
   ret_fptr enable_show;
+  char *name;
 } Element_Function_1;
 
 
