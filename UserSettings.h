@@ -78,6 +78,10 @@
 #define MENU_NASTAVENI_SELECT_RING_SCREEN 10
 #define MENU_NASTAVENI_SELECT_INPUT_SENSORS 11
 #define MENU_NASTAVENI_SELECT_PID_PARAMETRS 12
+#define MENU_NASTAVENI_SELECT_PROGRAM_TERM 13
+#define MENU_NASTAVENI_SETUP_PROGRAM_TERM 14
+#define MENU_NASTAVENI_PROGRAMATOR 15
+#define MENU_NASTAVENI_SITE 16
 
 #define MENU_DIALOG_YES_NO  100
 #define MENU_DIALOG_KEYBOARD_NUMBER 101
@@ -184,7 +188,7 @@ const char text_button_term_fan[] PROGMEM = "FAN";
 const char text_term_active[] PROGMEM = "Aktivni";
 const char text_term_deactive[] PROGMEM = "Neaktivni";
 const char text_term_do_activate[] PROGMEM = "Aktivovat novy regulator?";
-
+const char text_term_do_deactivate[] PROGMEM = "Deaktivovat regulator";
 
 const char nastaveni_site[] PROGMEM = "Nastaveni site";
 const char nastaveni_nrf[] PROGMEM = "NRF pripojeni";
@@ -204,6 +208,8 @@ const char text_rtds_prefix[] PROGMEM = "/";
 const char text_not_used[] PROGMEM = "Neni pouzito";
 const char text_rtds_novy[] PROGMEM = "Pridat nove vzdalene cidlo";
 const char nastaveni_delete_sensor[] PROGMEM = "Vymazat cidlo";
+const char nastaveni_deassociate_sensor[] PROGMEM = "Uvolnit cidlo";
+const char nastaveni_deassociate_program[] PROGMEM = "Uvolnit program";
 const char nastaveni_tds_period[] PROGMEM = "Merici perioda";
 const char nastaveni_name_sensor[] PROGMEM = "Nastavit nazev";
 const char nastaveni_tds_offset[] PROGMEM = "Nastavit offset";
@@ -214,6 +220,12 @@ const char text_last_update[] PROGMEM = "Posledni aktualizace:";
 const char text_select_default_temp[] PROGMEM = "Vyber zobrazeni teplomeru";
 const char text_select_term_mode[] PROGMEM = "Vyber modu regulatoru";
 const char text_select_term_default_ring[] PROGMEM = "Vyber vychoziho regulatoru";
+const char text_nastaveni_ring_program[] PROGMEM = "Vyber programu";
+const char text_nastaveni_setup_program[] PROGMEM = "Nastaveni programu";
+const char text_nastaveni_programator[] PROGMEM = "Nastaveni programatoru";
+const char text_prog[] PROGMEM = "PROG";
+const char text_ntp_sync_time[] PROGMEM = "Aktualizace casu";
+
 
 const char text_upozorneni[] PROGMEM = "Upozorneni";
 const char text_klavesnice[] PROGMEM = "Klavesnice";
@@ -231,7 +243,7 @@ const char text_ok[] PROGMEM = "OK";
 const char text_upper_case[] PROGMEM = "A";
 const char text_lower_case[] PROGMEM = "a";
 const char text_special_case[] PROGMEM = "@";
-
+const char text_dashdash[] PROGMEM = "---";
 
 const char char_P[] PROGMEM = "P";
 const char char_I[] PROGMEM = "I";
@@ -312,7 +324,7 @@ typedef struct t_Element_Function_1
   uint8_t redraw_class;
   fptr_args onclick;
   ret_fptr enable_show;
-  char *name;
+  const char *name;
 } Element_Function_1;
 
 
@@ -400,7 +412,7 @@ typedef struct t_Element_Symbol_1
 
 typedef struct t_Element_Button_1
 {
-  char *name;
+  const char *name;
   uint16_t x;
   uint16_t y;
   uint16_t size_x;
@@ -414,7 +426,7 @@ typedef struct t_Element_Button_1
 
 typedef struct t_Element_Button_2
 {
-  char *name;
+  const char *name;
   uint16_t x;
   uint16_t y;
   uint16_t size_x;
@@ -449,7 +461,7 @@ typedef struct t_Element_Button_2
 
 typedef struct t_Element_Switch_1
 {
-  char *name;
+  const char *name;
   uint16_t x;
   uint16_t y;
   uint16_t size_x;
@@ -469,7 +481,7 @@ typedef struct t_Element_Switch_1
 
 typedef struct t_Menu1
 {
-  char *name;
+  const char *name;
   Element_Button_1 button_1[10];
   Element_Button_2 button_2[5];
   Element_Function_1 function_1[4];
@@ -508,9 +520,11 @@ typedef struct t_MenuAll
   uint8_t len_menu1;
   uint8_t len_menu2;
   uint8_t len_menu3;
-  Menu1 ListMenu1[6];
+  uint8_t len_menu4;
+  Menu1 ListMenu1[10];
   Menu1 ListMenu2[6];
   Menu1 ListMenu3[6];
+  Menu1 ListMenu4[6];
 } MenuAll;
 
 
