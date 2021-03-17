@@ -142,9 +142,7 @@ void display_function_vertical_slider_get(uint8_t *start, uint8_t *stop);
 
 
 
-void get_function_one_wire_associate_or_setting_text_button(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2);
-uint8_t get_function_one_wire_last_index_for_menu(uint16_t idx, uint16_t args2, uint8_t args3);
-void click_tds_associate_or_setting_onewire(uint16_t args1, uint16_t args2, uint8_t idx);
+
 
 void click_rtds_setting_sensor(uint16_t args1, uint16_t args2, uint8_t loop_idx);
 
@@ -164,7 +162,7 @@ void click_dialog_button_yes(uint16_t args1, uint16_t args2, uint8_t args3);
 
 void click_keyboard_type(uint16_t args1, uint16_t args2, uint8_t args3);
 
-void button_click_ntp_sync_time(uint16_t args1, uint16_t args2, uint8_t args3);
+
 
 
 void display_menu_tds_set_offset(uint16_t args1, uint16_t args2, uint8_t args3);
@@ -268,6 +266,10 @@ void button_get_term_mode_labels(uint8_t args1, uint8_t args2, uint8_t args3, ch
 /*
         spolecne display funkce
 */
+
+const Element_Function_1 f_show_rectangle_decorate PROGMEM = {.x = 220, .y = 20, .args = 0, .fnt_coordinate_xy = display_element_rectangle,  .size_x = 240, .size_y = 240, .redraw_class = REDRAW_BUTTON, .onclick = nullfce, .enable_show = display_enable_show, .name = char_NULL,};
+
+
 const Element_Function_1 f_show_date PROGMEM = {
   .x = 280,
   .y = 290,

@@ -1,3 +1,23 @@
+/*
+   TODO
+   1. Prekreslovani elementu - zrychlit obsluhu displaye
+   2. Ikonka stav MQTT spojeni
+   3. Vyresit timeout na MQTT
+   4. Dialog menu vyberu - neaktivni nedostupne sede barvou
+   5. Dialog klavesnice kurzor editace
+   6. Dialog klavesnice - rozvreni tlacitek jako je na klavesnici
+   7. Dialog editace PID - zobrazit krivku vypoctu
+   8. tlacitko synchronizace NTP casu -> dialog povedlo se/ nepovedlo se
+   9. moznost si nastavit time offset letni/zimni
+   10. tftp bootloader
+   11. statistika pripojeni mqtt
+   12. vyber vychoziho teplomeru, kdyz je mrtvy/neaktivni zobrazit jinou barvou. Stav je nenalezene cidlo na sbernici
+      - vraci online i kdyz neni online
+
+zapojeni pinu z leva do prava hneda -> zluta -> oranzova -> zelena -> cervena -> cerna
+*/
+
+
 #include "room_control_v3.h"
 
 
@@ -5,7 +25,9 @@
 #include "SettingsMenu.h"
 #include "BaseDialogMenu.h"
 #include "FunctionsMenu.h"
-
+#include "NetworkSettingsMenu.h"
+#include "pidDialogMenu.h"
+#include "OneWireMenu.h"
 
 
 SoftSPIB swSPI(STORAGE_MOSI, STORAGE_MISO, STORAGE_CLK);
@@ -36,6 +58,7 @@ EEPROM_CAT25 SROM(&swSPI, STORAGE_EEPROM_CS , CAT25M02);
 
 
 
+long lastmqttconnect = 0;
 
 uint8_t last_output_update[MAX_THERMOSTAT];
 uint8_t selftest_data = 0;
@@ -47,22 +70,22 @@ uint16_t proud = 0;
 uint16_t light_curr = 0;
 uint8_t a2d_run_now = 0;
 
-uint32_t uptime = 0;
-long int milis = 0;
-long int milis_005s = 0;
-long int milis_05s = 0;
-long int milis_1s = 0;
-long int milis_10s = 0;
-long int milis_1ms = 0;
+long uptime = 0;
+long milis = 0;
+long milis_005s = 0;
+long milis_05s = 0;
+long milis_1s = 0;
+long milis_10s = 0;
+long milis_1ms = 0;
 
 
 
 uint8_t default_ring = 0;
 uint8_t default_show_temp = 0;
 
-unsigned long load = 0;
-unsigned long load_max = 0;
-unsigned long load_min = 0xffffffff;
+long load = 0;
+long load_max = 0;
+long load_min = 0xffffffff;
 
 uint16_t light_min = 0;
 uint16_t light_max = 0;
@@ -178,23 +201,7 @@ const Element_Dyn_Select_1 button_select_term_mode PROGMEM = {
 };
 
 
-const Element_Dyn_Button_1 onewire_associace_button PROGMEM = {
-  .first_x = 230,
-  .first_y = 35,
-  .size_x = 170,
-  .size_y = 55,
-  .font_size = 1,
-  .step_x = 60, .step_y = 60,
-  .direction = VERTICAL,
-  .max_items_count = 3,
-  .max_row_count = 1,
-  .slider_args = MENU_SLIDER_ONE_WIRE,
-  .args = INDEX_DYN_MENU_ASSOCIATE_ONEWIRE,
-  .get_status_string = get_function_one_wire_associate_or_setting_text_button,
-  .dyn_button_onclick =  click_tds_associate_or_setting_onewire,
-  .function_for_max_items = get_function_one_wire_last_index_for_menu,
-  .redraw_class = REDRAW_BUTTON,
-};
+
 
 
 
@@ -442,18 +449,7 @@ const Element_Dyn_Button_1 rtds_stat_button PROGMEM = {
 
 
 
-const Element_Button_1 button_ntp_sync_time PROGMEM = {
-  .name = text_ntp_sync_time,
-  .x = 10,
-  .y = 40,
-  .size_x = 190,
-  .size_y = 40,
-  .font_size = 1,
-  .args = 0,
-  .onclick = button_click_ntp_sync_time,
-  .redraw_class = REDRAW_BUTTON,
-  .enable_show = display_enable_show,
-};
+
 
 
 
@@ -477,7 +473,6 @@ const Element_Button_1 button_rtds_name PROGMEM = {.name = nastaveni_name_sensor
 const Element_Button_1 button_rtds_delete PROGMEM = {.name = nastaveni_delete_sensor, .x = 280, .y = 90, .size_x = 190, .size_y = 40, .font_size = 2, .args = 0, .onclick = click_rtds_deassociate_onewire,  .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show,};
 const Element_Button_1 button_rtds_subscribe PROGMEM = {.name = nastaveni_rtds_subscribe, .x = 280, .y = 140, .size_x = 190, .size_y = 40, .font_size = 2, .args = 0, .onclick = click_rtds_subscribe,  .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show,};
 const Element_Function_1 f_show_rtds_info_dynamics PROGMEM = {.x = 20, .y = 20, .args = 0, .fnt_coordinate_xy = display_element_show_rtds_info_dynamics,  .size_x = 0, .size_y = 0, .redraw_class = REDRAW_CLASS_SHOW, .onclick = nullfce, .enable_show = display_enable_show, .name = char_NULL,};
-const Element_Function_1 f_show_rtds_decorate PROGMEM = {.x = 220, .y = 20, .args = 0, .fnt_coordinate_xy = display_element_rectangle,  .size_x = 240, .size_y = 240, .redraw_class = REDRAW_BUTTON, .onclick = nullfce, .enable_show = display_enable_show, .name = char_NULL,};
 const Element_Function_1 f_vertical_slider_rtds PROGMEM = {  .x = 410, .y = 72, .args = MENU_SLIDER_RTDS, .fnt_coordinate_xy = display_element_vertical_slider,  .size_x = 40, .size_y = 126, .redraw_class = REDRAW_BUTTON, .onclick = nullfce, .enable_show = display_enable_show, .name = char_NULL,};
 
 const Element_Symbol_1 slider_menu_plus_rtds PROGMEM =  {
@@ -594,42 +589,7 @@ const Element_Symbol_1 dialog_set_default_ring_temp_minus PROGMEM =  {
 /*
    slider pro vyber one wire zarizeni
 */
-const Element_Function_1 f_vertical_slider PROGMEM = {
-  .x = 410,
-  .y = 72,
-  .args = MENU_SLIDER_ONE_WIRE,
-  .fnt_coordinate_xy = display_element_vertical_slider,
-  .size_x = 40,
-  .size_y = 126,
-  .redraw_class = REDRAW_BUTTON,
-  .onclick = nullfce,
-  .enable_show = display_enable_show,
-  .name = char_NULL,
-};
-const Element_Symbol_1 slider_menu_plus PROGMEM =  {
-  .znak = '+',
-  .x = 410,
-  .y = 30,
-  .size_x = 40,
-  .size_y = 40,
-  .znak_size = 2,
-  .args = MENU_SLIDER_ONE_WIRE,
-  .onclick = display_function_vertical_slider_dec,
-  .redraw_class = REDRAW_BUTTON,
-  .enable_show = display_enable_show,
-};
-const Element_Symbol_1 slider_menu_minus PROGMEM =  {
-  .znak = '-',
-  .x = 410,
-  .y = 200,
-  .size_x = 40,
-  .size_y = 40,
-  .znak_size = 2,
-  .args = MENU_SLIDER_ONE_WIRE,
-  .onclick = display_function_vertical_slider_inc,
-  .redraw_class = REDRAW_BUTTON,
-  .enable_show = display_enable_show,
-};
+
 
 
 
@@ -724,155 +684,7 @@ const Element_Symbol_1 slider_menu_minus_term_ring_input_temp PROGMEM =  {
 
 ///////////
 
-const Element_Function_1 f_dialog_set_variable_pid_p PROGMEM = {
-  .x = 270,
-  .y = 40,
-  .args = DIALOG_SET_VARIABLE_PID_P,
-  .fnt_coordinate_xy = display_element_dialog_set_variable,
-  .size_x = 140,
-  .size_y = 40,
-  .redraw_class = REDRAW_BUTTON,
-  .onclick = nullfce,
-  .enable_show = display_enable_show,
-  .name = char_P,
-};
-const Element_Symbol_1 dialog_set_variable_plus_pid_p PROGMEM =  {
-  .znak = '+',
-  .x = 410,
-  .y = 40,
-  .size_x = 40,
-  .size_y = 40,
-  .znak_size = 2,
-  .args = DIALOG_SET_VARIABLE_PID_P,
-  .onclick = display_function_set_variable_plus,
-  .redraw_class = REDRAW_BUTTON,
-  .enable_show = display_enable_show,
-};
-const Element_Symbol_1 dialog_set_variable_minus_pid_p PROGMEM =  {
-  .znak = '-',
-  .x = 230,
-  .y = 40,
-  .size_x = 40,
-  .size_y = 40,
-  .znak_size = 2,
-  .args = DIALOG_SET_VARIABLE_PID_P,
-  .onclick = display_function_set_variable_minus,
-  .redraw_class = REDRAW_BUTTON,
-  .enable_show = display_enable_show,
-};
 
-
-const Element_Function_1 f_dialog_set_variable_pid_i PROGMEM = {
-  .x = 270,
-  .y = 90,
-  .args = DIALOG_SET_VARIABLE_PID_I,
-  .fnt_coordinate_xy = display_element_dialog_set_variable,
-  .size_x = 140,
-  .size_y = 40,
-  .redraw_class = REDRAW_BUTTON,
-  .onclick = nullfce,
-  .enable_show = display_enable_show,
-  .name = char_I,
-};
-const Element_Symbol_1 dialog_set_variable_plus_pid_i PROGMEM =  {
-  .znak = '+',
-  .x = 410,
-  .y = 90,
-  .size_x = 40,
-  .size_y = 40,
-  .znak_size = 2,
-  .args = DIALOG_SET_VARIABLE_PID_I,
-  .onclick = display_function_set_variable_plus,
-  .redraw_class = REDRAW_BUTTON,
-  .enable_show = display_enable_show,
-};
-const Element_Symbol_1 dialog_set_variable_minus_pid_i PROGMEM =  {
-  .znak = '-',
-  .x = 230,
-  .y = 90,
-  .size_x = 40,
-  .size_y = 40,
-  .znak_size = 2,
-  .args = DIALOG_SET_VARIABLE_PID_I,
-  .onclick = display_function_set_variable_minus,
-  .redraw_class = REDRAW_BUTTON,
-  .enable_show = display_enable_show,
-};
-
-
-const Element_Function_1 f_dialog_set_variable_pid_d PROGMEM = {
-  .x = 270,
-  .y = 140,
-  .args = DIALOG_SET_VARIABLE_PID_D,
-  .fnt_coordinate_xy = display_element_dialog_set_variable,
-  .size_x = 140,
-  .size_y = 40,
-  .redraw_class = REDRAW_BUTTON,
-  .onclick = nullfce,
-  .enable_show = display_enable_show,
-  .name = char_D,
-};
-const Element_Symbol_1 dialog_set_variable_plus_pid_d PROGMEM =  {
-  .znak = '+',
-  .x = 410,
-  .y = 140,
-  .size_x = 40,
-  .size_y = 40,
-  .znak_size = 2,
-  .args = DIALOG_SET_VARIABLE_PID_D,
-  .onclick = display_function_set_variable_plus,
-  .redraw_class = REDRAW_BUTTON,
-  .enable_show = display_enable_show,
-};
-const Element_Symbol_1 dialog_set_variable_minus_pid_d PROGMEM =  {
-  .znak = '-',
-  .x = 230,
-  .y = 140,
-  .size_x = 40,
-  .size_y = 40,
-  .znak_size = 2,
-  .args = DIALOG_SET_VARIABLE_PID_D,
-  .onclick = display_function_set_variable_minus,
-  .redraw_class = REDRAW_BUTTON,
-  .enable_show = display_enable_show,
-};
-
-const Element_Function_1 f_dialog_set_variable_pid_t PROGMEM = {
-  .x = 270,
-  .y = 190,
-  .args = DIALOG_SET_VARIABLE_PID_T,
-  .fnt_coordinate_xy = display_element_dialog_set_variable,
-  .size_x = 140,
-  .size_y = 40,
-  .redraw_class = REDRAW_BUTTON,
-  .onclick = nullfce,
-  .enable_show = display_enable_show,
-  .name = char_T,
-};
-const Element_Symbol_1 dialog_set_variable_plus_pid_t PROGMEM =  {
-  .znak = '+',
-  .x = 410,
-  .y = 190,
-  .size_x = 40,
-  .size_y = 40,
-  .znak_size = 2,
-  .args = DIALOG_SET_VARIABLE_PID_T,
-  .onclick = display_function_set_variable_plus,
-  .redraw_class = REDRAW_BUTTON,
-  .enable_show = display_enable_show,
-};
-const Element_Symbol_1 dialog_set_variable_minus_pid_t PROGMEM =  {
-  .znak = '-',
-  .x = 230,
-  .y = 190,
-  .size_x = 40,
-  .size_y = 40,
-  .znak_size = 2,
-  .args = DIALOG_SET_VARIABLE_PID_T,
-  .onclick = display_function_set_variable_minus,
-  .redraw_class = REDRAW_BUTTON,
-  .enable_show = display_enable_show,
-};
 ///////////
 
 
@@ -887,37 +699,7 @@ const Element_Symbol_1 dialog_set_variable_minus_pid_t PROGMEM =  {
 
 
 
-const Menu1 OneWireMenu PROGMEM = {
-  .name = nastaveni_onewire,
-  .button_1 = {button_back},
-  .button_2 = {NULL},
-  .function_1 = {f_show_date, f_vertical_slider, f_show_rtds_decorate},
-  .switch_1 = {NULL},
-  .dyn_button = {onewire_associace_button},
-  .symbol_button_1 = {slider_menu_plus, slider_menu_minus},
-  .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {NULL},
-  .len_button_1 = 1,
-  .len_button_2 = 0,
-  .len_function_1 = 3,
-  .len_switch_1 = 0,
-  .len_dyn_button_1 = 1,
-  .len_symbol_button_1 = 2,
-  .len_dyn_symbol_1 = 0,
-  .len_dyn_select_box_1 = 0,
-  .idx = MENU_NASTAVENI_ONEWIRE,
-  .x = 0,
-  .y = 0,
-  .size_x = 480,
-  .size_y = 320,
-  .atributes = (1 << MENU_ATTRIBUTES_CLEAN_DISPLAY),
-  .color_background = WHITE,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .redraw_class_0 = returnnullfceargs,
-  .redraw_class_1 = returnnullfceargs,
-  .redraw_class_2 = returnnullfceargs,
-  .preload_function = returnnullfceargs,
-};
+
 
 
 
@@ -959,7 +741,7 @@ const Menu1 List_RTDS_Menu PROGMEM = {
   .name = nastaveni_rtds,
   .button_1 = {button_back, button_rtds_novy},
   .button_2 = {NULL},
-  .function_1 = {f_show_rtds_decorate, f_show_date, f_vertical_slider_rtds},
+  .function_1 = {f_show_rectangle_decorate, f_show_date, f_vertical_slider_rtds},
   .switch_1 = {NULL},
   .dyn_button = {rtds_stat_button},
   .symbol_button_1 = {slider_menu_plus_rtds, slider_menu_minus_rtds},
@@ -1227,38 +1009,7 @@ const Menu1 DialogSelectInputSensorsForTerm PROGMEM = {
 };
 
 //saric
-///p i d t
-const Menu1 DialogSelectPIDSensor PROGMEM = {
-  .name = text_pid_regulator,
-  .button_1 = {button_back},
-  .button_2 = {NULL},
-  .function_1 = {f_dialog_set_variable_pid_p, f_dialog_set_variable_pid_i, f_dialog_set_variable_pid_d, f_dialog_set_variable_pid_t},
-  .switch_1 = {NULL},
-  .dyn_button = {NULL},
-  .symbol_button_1 = {dialog_set_variable_plus_pid_p, dialog_set_variable_minus_pid_p, dialog_set_variable_plus_pid_i, dialog_set_variable_minus_pid_i, dialog_set_variable_plus_pid_d, dialog_set_variable_minus_pid_d, dialog_set_variable_plus_pid_t, dialog_set_variable_minus_pid_t},
-  .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {NULL},
-  .len_button_1 = 1,
-  .len_button_2 = 0,
-  .len_function_1 = 4,
-  .len_switch_1 = 0,
-  .len_dyn_button_1 = 0,
-  .len_symbol_button_1 = 8,
-  .len_dyn_symbol_1 = 0,
-  .len_dyn_select_box_1 = 0,
-  .idx = MENU_NASTAVENI_SELECT_PID_PARAMETRS,
-  .x = 10,
-  .y = 10,
-  .size_x = 460,
-  .size_y = 300,
-  .atributes = (1 << MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE | 1 << MENU_ATTRIBUTES_DECORATE_MENU),
-  .color_background = YELLOW,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .redraw_class_0 = returnnullfceargs,
-  .redraw_class_1 = returnnullfceargs,
-  .redraw_class_2 = returnnullfceargs,
-  .preload_function = preload_pid_menu,
-};
+
 
 const Menu1 DialogSelectProgramForTerm PROGMEM = {
   .name = text_nastaveni_ring_program,
@@ -1357,37 +1108,7 @@ const Menu1 MenuProgramator PROGMEM = {
   .preload_function = returnnullfceargs,
 };
 
-const Menu1 MenuNastaveniSite PROGMEM = {
-  .name = nastaveni_site,
-  .button_1 = {button_back, button_ntp_sync_time},
-  .button_2 = {NULL},
-  .function_1 = {NULL},
-  .switch_1 = {NULL},
-  .dyn_button = {NULL},
-  .symbol_button_1 = {NULL},
-  .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {NULL},
-  .len_button_1 = 2,
-  .len_button_2 = 0,
-  .len_function_1 = 0,
-  .len_switch_1 = 0,
-  .len_dyn_button_1 = 0,
-  .len_symbol_button_1 = 0,
-  .len_dyn_symbol_1 = 0,
-  .len_dyn_select_box_1 = 0,
-  .idx = MENU_NASTAVENI_SITE,
-  .x = 0,
-  .y = 0,
-  .size_x = 480,
-  .size_y = 320,
-  .atributes = (1 << MENU_ATTRIBUTES_CLEAN_DISPLAY),
-  .color_background = WHITE,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .redraw_class_0 = returnnullfceargs,
-  .redraw_class_1 = returnnullfceargs,
-  .redraw_class_2 = returnnullfceargs,
-  .preload_function = returnnullfceargs,
-};
+
 
 const MenuAll Menu_All PROGMEM = {
   .len_menu1 = 10,
@@ -2079,8 +1800,15 @@ void helper_thermostat_set_pid_time(uint16_t args1, float args2, uint8_t args3)
 {
   thermostat_ring_pid_set_time(args1, args3);
 }
+void button_click_ring_term_set_pid_default(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  thermostat_ring_pid_set_kp(default_ring, 1.0);
+  thermostat_ring_pid_set_ki(default_ring, 0.5);
+  thermostat_ring_pid_set_kd(default_ring, 1.0);
+  thermostat_ring_pid_set_time(default_ring, 60);
+  preload_pid_menu(0, 0, 0);
 
-//float_rozdelit do dvou intu
+}
 
 uint8_t preload_regulator_menu(uint16_t args1, uint16_t args2, uint8_t args3)
 {
@@ -2094,7 +1822,7 @@ uint8_t preload_pid_menu(uint16_t args1, uint16_t args2, uint8_t args3)
   display_function_set_variable(thermostat_get_pid_p(default_ring), -10.0, 10.0, 0.1, default_ring, NUMBER_TYPE_FLOAT,  H_TRUE, DIALOG_SET_VARIABLE_PID_P, &helper_thermostat_set_pid_p);
   display_function_set_variable(thermostat_get_pid_i(default_ring), -10.0, 10.0, 0.1, default_ring, NUMBER_TYPE_FLOAT,  H_TRUE, DIALOG_SET_VARIABLE_PID_I, &helper_thermostat_set_pid_i);
   display_function_set_variable(thermostat_get_pid_d(default_ring), -10.0, 10.0, 0.1, default_ring, NUMBER_TYPE_FLOAT,  H_TRUE, DIALOG_SET_VARIABLE_PID_D, &helper_thermostat_set_pid_d);
-  display_function_set_variable(thermostat_get_pid_time(default_ring),  1, 254, 2, default_ring, NUMBER_TYPE_INT,  H_TRUE, DIALOG_SET_VARIABLE_PID_T, &helper_thermostat_set_pid_time);
+  display_function_set_variable(thermostat_get_pid_time(default_ring),  10, 254, 2, default_ring, NUMBER_TYPE_INT,  H_TRUE, DIALOG_SET_VARIABLE_PID_T, &helper_thermostat_set_pid_time);
 }
 
 
@@ -2625,7 +2353,7 @@ int remote_tds_get_data(uint8_t idx)
   if (idx < MAX_RTDS)
   {
     temp = SRAM.readByte(ram_remote_tds_store_data_high + (ram_remote_tds_store_size * idx)) << 8;
-    temp = temp = SRAM.readByte(ram_remote_tds_store_data_low + (ram_remote_tds_store_size * idx));
+    temp = temp + SRAM.readByte(ram_remote_tds_store_data_low + (ram_remote_tds_store_size * idx));
   }
   return temp;
 }
@@ -3364,36 +3092,44 @@ byte mqtt_reconnect(void)
   char nazev[10];
   char topic[26];
   byte ret = MQTT_DISCONNECTED;
+  long mil;
   ///  /thermctl/xxxxxxxx/#
   ///  /thermctl/global/#
-  device_get_name(nazev);
   if (!mqtt_client.connected())
-    if (mqtt_client.connect(nazev))
+  {
+    device_get_name(nazev);
+    mil = millis();
+    if (mil > lastmqttconnect)
     {
-      strcpy_P(topic, thermctl_header_in);
-      strcat(topic, nazev);
-      strcat(topic, "/#");
-      mqtt_client.subscribe(topic);
-      strcpy_P(topic, thermctl_header_in);
-      strcat(topic, "global/#");
-      mqtt_client.subscribe(topic);
-      //// /rtds/xxxxx
-      for (uint8_t idx = 0; idx < MAX_RTDS; idx++)
-        remote_tds_subscibe_topic(idx);
-      //// svetelny controller
-      strcpy_P(topic, lightctl_header_out);
-      strcat(topic, "/#");
-      mqtt_client.subscribe(topic);
-      /// zpetna vazba od ostatnich room controleru
-      strcpy_P(topic, thermctl_subscribe);
-      mqtt_client.subscribe(topic);
-      /// zpetna vazba od ostatnich term controlleru
-      strcpy_P(topic, termbig_subscribe);
-      mqtt_client.subscribe(topic);
-      /// zpetna vazba od vystupu
-      strcpy_P(topic, termbig_header_out);
-      mqtt_client.subscribe(topic);
+      lastmqttconnect = mil + 5000;
+      if (mqtt_client.connect(nazev))
+      {
+        strcpy_P(topic, thermctl_header_in);
+        strcat(topic, nazev);
+        strcat(topic, "/#");
+        mqtt_client.subscribe(topic);
+        strcpy_P(topic, thermctl_header_in);
+        strcat(topic, "global/#");
+        mqtt_client.subscribe(topic);
+        //// /rtds/xxxxx
+        for (uint8_t idx = 0; idx < MAX_RTDS; idx++)
+          remote_tds_subscibe_topic(idx);
+        //// svetelny controller
+        strcpy_P(topic, lightctl_header_out);
+        strcat(topic, "/#");
+        mqtt_client.subscribe(topic);
+        /// zpetna vazba od ostatnich room controleru
+        strcpy_P(topic, thermctl_subscribe);
+        mqtt_client.subscribe(topic);
+        /// zpetna vazba od ostatnich term controlleru
+        strcpy_P(topic, termbig_subscribe);
+        mqtt_client.subscribe(topic);
+        /// zpetna vazba od vystupu
+        strcpy_P(topic, termbig_header_out);
+        mqtt_client.subscribe(topic);
+      }
     }
+  }
   ret = mqtt_client.state();
   return ret;
 }
@@ -3554,7 +3290,7 @@ void send_mqtt_tds(void)
   long avg = 0;
   for (uint8_t id = 0; id < HW_ONEWIRE_MAXROMS; id++)
     if (get_tds18s20(id, &tds) == 1)
-      if (tds.used == 1) if (status_tds18s20[id].online == True)
+      if (tds.used == 1 && status_tds18s20[id].online == True)
         {
           tt = status_tds18s20[id].temp / 10;
           itoa(tt, payload, 10);
@@ -3974,13 +3710,13 @@ void thermostat(void)
       thermostat_pid_setdirection_reverse(tix);
     }
 
-    /*
-      if (tdsid >= TDS_MEMORY_MAP_TDS && tdsid < TDS_MEMORY_MAP_RTDS)
-      {
+
+    if (tdsid < HW_ONEWIRE_MAXROMS )
+    {
       if (get_tds18s20(tdsid, &tds) == 1)
         if (tds.used == 1 && status_tds18s20[tdsid].online == True)
         {
-          thermostat_pid_input(tix, status_tds18s20[tdsid].temp / 100);
+          thermostat_pid_input(tix, status_tds18s20[tdsid].temp / 100.0);
           thermostat_pid_setpoint(tix, thresh);
           pwm = thermostat_pid_output(tix);
           thermostat_ring_set_power(tix, pwm);
@@ -3991,30 +3727,30 @@ void thermostat(void)
           pwm = 0;
           thermostat_ring_set_power(tix, pwm);
         }
-      }
-    */
-    /*
-      if (tdsid >= TDS_MEMORY_MAP_RTDS && tdsid < 127)
-      {
-      act = tdsid - TDS_MEMORY_MAP_RTDS;
+    }
+
+
+    if (tdsid >= HW_ONEWIRE_MAXROMS && tdsid < HW_ONEWIRE_MAXROMS + MAX_RTDS)
+    {
+      act = tdsid - HW_ONEWIRE_MAXROMS;
       remote_tds_get_active(act , &active);
 
-        if (active == 1 && remote_tds_last_update[act] < 180)
-        {
-        thermostat_pid_input(tix, remote_tds[act] / 10);
+      if (active == 1 && remote_tds_get_last_update(act) < 180)
+      {
+        thermostat_pid_input(tix, remote_tds_get_data(act) / 1000.0);
         thermostat_pid_setpoint(tix, thresh);
         pwm = thermostat_pid_output(tix);
         thermostat_ring_set_power(tix, pwm);
-        }
-        else
-        {
+      }
+      else
+      {
         tmode = TERM_MODE_ERR;
         pwm = 0;
         thermostat_ring_set_power(tix, pwm);
-        }
-
       }
-    */
+
+    }
+
     if (tmode == TERM_MODE_MAN_HEAT)
     {
       /*
@@ -4071,7 +3807,7 @@ void setup()
   char s_dvanact[8];
   char s_current[8];
   struct_DDS18s20 tds;
-  uint32_t milis;
+  long milis;
 
   NTPClient timeClient(udpClient);
 
@@ -4385,6 +4121,7 @@ void setup()
       milis = millis();
       while ((millis() - milis) < 3000 )
       {
+        lastmqttconnect = 0;
         mqtt_client.loop();
         if (mqtt_reconnect() == 0)
         {
@@ -4394,7 +4131,7 @@ void setup()
         else
           selftest_set_0(SELFTEST_MQTT_LINK);
       }
-
+      lastmqttconnect = 0;
       if (selftest_get_0(SELFTEST_MQTT_LINK) != 0)
       {
         strcpy_P(str1, text_err);
@@ -4495,7 +4232,7 @@ void loop() {
   // put your main code here, to run repeatedly:
   char str1[16];
   unsigned long load_now;
-
+  long mil;
 
 
   load_now = millis();
@@ -4510,25 +4247,24 @@ void loop() {
   if (draw_menu(false) == true)
     draw_menu(true);
 
+
+
+
   ////////////////////
   /// kazdych 10sec
-  if ((millis() - milis_10s) > 10000)
+  if ((millis() - milis_10s) >= 10000)
   {
-    milis_10s = millis();
-
-
+    milis_10s += 10000;
     menu_redraw10s = 1;
 
     //device_get_name(str1);
-
     send_mqtt_onewire();
     send_mqtt_status(&mqtt_client);
     send_device_status();
     send_mqtt_ring();
     send_mqtt_tds();
-
     send_mqtt_program();
-    ///thermostat();
+    thermostat();
     for (uint8_t idx = 0; idx < MAX_THERMOSTAT; idx++)
       if (tds_used(idx) == 1)
         mqtt_send_pid_variable(idx);
@@ -4537,13 +4273,11 @@ void loop() {
     //send_light_controler();
     //send_know_device();
     //send_mesh_status();
-
-
   }
 
-  if ((millis() - milis_1s) > 1000)
+  if ((millis() - milis_1s) >= 1000)
   {
-    milis_1s = millis();
+    milis_1s += 1000;
     uptime++;
     mereni_hwwire(uptime);
     tds_extended_memory_store();
@@ -4551,9 +4285,9 @@ void loop() {
   }
 
   //digitalWrite(LED, LOW);
-  if ((millis() - milis_05s) > 500)
+  if ((millis() - milis_05s) >= 500)
   {
-    milis_05s = millis();
+    milis_05s += 500;
     now = rtc.now();
     selftest();
     menu_redraw05s = 1;
@@ -4564,13 +4298,10 @@ void loop() {
 
 
 
-
-
-
   /// kazdych 50ms
-  if ((millis() - milis_005s) > 50)
+  if ((millis() - milis_005s) >= 50 )
   {
-    milis_005s = millis();
+    milis_005s += 50;
 
     /// obsluha adc prevodniku
     if (a2d_run_now == 1)
@@ -4585,20 +4316,20 @@ void loop() {
   if (load < load_min) load_min = load;
   if (load > load_max) load_max = load;
 
-  /// automaticke nastaveni jasu displaye
-  if (light_curr < light_min) light_min = light_curr;
-  if (light_curr > light_max) light_max = light_curr;
-  ///
-  /*
-    if (jas_disp == 0) // Automatika
-    {
-      auto_jas = (float) (light_curr - light_min) / (light_max - light_min) * 255;
-      itmp = auto_jas;
-      if (itmp > 240) itmp = 240;
-      analogWrite(PWM_DISP, itmp);
-    }
-  */
-}
+    /// automaticke nastaveni jasu displaye
+    if (light_curr < light_min) light_min = light_curr;
+      if (light_curr > light_max) light_max = light_curr;
+        ///
+        /*
+          if (jas_disp == 0) // Automatika
+          {
+            auto_jas = (float) (light_curr - light_min) / (light_max - light_min) * 255;
+            itmp = auto_jas;
+            if (itmp > 240) itmp = 240;
+            analogWrite(PWM_DISP, itmp);
+          }
+        */
+      }
 
 //-----------------------------------------------------------------------------------------------------------------------------------
 void display_element_rectangle(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
@@ -4612,7 +4343,7 @@ void display_element_dialog_default_ring(uint16_t x, uint16_t y, uint16_t size_x
   char name[10];
   char default_text[30];
   strcpy_P(default_text, regulator_default_text);
-  if (thermostat_ring_get_active(default_ring) != 255)
+  if (thermostat_ring_get_active(default_ring) != RING_FREE)
   {
     thermostat_ring_get_name(default_ring, name);
     strcat(default_text, name);
@@ -4947,7 +4678,9 @@ void button_click_2(uint16_t x, uint16_t y, uint8_t size_x, uint8_t size_y, uint
   uint8_t num_lines_const = 0;
   uint8_t prvni = 0;
   uint8_t druhy = 0;
-  back_color = color_inactive;
+  back_color = LIGHTGREY;
+  if (state == 0)
+    back_color = color_inactive;
   if (state == 1)
     back_color = color_active;
   my_lcd.Set_Draw_color(BLACK);
@@ -5189,7 +4922,6 @@ void click_rtds_add_sensor(uint16_t args1, uint16_t args2, uint8_t args3)
     display_element_set_string(rtds_topic, RTDS_DEVICE_STRING_LEN, idx, &menu_rtds_create_name);
   }
 }
-////sarr
 
 void menu_rtds_create_name(uint16_t args1, uint16_t args2, uint8_t args3)
 {
@@ -5428,9 +5160,7 @@ void button_click_deactivate_term_ring(uint16_t args1, uint16_t args2, uint8_t a
 */
 uint8_t button_get_show_default_ring_program_active(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  //printf("%d %d %d\n", args1, args2, args3);
   uint8_t ret = 0;
-  //printf("args3:%d act%d ringp%d\n",args3,thermostat_program_get_active(args3),thermostat_ring_get_program_id(default_ring) );
   if ((thermostat_program_get_active(args3) != PROG_FREE) && (thermostat_ring_get_program_id(default_ring) == args3))
     ret = 1;
 
@@ -5509,7 +5239,7 @@ void term_ring_do_activate(uint16_t args1, uint16_t args2, uint8_t args3)
 */
 void button_click_set_new_default_ring_in_dialog(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  if (thermostat_ring_get_active(args3) != 255)
+  if (thermostat_ring_get_active(args3) != RING_FREE)
   {
     default_ring = args3;
     MenuHistoryUpdateArgs1(args3);
@@ -5535,7 +5265,7 @@ void button_change_default_ring_labels_in_dialog(uint8_t args1, uint8_t args2, u
 {
   char name[10];
   char active[12];
-  if (thermostat_ring_get_active(args1) != 255)
+  if (thermostat_ring_get_active(args1) != RING_FREE)
     strcpy_P(active, text_term_active);
   else
     strcpy_P(active, text_term_deactive);
@@ -5595,7 +5325,7 @@ void button_click_nastaveni_ring_screen(uint16_t args1, uint16_t args2, uint8_t 
 uint8_t button_status_default_ring_term_has_mode(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   uint8_t ret = 0;
-  if (thermostat_ring_get_active(default_ring) != 255)
+  if (thermostat_ring_get_active(default_ring) != RING_FREE)
     if (thermostat_ring_get_mode_1(default_ring, args1) == true)
       ret = 1;
   return ret;
@@ -5610,7 +5340,7 @@ uint8_t button_status_default_ring_term_has_mode(uint16_t args1, uint16_t args2,
 */
 void button_click_default_term_set_mode(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  if (thermostat_ring_get_active(default_ring) != 255)
+  if (thermostat_ring_get_active(default_ring) != RING_FREE)
   {
     thermostat_ring_set_mode(default_ring, args1);
     change_term_mode = 1;
@@ -5715,13 +5445,17 @@ void button_get_default_ring_term_mode_labels(uint8_t args1, uint8_t args2, uint
 uint8_t button_get_term_mode_is_selected(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   uint8_t mode;
-  uint8_t ret = 0;
-  mode = thermostat_ring_get_mode(args2);
-  if (args3 == 0 && mode == TERM_MODE_OFF) ret = 1;
-  if (args3 == 1 && mode == TERM_MODE_MAX) ret = 1;
-  if (args3 == 2 && mode == TERM_MODE_MIN) ret = 1;
-  if (args3 == 3 && mode == TERM_MODE_PROG) ret = 1;
-  if (args3 == 4 && (mode == TERM_MODE_MAN || mode == TERM_MODE_MAN_HEAT || mode == TERM_MODE_MAN_COOL)) ret = 1;
+  uint8_t ret = 2;
+  if (thermostat_ring_get_active(args2) != RING_FREE)
+  {
+    ret = 0;
+    mode = thermostat_ring_get_mode(args2);
+    if (args3 == 0 && mode == TERM_MODE_OFF) ret = 1;
+    if (args3 == 1 && mode == TERM_MODE_MAX) ret = 1;
+    if (args3 == 2 && mode == TERM_MODE_MIN) ret = 1;
+    if (args3 == 3 && mode == TERM_MODE_PROG) ret = 1;
+    if (args3 == 4 && (mode == TERM_MODE_MAN || mode == TERM_MODE_MAN_HEAT || mode == TERM_MODE_MAN_COOL)) ret = 1;
+  }
   return ret;
 }
 ///
@@ -5800,10 +5534,11 @@ void button_get_term_mode_labels(uint8_t args1, uint8_t args2, uint8_t args3, ch
 */
 uint8_t button_get_term_heat_or_cool(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  uint8_t ret = 0;
+  uint8_t ret = 2;
   uint8_t b;
-  if (thermostat_ring_get_active(default_ring) != 255)
+  if (thermostat_ring_get_active(default_ring) != RING_FREE)
   {
+    ret = 0;
     b = thermostat_ring_get_status_bites(default_ring, STATUS_BIT_HEAT_OR_COOL);
     if (b == 0 && args1 == TERM_MODE_MAN_HEAT)
       ret = 1;
@@ -5820,7 +5555,7 @@ uint8_t button_get_term_heat_or_cool(uint16_t args1, uint16_t args2, uint8_t arg
 */
 void button_click_set_term_heat_or_cool(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  if (thermostat_ring_get_active(default_ring) != 255)
+  if (thermostat_ring_get_active(default_ring) != RING_FREE)
   {
     if (args1 == TERM_MODE_MAN_HEAT)
       thermostat_ring_update_bites(default_ring, STATUS_BIT_HEAT_OR_COOL, 0);
@@ -5860,7 +5595,6 @@ uint8_t display_enable_show_term_mode_prog(uint16_t args1, uint16_t args2, uint8
 void button_click_ntp_sync_time(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   NTPClient timeClient(udpClient);
-
   if (ntp_update(&timeClient, &rtc, time_get_offset()) == 1)
   {
     selftest_clear_0(SELFTEST_ERR_NTP);
@@ -5868,6 +5602,7 @@ void button_click_ntp_sync_time(uint16_t args1, uint16_t args2, uint8_t args3)
   else
   {
     selftest_set_0(SELFTEST_ERR_NTP);
+
   }
 }
 
@@ -5876,13 +5611,3 @@ void button_click_ntp_sync_time(uint16_t args1, uint16_t args2, uint8_t args3)
 
 
 ///////////////////////////////////////////////////////////
-
-
-/*
-  char text[10];
-  dtostrf(menu_dialog_variable[idx].variable_now, 4, 1, text);
-  printf("now %s\n", text);
-  dtostrf(menu_dialog_variable[idx].variable_step, 4, 1, text);
-  printf("step %s\n", text);
-  printf("conv %d\n", float_to_int(menu_dialog_variable[idx].variable_now));
-*/

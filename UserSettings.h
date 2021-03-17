@@ -165,6 +165,7 @@ const char funkce_text[] PROGMEM = "Funkce";
 const char regulator_text[] PROGMEM = "Regulator";
 const char regulator_default_text[] PROGMEM = "Vychozi regulator:";
 const char ring_text_setup[] PROGMEM = "Nastaveni";
+const char text_set_default[] PROGMEM = "Vychozi hodnoty";
 
 const char budik_text[] PROGMEM = "Budik";
 const char button_zpet[] PROGMEM = "Zpet";
