@@ -46,9 +46,11 @@
 #define STORAGE_RAM_CS  22
 #define STORAGE_EEPROM_CS  23
 #define PIEZO 12
+
 #define NRF_CS 2
-#define NRF_CE 3
+#define NRF_CE 3 
 #define NRF_INT 5
+
 #define LED 8
 #define JUMPER 14
 

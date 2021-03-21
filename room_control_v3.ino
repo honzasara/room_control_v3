@@ -13,8 +13,9 @@
    11. statistika pripojeni mqtt
    12. vyber vychoziho teplomeru, kdyz je mrtvy/neaktivni zobrazit jinou barvou. Stav je nenalezene cidlo na sbernici
       - vraci online i kdyz neni online
+   13, vytvorit menu seznam vsech teplomeru ukazovat hodnoty
 
-zapojeni pinu z leva do prava hneda -> zluta -> oranzova -> zelena -> cervena -> cerna
+  zapojeni pinu z leva do prava hneda -> zluta -> oranzova -> zelena -> cervena -> cerna
 */
 
 
@@ -43,13 +44,14 @@ PubSubClient mqtt_client(ethClient);
 
 
 RF24 radio(NRF_CE, NRF_CS);
-RF24Network network(radio);
-RF24Mesh mesh(radio, network);
+//RF24Network network(radio);
+//RF24Mesh mesh(radio, network);
+
 Generic_LM75_11Bit lm75_temp;
 
 
 LCDWIKI_KBV my_lcd(ST7796S, 33, 35, 36, 32, 34); //model,cs,cd,wr,rd,reset
-LCDWIKI_TOUCH my_touch(28, 27, 29, 30, 7); //tcs,tclk,tdout,tdin,tirq
+LCDWIKI_TOUCH my_touch(28, 27, 29, 30, 7, 31); //tcs,tclk,tdout,tdin,tirq, sdcd
 
 StaticJsonDocument<256> doc;
 
@@ -3291,36 +3293,36 @@ void send_mqtt_tds(void)
   for (uint8_t id = 0; id < HW_ONEWIRE_MAXROMS; id++)
     if (get_tds18s20(id, &tds) == 1)
       if (tds.used == 1 && status_tds18s20[id].online == True)
-        {
-          tt = status_tds18s20[id].temp / 10;
-          itoa(tt, payload, 10);
-          send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "temp", payload);
-          avg = 0;
-          for (uint8_t c = 0; c < MAX_AVG_TEMP; c++) avg = avg + status_tds18s20[id].average_temp[c];
-          avg = avg / MAX_AVG_TEMP;
-          avg = avg / 10;
-          itoa(avg, payload, 10);
-          send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "temp_avg", payload);
+      {
+        tt = status_tds18s20[id].temp / 10;
+        itoa(tt, payload, 10);
+        send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "temp", payload);
+        avg = 0;
+        for (uint8_t c = 0; c < MAX_AVG_TEMP; c++) avg = avg + status_tds18s20[id].average_temp[c];
+        avg = avg / MAX_AVG_TEMP;
+        avg = avg / 10;
+        itoa(avg, payload, 10);
+        send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "temp_avg", payload);
 
-          strcpy(payload, tds.name);
-          send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "name", payload);
-          tt = tds.offset;
-          itoa(tt, payload, 10);
-          send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "offset", payload);
-          tt = status_tds18s20[id].online;
-          itoa(tt, payload, 10);
-          send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "online", payload);
-          payload[0] = 0;
-          createString(payload, ':', tds.rom, 8, 16);
-          send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "rom", payload);
-          tt = tds.period;
-          itoa(tt, payload, 10);
-          send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "period", payload);
+        strcpy(payload, tds.name);
+        send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "name", payload);
+        tt = tds.offset;
+        itoa(tt, payload, 10);
+        send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "offset", payload);
+        tt = status_tds18s20[id].online;
+        itoa(tt, payload, 10);
+        send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "online", payload);
+        payload[0] = 0;
+        createString(payload, ':', tds.rom, 8, 16);
+        send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "rom", payload);
+        tt = tds.period;
+        itoa(tt, payload, 10);
+        send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "period", payload);
 
-          tt = (uptime & 0xff) - status_tds18s20[id].period_now;
-          itoa(tt, payload, 10);
-          send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "start_at", payload);
-        }
+        tt = (uptime & 0xff) - status_tds18s20[id].period_now;
+        itoa(tt, payload, 10);
+        send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "start_at", payload);
+      }
 }
 ///
 ///
@@ -3950,7 +3952,7 @@ void setup()
         time_set_offset(1);
         /// pokus o vetsi random
         device.mac[0] = 2; device.mac[1] = 1; device.mac[2] = 2; device.mac[3] = dvanact >> 1; device.mac[4] = light_curr >> 1; device.mac[5] = proud >> 1;
-        device.myIP[0] = 192; device.myIP[1] = 168; device.myIP[2] = 2; device.myIP[3] = 110;
+        device.myIP[0] = 192; device.myIP[1] = 168; device.myIP[2] = 2; device.myIP[3] = 111;
         device.myMASK[0] = 255; device.myMASK[1] = 255; device.myMASK[2] = 255; device.myMASK[3] = 0;
 
         device.myGW[0] = 192; device.myGW[1] = 168; device.myGW[2] = 2; device.myGW[3] = 1;
@@ -3961,7 +3963,7 @@ void setup()
         strcpy(device.mqtt_user, "saric");
         strcpy(device.mqtt_key, "no");
         save_setup_network();
-        strcpy(str1, "TERM D1");
+        strcpy(str1, "TERM D2");
         device_set_name(str1);
         char hostname[10];
         device_get_name(hostname);
@@ -4050,6 +4052,16 @@ void setup()
       strcpy_P(str1, text_touchscreen);
       show_string(str1, 30, 50 + (init * 10), 1, GREEN, WHITE, 0 );
       my_touch.TP_Init(my_lcd.Get_Rotation(), my_lcd.Get_Display_Width(), my_lcd.Get_Display_Height());
+      for (uint8_t i = 1; i < 8; i++)
+      {
+        digitalWrite(LED, LOW);
+        my_touch.TP_SetBacklight(i * 11);
+        delay(100);
+        digitalWrite(LED, HIGH);
+        delay(100);
+
+      }
+      my_touch.TP_SetBacklight(50);
     }
     ///
     /// inicializace ds2482
@@ -4157,6 +4169,8 @@ void setup()
     {
       strcpy_P(str1, text_nrf_rozhrani);
       show_string(str1, 30, 50 + (init * 10), 1, GREEN, WHITE, 0 );
+      scan_rf_net_enable = 2;
+      radio.begin();
     }
     ///
     /// inicializace termostatu
@@ -4249,6 +4263,12 @@ void loop() {
 
 
 
+  if (scan_rf_net_enable == 2)
+  {
+    scan_rf_net_enable = 0;
+    radio.printDetails();
+  }
+
 
   ////////////////////
   /// kazdych 10sec
@@ -4316,20 +4336,20 @@ void loop() {
   if (load < load_min) load_min = load;
   if (load > load_max) load_max = load;
 
-    /// automaticke nastaveni jasu displaye
-    if (light_curr < light_min) light_min = light_curr;
-      if (light_curr > light_max) light_max = light_curr;
-        ///
-        /*
-          if (jas_disp == 0) // Automatika
-          {
-            auto_jas = (float) (light_curr - light_min) / (light_max - light_min) * 255;
-            itmp = auto_jas;
-            if (itmp > 240) itmp = 240;
-            analogWrite(PWM_DISP, itmp);
-          }
-        */
-      }
+  /// automaticke nastaveni jasu displaye
+  if (light_curr < light_min) light_min = light_curr;
+  if (light_curr > light_max) light_max = light_curr;
+  ///
+  /*
+    if (jas_disp == 0) // Automatika
+    {
+      auto_jas = (float) (light_curr - light_min) / (light_max - light_min) * 255;
+      itmp = auto_jas;
+      if (itmp > 240) itmp = 240;
+      analogWrite(PWM_DISP, itmp);
+    }
+  */
+}
 
 //-----------------------------------------------------------------------------------------------------------------------------------
 void display_element_rectangle(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
