@@ -100,9 +100,8 @@ uint8_t menu_redraw_update_temp(uint16_t args1, uint16_t args2, uint8_t args3);
 void display_element_show_time_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
 void display_element_show_temp_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
 void display_element_show_date_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
-void display_element_show_tds_info_static(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
-void display_element_show_tds_info_dynamics(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
-void display_element_show_rtds_info_dynamics(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
+
+
 void display_element_dialog_show_text(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
 void display_element_dialog_set_variable(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t idx, uint8_t args2, char *text);
 void display_element_vertical_slider(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
@@ -146,15 +145,7 @@ void display_function_vertical_slider_get(uint8_t *start, uint8_t *stop);
 
 
 
-void click_rtds_setting_sensor(uint16_t args1, uint16_t args2, uint8_t loop_idx);
 
-void click_tds_deassociate_onewire(uint16_t args1, uint16_t idx, uint8_t args3);
-void click_rtds_deassociate_onewire(uint16_t args1, uint16_t idx, uint8_t args3);
-void click_rtds_subscribe(uint16_t args1, uint16_t idx, uint8_t args3);
-
-uint8_t get_function_rtds_active_items(uint16_t args1, uint16_t idx, uint8_t args3);
-uint8_t get_function_rtds_last_index_for_menu(uint16_t args1, uint16_t args2, uint8_t args3);
-void get_function_rtds_text_button(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2);
 
 
 
@@ -167,9 +158,7 @@ void click_keyboard_type(uint16_t args1, uint16_t args2, uint8_t args3);
 
 
 
-void display_menu_tds_set_offset(uint16_t args1, uint16_t args2, uint8_t args3);
-void display_menu_tds_set_period(uint16_t args1, uint16_t args2, uint8_t args3);
-void display_menu_tds_set_name(uint16_t args1, uint16_t args2, uint8_t args3);
+
 
 void display_menu_rtds_update_name(uint16_t args1, uint16_t args2, uint8_t args3);
 
@@ -189,14 +178,7 @@ void get_function_keyboard_alfa_char(uint8_t args1, uint8_t args2, uint8_t args3
 void click_keyboard_alfa(uint16_t args1, uint16_t args2, uint8_t args3);
 uint8_t get_function_keyboard_alfa_max_keys(uint16_t args1, uint16_t args2, uint8_t args3);
 
-void click_select_default_temp(uint8_t args1, uint8_t args2);
 
-
-
-void button_get_show_default_temp(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2);
-void button_click_set_show_default_temp(uint16_t args1, uint16_t args2, uint8_t args3);
-uint8_t button_get_show_default_temp_max_items(uint16_t args1, uint16_t args2, uint8_t args3);
-uint8_t button_get_show_default_temp_active(uint16_t args1, uint16_t args2, uint8_t args3);
 
 
 
@@ -263,6 +245,30 @@ void button_get_term_mode_labels(uint8_t args1, uint8_t args2, uint8_t args3, ch
 ///////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+const char new_text_nastaveni_system_full[] PROGMEM = "Nastaveni systemu";
+const char new_text_nastaveni_system[] PROGMEM = "N. systemu";
+
+const char new_text_nastaveni_periferii_full[] PROGMEM = "Nastaveni periferii";
+const char new_text_nastaveni_periferie[] PROGMEM = "N. periferii";
+
+const char new_text_nastaveni_zobrazeni_full[] PROGMEM = "Nastaveni zobrazeni";
+const char new_text_nastaveni_zobrazeni[] PROGMEM = "N. zobrazeni";
+
+const char new_text_nastaveni_regulatoru[] PROGMEM = "N. regulatoru";
+
+const char new_text_nastaveni_casu[] PROGMEM = "Nastaveni casu";
+const char new_text_o_zarizeni[] PROGMEM = "O zarizeni";
+
+const char new_nastaveni_mqtt_topic[] PROGMEM = "MQTT topic";
+const char new_nastaveni_nrf_input[] PROGMEM = "NRF vstup";
+
+const char new_text_scan_onewire_bus[] PROGMEM = "Scan sbernice";
+
+const char new_text_ok[] PROGMEM = "OK";
+
+const char new_text_ok_ntp_time[] PROGMEM = "Aktualizace NTP OK";
+const char new_text_error_ntp_time[] PROGMEM = "Aktualizace NTP ERROR";
 
 /***************************************************************/
 /*

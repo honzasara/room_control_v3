@@ -30,6 +30,19 @@ const Element_Button_1 dialog_no PROGMEM = {
 };
 
 
+const Element_Button_1 dialog_ok PROGMEM = {
+  .name = new_text_ok,
+  .x = 250,
+  .y = 60,
+  .size_x = 100,
+  .size_y = 40,
+  .font_size = 2,
+  .args = 0,
+  .onclick = MenuHistoryPrevMenu,
+  .redraw_class = REDRAW_BUTTON,
+  .enable_show = display_enable_show,
+};
+
 const Element_Button_1 dialog_set_string_save PROGMEM =  {
   .name = text_ulozit,
   .x = 10,
@@ -311,6 +324,37 @@ const Menu1 DialogYESNO PROGMEM = {
   .preload_function = returnnullfceargs,
 };
 
+const Menu1 DialogOK PROGMEM = {
+  .name = text_upozorneni,
+  .button_1 = {dialog_ok},
+  .button_2 = {NULL},
+  .function_1 = {f_dialog_show_text},
+  .switch_1 = {NULL},
+  .dyn_button = {NULL},
+  .symbol_button_1 = {NULL},
+  .dyn_symbol_1 = {NULL},
+  .dyn_select_box_1 = {NULL},
+  .len_button_1 = 1,
+  .len_button_2 = 0,
+  .len_function_1 = 1,
+  .len_switch_1 = 0,
+  .len_dyn_button_1 = 0,
+  .len_symbol_button_1 = 0,
+  .len_dyn_symbol_1 = 0,
+  .len_dyn_select_box_1 = 0,
+  .idx = MENU_DIALOG_OK,
+  .x = 50,
+  .y = 50,
+  .size_x = 380,
+  .size_y = 140,
+  .atributes = (1 << MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE | 1 << MENU_ATTRIBUTES_DECORATE_MENU),
+  .color_background = YELLOW,
+  .redraw_class = (1 << REDRAW_FORCE),
+  .redraw_class_0 = returnnullfceargs,
+  .redraw_class_1 = returnnullfceargs,
+  .redraw_class_2 = returnnullfceargs,
+  .preload_function = returnnullfceargs,
+};
 
 
 const Menu1 DialogSetVariable PROGMEM = {

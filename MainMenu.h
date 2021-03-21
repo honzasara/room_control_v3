@@ -124,7 +124,7 @@ const Element_Button_1 button_global_setting PROGMEM = {
   .size_x = 170, 
   .size_y = 40, 
   .font_size = 2, 
-  .args = MENU_NASTAVENI_SCREEN, 
+  .args = NEW_MENU_NASTAVENI_SCREEN, 
   .onclick = MenuHistoryNextMenu,  
   .redraw_class = (1 << REDRAW_FORCE), 
   .enable_show = display_enable_show,
@@ -138,7 +138,7 @@ const Element_Button_1 button_global_functions PROGMEM = {
   .size_y = 40, 
   .font_size = 2, 
   .args = MENU_FUNKCE_SCREEN, 
-  .onclick = MenuHistoryNextMenu,  
+  .onclick = nullfce, //MenuHistoryNextMenu,  
   .redraw_class = (1 << REDRAW_FORCE), 
   .enable_show = display_enable_show,
   };
@@ -151,7 +151,7 @@ const Element_Button_1 button_global_regulator PROGMEM = {
   .size_y = 40, 
   .font_size = 2, 
   .args = MENU_REGULATOR, 
-  .onclick = MenuHistoryNextMenu,  
+  .onclick = nullfce, //MenuHistoryNextMenu,  
   .redraw_class = (1 << REDRAW_FORCE), 
   .enable_show = display_enable_show,
   };

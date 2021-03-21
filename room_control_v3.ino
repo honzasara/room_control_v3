@@ -7,13 +7,18 @@
    5. Dialog klavesnice kurzor editace
    6. Dialog klavesnice - rozvreni tlacitek jako je na klavesnici
    7. Dialog editace PID - zobrazit krivku vypoctu
-   8. tlacitko synchronizace NTP casu -> dialog povedlo se/ nepovedlo se
+   8. tlacitko synchronizace NTP casu -> dialog povedlo se/ nepovedlo se - HOTOVO
    9. moznost si nastavit time offset letni/zimni
    10. tftp bootloader
    11. statistika pripojeni mqtt
    12. vyber vychoziho teplomeru, kdyz je mrtvy/neaktivni zobrazit jinou barvou. Stav je nenalezene cidlo na sbernici
       - vraci online i kdyz neni online
-   13, vytvorit menu seznam vsech teplomeru ukazovat hodnoty
+   13. vytvorit menu seznam vsech teplomeru ukazovat hodnoty
+   14. rtds pridat informaci o typu zpravy
+      - teplota
+      - co2
+      - humadity
+      - vitr
 
   zapojeni pinu z leva do prava hneda -> zluta -> oranzova -> zelena -> cervena -> cerna
 */
@@ -29,6 +34,12 @@
 #include "NetworkSettingsMenu.h"
 #include "pidDialogMenu.h"
 #include "OneWireMenu.h"
+
+#include "SystemSettingsMenu.h"
+#include "PeriferieSettingsMenu.h"
+#include "DisplaySettingsMenu.h"
+#include "RTDSMenu.h"
+#include "MenuSettingsTime.h"
 
 
 SoftSPIB swSPI(STORAGE_MOSI, STORAGE_MISO, STORAGE_CLK);
@@ -155,28 +166,7 @@ fptr_args dialog_yes_function;
 /*
    definice menu pro vyber zobrazeni teplomeru na vychozi obrazovce
 */
-const Element_Dyn_Select_1 button_select_show_default_temp PROGMEM = {
-  .first_x = 10,
-  .first_y = 40,
-  .size_x = 120,
-  .size_y = 60,
-  .font_size_1 = 1,
-  .font_size_2 = 1,
-  .color_active = GREEN,
-  .color_inactive = WHITE,
-  .step_x = 130,
-  .step_y = 80,
-  .direction = HORIZONTAL_NEW_LINE,
-  .max_items_count = 3,
-  .max_row_count = 2,
-  .slider_args = MENU_SLIDER_DEFAULT_TEMP,
-  .args = INPUT_SENSOR_SHOW_ACTIVE,
-  .get_status_string = button_get_show_default_temp,
-  .dyn_symbol_onclick =  button_click_set_show_default_temp,
-  .function_for_max_items = button_get_show_default_temp_max_items,
-  .get_status_fnt = button_get_show_default_temp_active,
-  .redraw_class = REDRAW_BUTTON,
-};
+
 
 
 const Element_Dyn_Select_1 button_select_term_mode PROGMEM = {
@@ -428,24 +418,7 @@ const Element_Button_1 button_deassociate_program_for_term = {
 
 
 
-const Element_Dyn_Button_1 rtds_stat_button PROGMEM = {
-  .first_x = 230,
-  .first_y = 35,
-  .size_x = 170,
-  .size_y = 55,
-  .font_size = 1,
-  .step_x = 60,
-  .step_y = 60,
-  .direction = VERTICAL,
-  .max_items_count = 3,
-  .max_row_count = 1,
-  .slider_args = MENU_SLIDER_RTDS,
-  .args = INDEX_DYN_MENU_RTDS,
-  .get_status_string = get_function_rtds_text_button,
-  .dyn_button_onclick =  click_rtds_setting_sensor,
-  .function_for_max_items = get_function_rtds_last_index_for_menu,
-  .redraw_class = REDRAW_BUTTON,
-};
+
 
 
 
@@ -462,46 +435,8 @@ const Element_Dyn_Button_1 rtds_stat_button PROGMEM = {
 
 /////
 
-const Element_Button_1 button_tds_offset PROGMEM = {.name = nastaveni_tds_offset, .x = 280, .y = 40, .size_x = 190, .size_y = 40, .font_size = 2, .args = 0, .onclick = display_menu_tds_set_offset,  .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show,};
-const Element_Button_1 button_tds_name PROGMEM = {.name = nastaveni_name_sensor, .x = 280, .y = 90, .size_x = 190, .size_y = 40, .font_size = 2, .args = 0, .onclick = display_menu_tds_set_name,  .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show,};
-const Element_Button_1 button_tds_period PROGMEM = {.name = nastaveni_tds_period, .x = 280, .y = 140, .size_x = 190, .size_y = 40, .font_size = 2, .args = 0, .onclick = display_menu_tds_set_period,  .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show,};
-const Element_Button_1 button_tds_delete PROGMEM = {.name = nastaveni_delete_sensor, .x = 280, .y = 190, .size_x = 190, .size_y = 40, .font_size = 2, .args = 0, .onclick = click_tds_deassociate_onewire,  .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show,};
-const Element_Function_1 f_show_tds_info_static PROGMEM = {.x = 20, .y = 20, .args = 0, .fnt_coordinate_xy = display_element_show_tds_info_static,  .size_x = 0, .size_y = 0, .redraw_class = REDRAW_BUTTON, .onclick = nullfce, .enable_show = display_enable_show, .name = char_NULL,};
-const Element_Function_1 f_show_tds_info_dynamics PROGMEM = {.x = 20, .y = 20, .args = 0, .fnt_coordinate_xy = display_element_show_tds_info_dynamics,  .size_x = 0, .size_y = 0, .redraw_class = REDRAW_CLASS_SHOW, .onclick = nullfce, .enable_show = display_enable_show, .name = char_NULL,};
 /////////
 
-const Element_Button_1 button_rtds_novy PROGMEM = {.name = text_rtds_novy, .x = 10, .y = 40, .size_x = 190, .size_y = 40, .font_size = 1, .args = 0, .onclick = click_rtds_add_sensor, .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show,};
-const Element_Button_1 button_rtds_name PROGMEM = {.name = nastaveni_name_sensor, .x = 280, .y = 40, .size_x = 190, .size_y = 40, .font_size = 2, .args = 0, .onclick = display_menu_rtds_update_name,  .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show,};
-const Element_Button_1 button_rtds_delete PROGMEM = {.name = nastaveni_delete_sensor, .x = 280, .y = 90, .size_x = 190, .size_y = 40, .font_size = 2, .args = 0, .onclick = click_rtds_deassociate_onewire,  .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show,};
-const Element_Button_1 button_rtds_subscribe PROGMEM = {.name = nastaveni_rtds_subscribe, .x = 280, .y = 140, .size_x = 190, .size_y = 40, .font_size = 2, .args = 0, .onclick = click_rtds_subscribe,  .redraw_class = REDRAW_BUTTON, .enable_show = display_enable_show,};
-const Element_Function_1 f_show_rtds_info_dynamics PROGMEM = {.x = 20, .y = 20, .args = 0, .fnt_coordinate_xy = display_element_show_rtds_info_dynamics,  .size_x = 0, .size_y = 0, .redraw_class = REDRAW_CLASS_SHOW, .onclick = nullfce, .enable_show = display_enable_show, .name = char_NULL,};
-const Element_Function_1 f_vertical_slider_rtds PROGMEM = {  .x = 410, .y = 72, .args = MENU_SLIDER_RTDS, .fnt_coordinate_xy = display_element_vertical_slider,  .size_x = 40, .size_y = 126, .redraw_class = REDRAW_BUTTON, .onclick = nullfce, .enable_show = display_enable_show, .name = char_NULL,};
-
-const Element_Symbol_1 slider_menu_plus_rtds PROGMEM =  {
-  .znak = '+',
-  .x = 410,
-  .y = 30,
-  .size_x = 40,
-  .size_y = 40,
-  .znak_size = 2,
-  .args = MENU_SLIDER_RTDS,
-  .onclick = display_function_vertical_slider_dec,
-  .redraw_class = REDRAW_BUTTON,
-  .enable_show = display_enable_show,
-};
-
-const Element_Symbol_1 slider_menu_minus_rtds PROGMEM =  {
-  .znak = '-',
-  .x = 410,
-  .y = 200,
-  .size_x = 40,
-  .size_y = 40,
-  .znak_size = 2,
-  .args = MENU_SLIDER_RTDS,
-  .onclick = display_function_vertical_slider_inc,
-  .redraw_class = REDRAW_BUTTON,
-  .enable_show = display_enable_show,
-};
 
 
 
@@ -514,18 +449,8 @@ const Element_Symbol_1 slider_menu_minus_rtds PROGMEM =  {
 
 
 
-const Element_Function_1 f_show_default_decorate PROGMEM = {
-  .x = 5,
-  .y = 30,
-  .args = 0,
-  .fnt_coordinate_xy = display_element_rectangle,
-  .size_x = 460,
-  .size_y = 180,
-  .redraw_class = REDRAW_BUTTON,
-  .onclick = nullfce,
-  .enable_show = display_enable_show,
-  .name = char_NULL,
-};
+
+
 
 const Element_Function_1 f_show_default_ring PROGMEM = {
   .x = 140,
@@ -597,46 +522,7 @@ const Element_Symbol_1 dialog_set_default_ring_temp_minus PROGMEM =  {
 
 
 
-/*************************************************************************************/
-/*
-   slider pro menu vyber vychozi teplomeru pro zobrazeni
-*/
-const Element_Function_1 f_vertical_slider_default_temp PROGMEM = {
-  .x = 410,
-  .y = 72,
-  .args = MENU_SLIDER_DEFAULT_TEMP,
-  .fnt_coordinate_xy = display_element_vertical_slider,
-  .size_x = 40,
-  .size_y = 86,
-  .redraw_class = REDRAW_BUTTON,
-  .onclick = nullfce,
-  .enable_show = display_enable_show,
-  .name = char_NULL,
-};
-const Element_Symbol_1 slider_menu_plus_default_temp PROGMEM =  {
-  .znak = '+',
-  .x = 410,
-  .y = 30,
-  .size_x = 40,
-  .size_y = 40,
-  .znak_size = 2,
-  .args = MENU_SLIDER_DEFAULT_TEMP,
-  .onclick = display_function_vertical_slider_dec,
-  .redraw_class = REDRAW_BUTTON,
-  .enable_show = display_enable_show,
-};
-const Element_Symbol_1 slider_menu_minus_default_temp PROGMEM =  {
-  .znak = '-',
-  .x = 410,
-  .y = 160,
-  .size_x = 40,
-  .size_y = 40,
-  .znak_size = 2,
-  .args = MENU_SLIDER_DEFAULT_TEMP,
-  .onclick = display_function_vertical_slider_inc,
-  .redraw_class = REDRAW_BUTTON,
-  .enable_show = display_enable_show,
-};
+
 
 /*********************************************************/
 /*
@@ -705,104 +591,11 @@ const Element_Symbol_1 slider_menu_minus_term_ring_input_temp PROGMEM =  {
 
 
 
-const Menu1 TDSMenu PROGMEM = {
-  .name = text_tds_sensors,
-  .button_1 = {button_back, button_tds_delete, button_tds_period, button_tds_name, button_tds_offset},
-  .button_2 = {NULL},
-  .function_1 = {f_show_date, f_show_tds_info_static, f_show_tds_info_dynamics},
-  .switch_1 = {NULL},
-  .dyn_button = {NULL},
-  .symbol_button_1 = {NULL},
-  .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {NULL},
-  .len_button_1 = 5,
-  .len_button_2 = 0,
-  .len_function_1 = 3,
-  .len_switch_1 = 0,
-  .len_dyn_button_1 = 0,
-  .len_symbol_button_1 = 0,
-  .len_dyn_symbol_1 = 0,
-  .len_dyn_select_box_1 = 0,
-  .idx = MENU_NASTAVENI_TDS,
-  .x = 0,
-  .y = 0,
-  .size_x = 480,
-  .size_y = 320,
-  .atributes = (1 << MENU_ATTRIBUTES_CLEAN_DISPLAY),
-  .color_background = WHITE,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .redraw_class_0 = returnnullfceargs,
-  .redraw_class_1 = returnnullfceargs,
-  .redraw_class_2 = returnnullfceargs,
-  .preload_function = returnnullfceargs,
-};
 
 
 
-const Menu1 List_RTDS_Menu PROGMEM = {
-  .name = nastaveni_rtds,
-  .button_1 = {button_back, button_rtds_novy},
-  .button_2 = {NULL},
-  .function_1 = {f_show_rectangle_decorate, f_show_date, f_vertical_slider_rtds},
-  .switch_1 = {NULL},
-  .dyn_button = {rtds_stat_button},
-  .symbol_button_1 = {slider_menu_plus_rtds, slider_menu_minus_rtds},
-  .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {NULL},
-  .len_button_1 = 2,
-  .len_button_2 = 0,
-  .len_function_1 = 3,
-  .len_switch_1 = 0,
-  .len_dyn_button_1 = 1,
-  .len_symbol_button_1 = 2,
-  .len_dyn_symbol_1 = 0,
-  .len_dyn_select_box_1 = 0,
-  .idx = MENU_LIST_NASTAVENI_RTDS,
-  .x = 0,
-  .y = 0,
-  .size_x = 480,
-  .size_y = 320,
-  .atributes = (1 << MENU_ATTRIBUTES_CLEAN_DISPLAY),
-  .color_background = WHITE,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .redraw_class_0 = returnnullfceargs,
-  .redraw_class_1 = returnnullfceargs,
-  .redraw_class_2 = returnnullfceargs,
-  .preload_function = returnnullfceargs,
-};
 
 
-const Menu1 RTDS_Menu_Detail PROGMEM = {
-  .name = nastaveni_rtds,
-  .button_1 = {button_back, button_rtds_delete, button_rtds_name, button_rtds_subscribe},
-  .button_2 = {NULL},
-  .function_1 = {f_show_rtds_info_dynamics},
-  .switch_1 = {NULL},
-  .dyn_button = {NULL},
-  .symbol_button_1 = {NULL},
-  .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {NULL},
-  .len_button_1 = 4,
-  .len_button_2 = 0,
-  .len_function_1 = 1,
-  .len_switch_1 = 0,
-  .len_dyn_button_1 = 0,
-  .len_symbol_button_1 = 0,
-  .len_dyn_symbol_1 = 0,
-  .len_dyn_select_box_1 = 0,
-  .idx = MENU_NASTAVENI_RTDS_DETAIL,
-  .x = 0,
-  .y = 0,
-  .size_x = 480,
-  .size_y = 320,
-  .atributes = (1 << MENU_ATTRIBUTES_CLEAN_DISPLAY),
-  .color_background = WHITE,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .redraw_class_0 = returnnullfceargs,
-  .redraw_class_1 = returnnullfceargs,
-  .redraw_class_2 = returnnullfceargs,
-  .preload_function = returnnullfceargs,
-};
 
 
 
@@ -845,37 +638,7 @@ const Menu1 RegulatorMenu PROGMEM = {
 
 
 
-const Menu1 SelectMenuDefaultTemp PROGMEM = {
-  .name = text_select_default_temp,
-  .button_1 = {button_back},
-  .button_2 = {NULL},
-  .function_1 = {f_show_date, f_vertical_slider_default_temp, f_show_default_decorate},
-  .switch_1 = {NULL},
-  .dyn_button = {NULL},
-  .symbol_button_1 = {slider_menu_plus_default_temp, slider_menu_minus_default_temp},
-  .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {button_select_show_default_temp},
-  .len_button_1 = 1,
-  .len_button_2 = 0,
-  .len_function_1 = 3,
-  .len_switch_1 = 0,
-  .len_dyn_button_1 = 0,
-  .len_symbol_button_1 = 2,
-  .len_dyn_symbol_1 = 0,
-  .len_dyn_select_box_1 = 1,
-  .idx = MENU_SELECT_DEFAULT_TEMP,
-  .x = 0,
-  .y = 0,
-  .size_x = 480,
-  .size_y = 320,
-  .atributes = (1 << MENU_ATTRIBUTES_CLEAN_DISPLAY),
-  .color_background = WHITE,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .redraw_class_0 = returnnullfceargs,
-  .redraw_class_1 = returnnullfceargs,
-  .redraw_class_2 = returnnullfceargs,
-  .preload_function = returnnullfceargs,
-};
+
 
 
 
@@ -1113,14 +876,15 @@ const Menu1 MenuProgramator PROGMEM = {
 
 
 const MenuAll Menu_All PROGMEM = {
-  .len_menu1 = 10,
-  .len_menu2 = 6,
-  .len_menu3 = 6,
-  .len_menu4 = 0,
-  .ListMenu1 = {HlavniMenu, NastaveniMenu, FunkceMenu, OneWireMenu, TDSMenu, DialogSetVariable, DialogSelectProgramForTerm, DialogSetupProgramForTerm, MenuProgramator, MenuNastaveniSite},
-  .ListMenu2 = {DialogKyeboardAlfa, DialogKyeboardNumber, DialogYESNO, RegulatorMenu, List_RTDS_Menu, RTDS_Menu_Detail},
-  .ListMenu3 = {SelectMenuDefaultTemp, RingSetup, DialogSelectTermMode, DialogSelectRing, DialogSelectInputSensorsForTerm, DialogSelectPIDSensor},
-  .ListMenu4 = {},
+  .len_menu1 = 5,
+  .len_menu2 = 4,
+  .len_menu3 = 3,
+  .len_menu4 = 4,
+
+  .ListMenu1 = {HlavniMenu, MenuNastaveniSite, OneWireMenu, MenuNastaveniCas, SelectMenuDefaultTemp},
+  .ListMenu2 = {DialogYESNO, DialogSetVariable, DialogKyeboardAlfa, DialogOK},
+  .ListMenu3 = {TDSMenu, RTDS_Menu_Detail, List_RTDS_Menu},
+  .ListMenu4 = {SystemSettingsMenu, New_NastaveniMenu, PeriferieSettingsMenu, New_DisplaySettingMenu},
 };
 
 
@@ -4914,6 +4678,17 @@ void click_tds_deassociate_onewire(uint16_t args1, uint16_t idx, uint8_t args3)
   tds_set_clear_wrom_id(idx);
   MenuHistoryPrevMenu(0, 0, 0);
 }
+
+void clik_button_onewire_scan_bus(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char str1[32];
+  Global_HWwirenum = 0;
+  one_hw_search_device(0);
+  tds_update_associate();
+  MenuHistoryNextMenu(MENU_DIALOG_OK, 0, 0);
+  sprintf(str1, "Nalezeno: %d novych 1Wire", Global_HWwirenum);
+  strcpy(dialog_text, str1);
+}
 //////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4988,11 +4763,7 @@ void click_rtds_setting_sensor(uint16_t args1, uint16_t args2, uint8_t loop_idx)
     MenuHistoryNextMenu(MENU_NASTAVENI_RTDS_DETAIL, loop_idx, 0);
   }
 }
-//////////////////////////////
-void click_select_default_temp(uint8_t args1, uint8_t args2)
-{
 
-}
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// funkce ktera vraci hodnoty pro zobrazeni, vrazi nazev, teplotu, navratova hodnota, zda jsou cisla aktualne platna
 uint8_t get_global_temp(uint8_t device, char*name, float *temp)
@@ -5611,21 +5382,35 @@ uint8_t display_enable_show_term_mode_prog(uint16_t args1, uint16_t args2, uint8
 }
 
 
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 void button_click_ntp_sync_time(uint16_t args1, uint16_t args2, uint8_t args3)
 {
+  char str1[32];
   NTPClient timeClient(udpClient);
   if (ntp_update(&timeClient, &rtc, time_get_offset()) == 1)
   {
     selftest_clear_0(SELFTEST_ERR_NTP);
+    MenuHistoryNextMenu(MENU_DIALOG_OK, 0, 0);
+    strcpy_P(dialog_text, new_text_ok_ntp_time);
   }
   else
   {
     selftest_set_0(SELFTEST_ERR_NTP);
-
+    MenuHistoryNextMenu(MENU_DIALOG_OK, 0, 0);
+    strcpy_P(dialog_text, new_text_error_ntp_time);
   }
 }
 
+
+//////////////////////////
+void click_button_default_value(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  EEPROM.write(set_default_values, 255);
+  resetFunc();
+}
 
 
 
