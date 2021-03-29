@@ -22,6 +22,8 @@
 #define set_default_values 90
 #define my_default_ring 92
 #define my_default_show_temp 93
+#define my_brightness_values 94
+#define my_brightness_mode 95
 
 
 #define MAX_RTDS 10
@@ -100,6 +102,9 @@
 #define NEW_MENU_PERIFERIE_NASTAVENI_SCREEN 151
 #define NEW_MENU_DISPLAY_NASTAVENI_SCREEN 152
 #define NEW_MENU_NASTAVENI_CASU_SCREEN 153
+#define NEW_MENU_NASTAVENI_MQTT_SCREEN 154
+#define NEW_MENU_DISPLAY_NASTAVENI_BRIGTHNESS_SCREEN 155
+#define NEW_MENU_ABOUT_DEVICE 156
 
 
 #define MENU_ATTRIBUTES_CLEAN_DISPLAY 0

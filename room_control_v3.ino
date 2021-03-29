@@ -20,6 +20,8 @@
       - humadity
       - vitr
 
+    15. umet nastavit promeou seznam_server pro ucel testovani konektivity, port
+
   zapojeni pinu z leva do prava hneda -> zluta -> oranzova -> zelena -> cervena -> cerna
 */
 
@@ -41,6 +43,7 @@
 #include "RTDSMenu.h"
 #include "MenuSettingsTime.h"
 
+#include "MenuNastaveniMqtt.h"
 
 SoftSPIB swSPI(STORAGE_MOSI, STORAGE_MISO, STORAGE_CLK);
 
@@ -48,15 +51,17 @@ SoftSPIB swSPI(STORAGE_MOSI, STORAGE_MISO, STORAGE_CLK);
 RTC_DS1307 rtc;
 DateTime now;
 
+
 EthernetClient ethClient;
+EthernetClient ethClient1;
 EthernetUDP udpClient;
 PubSubClient mqtt_client(ethClient);
-
+EthernetServer http_server(80);
 
 
 RF24 radio(NRF_CE, NRF_CS);
-//RF24Network network(radio);
-//RF24Mesh mesh(radio, network);
+RF24Network network(radio);
+RF24Mesh mesh(radio, network);
 
 Generic_LM75_11Bit lm75_temp;
 
@@ -100,10 +105,14 @@ long load = 0;
 long load_max = 0;
 long load_min = 0xffffffff;
 
-uint16_t light_min = 0;
+uint16_t light_min = 0xffff;
 uint16_t light_max = 0;
-uint8_t auto_jas = 0;
 uint8_t watchdog_state = 0;
+
+uint8_t brigthness_display_values = 0;
+uint8_t brigthness_display_auto_values = 0;
+
+uint8_t brigthness_display_mode = 0;
 
 uint8_t use_rtds = 0;
 uint8_t use_tds = 0;
@@ -113,6 +122,7 @@ uint8_t menu_slider_data_max;
 uint8_t menu_slider_data_min;
 uint8_t menu_slider_data_max_element;
 
+float internal_temp;
 
 
 struct tt_menu_dialog_variable
@@ -876,15 +886,15 @@ const Menu1 MenuProgramator PROGMEM = {
 
 
 const MenuAll Menu_All PROGMEM = {
-  .len_menu1 = 5,
+  .len_menu1 = 6,
   .len_menu2 = 4,
   .len_menu3 = 3,
-  .len_menu4 = 4,
+  .len_menu4 = 6,
 
-  .ListMenu1 = {HlavniMenu, MenuNastaveniSite, OneWireMenu, MenuNastaveniCas, SelectMenuDefaultTemp},
+  .ListMenu1 = {HlavniMenu, MenuNastaveniSite, OneWireMenu, MenuNastaveniCas, SelectMenuDefaultTemp, MenuNastaveniMQTT},
   .ListMenu2 = {DialogYESNO, DialogSetVariable, DialogKyeboardAlfa, DialogOK},
   .ListMenu3 = {TDSMenu, RTDS_Menu_Detail, List_RTDS_Menu},
-  .ListMenu4 = {SystemSettingsMenu, New_NastaveniMenu, PeriferieSettingsMenu, New_DisplaySettingMenu},
+  .ListMenu4 = {SystemSettingsMenu, New_NastaveniMenu, PeriferieSettingsMenu, New_DisplaySettingMenu, New_DisplaySetting_Brigthness, AboutDeviceMenu},
 };
 
 
@@ -1605,7 +1615,12 @@ uint8_t display_function_get_variable_args(uint8_t idx)
   return menu_dialog_variable[idx].args;
 }
 
-float display_function_get_variable(uint8_t idx)
+float display_function_get_variable_float(uint8_t idx)
+{
+  return menu_dialog_variable[idx].variable_now ;
+}
+
+int display_function_get_variable_int(uint8_t idx)
 {
   return menu_dialog_variable[idx].variable_now ;
 }
@@ -1685,12 +1700,12 @@ void display_element_set_string_del_char(uint16_t args1, uint16_t idx, uint8_t a
 */
 void menu_tds_save_offset(uint16_t args1, float args2, uint8_t args3)
 {
-  tds_set_offset(display_function_get_variable_args(args1), display_function_get_variable(args1) * 1000);
+  tds_set_offset(display_function_get_variable_args(args1), display_function_get_variable_float(args1) * 1000);
 }
 
 void menu_tds_save_period(uint16_t args1, float args2, uint8_t args3)
 {
-  tds_set_period(display_function_get_variable_args(args1), display_function_get_variable(args1));
+  tds_set_period(display_function_get_variable_args(args1), display_function_get_variable_float(args1));
 }
 /////
 void menu_tds_save_name(uint16_t args1, uint16_t args2, uint8_t args3)
@@ -2241,7 +2256,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   uint8_t active;
 
   NTPClient timeClient(udpClient);
-
+  DateTime ted;
   for (uint8_t j = 0; j < 128; j++) my_payload[j] = 0;
   ////
   mqtt_receive_message++; /// inkrementuji promenou celkovy pocet prijatych zprav
@@ -2279,7 +2294,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   if (strcmp(str1, topic) == 0)
   {
     mqtt_process_message++;
-    if (ntp_update(&timeClient, &rtc, time_get_offset()) == 1)
+    if (ntp_update(&timeClient, &rtc, time_get_offset(), &ted) == 1)
       selftest_clear_0(SELFTEST_ERR_NTP);
     else
       selftest_set_0(SELFTEST_ERR_NTP);
@@ -2815,6 +2830,16 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
     }
   }
 
+  //// thermctl-in/XXXXX/brightness
+  strcpy_P(str1, thermctl_header_in);
+  strcat(str1, device.nazev);
+  strcat(str1, "/brightness");
+  if (strcmp(str1, topic) == 0)
+  {
+    mqtt_process_message++;
+    my_touch.TP_SetBacklight(atoi(my_payload));
+  }
+
   //// thermctl-in/XXXXX/reload
   strcpy_P(str1, thermctl_header_in);
   strcat(str1, device.nazev);
@@ -2935,19 +2960,19 @@ void send_device_status(void)
   if (mqtt_client.connected())
   {
     strcpy(str_topic, "status/uptime");
-    itoa(uptime, payload, 10);
+    sprintf(payload, "%ld", uptime);
     send_mqtt_general_payload(&mqtt_client, str_topic, payload);
     ///
     strcpy(str_topic, "status/brigthness");
+    itoa(brigthness_display_values, payload, 10);
+    send_mqtt_general_payload(&mqtt_client, str_topic, payload);
+    ///
+    strcpy(str_topic, "status/light");
     itoa(light_curr, payload, 10);
     send_mqtt_general_payload(&mqtt_client, str_topic, payload);
     ///
-    //strcpy(str_topic, "status/light");
-    //itoa(jas_disp, payload, 10);
-    //send_mqtt_general_payload(&mqtt_client, str_topic, payload);
-    ///
     strcpy(str_topic, "status/auto_brigthness");
-    itoa(auto_jas, payload, 10);
+    itoa(brigthness_display_auto_values, payload, 10);
     send_mqtt_general_payload(&mqtt_client, str_topic, payload);
     ///
     strcpy(str_topic, "status/load_min");
@@ -3333,12 +3358,12 @@ float prepocet_proudu(uint16_t vstup)
 ///
 /////////////// Casove funkce ///////////////////////////////////////////////////////////////////
 /// time_get_offset - ziska casovy offset, letni/zimni cas
-uint8_t time_get_offset(void)
+int8_t time_get_offset(void)
 {
   return EEPROM.read(time_offset);
 }
 /// time_set_offset - nastavi casovy offset letni/zimni
-void time_set_offset(uint8_t offset)
+void time_set_offset(int8_t offset)
 {
   EEPROM.write(time_offset, offset);
 }
@@ -3594,8 +3619,6 @@ void setup()
 
   my_lcd.Init_LCD();
   my_lcd.Set_Rotation(3);
-  my_touch.TP_Set_Rotation(3);
-  my_touch.TP_Init(my_lcd.Get_Rotation(), my_lcd.Get_Display_Width(), my_lcd.Get_Display_Height());
   my_lcd.Fill_Screen(WHITE);
   my_lcd.Set_Draw_color(BLUE);
   strcpy_P(str1, term_title);
@@ -3733,6 +3756,8 @@ void setup()
         device_get_name(hostname);
         default_ring = NO_DEFAULT_RING;
         set_default_ring(default_ring);
+        EEPROM.write(my_brightness_values, 50);
+        EEPROM.write(my_brightness_mode, 0);
       }
       else
       {
@@ -3816,6 +3841,7 @@ void setup()
       strcpy_P(str1, text_touchscreen);
       show_string(str1, 30, 50 + (init * 10), 1, GREEN, WHITE, 0 );
       my_touch.TP_Init(my_lcd.Get_Rotation(), my_lcd.Get_Display_Width(), my_lcd.Get_Display_Height());
+      my_touch.TP_Set_Rotation(3);
       for (uint8_t i = 1; i < 8; i++)
       {
         digitalWrite(LED, LOW);
@@ -3823,9 +3849,10 @@ void setup()
         delay(100);
         digitalWrite(LED, HIGH);
         delay(100);
-
       }
-      my_touch.TP_SetBacklight(50);
+      brigthness_display_values = EEPROM.read(my_brightness_values);
+      brigthness_display_mode = EEPROM.read(my_brightness_mode);
+      my_touch.TP_SetBacklight(brigthness_display_values * 2);
     }
     ///
     /// inicializace ds2482
@@ -3881,9 +3908,12 @@ void setup()
       delay(100);
       Ethernet.init(ETH_CS);
       Ethernet.begin(device.mac, device.myIP, device.myDNS, device.myGW, device.myMASK);
+      w5500.setRetransmissionCount(2);
+      w5500.setRetransmissionTime(600);
       strcpy_P(str1, text_ethernet_rozhrani);
       show_string(str1, 30, 50 + (init * 10), 1, GREEN, WHITE, 0 );
       delay(100);
+      http_server.begin();
     }
     ///
     ///inicializace mqtt rozhrani
@@ -3891,6 +3921,7 @@ void setup()
     {
       strcpy_P(str1, text_mqtt_rozhrani);
       show_string(str1, 30, 50 + (init * 10), 1, GREEN, WHITE, 0 );
+
       mqtt_client.setServer(device.mqtt_server, device.mqtt_port);
       mqtt_client.setCallback(mqtt_callback);
       send_mqtt_set_header(thermctl_header_out);
@@ -4022,6 +4053,18 @@ void loop() {
   mqtt_client.loop();
 
 
+  if (ethClient1.connected())
+    ethClient1.stop();
+
+  EthernetClient http_client = http_server.available();
+  if (http_client.connected())
+  {
+    while (http_client.available())
+      http_client.read();
+    http_client.write("ahoj");
+  }
+
+
   if (draw_menu(false) == true)
     draw_menu(true);
 
@@ -4040,7 +4083,6 @@ void loop() {
   {
     milis_10s += 10000;
     menu_redraw10s = 1;
-
     //device_get_name(str1);
     send_mqtt_onewire();
     send_mqtt_status(&mqtt_client);
@@ -4050,13 +4092,26 @@ void loop() {
     send_mqtt_program();
     thermostat();
     for (uint8_t idx = 0; idx < MAX_THERMOSTAT; idx++)
-      if (tds_used(idx) == 1)
+      if (thermostat_ring_get_active(idx) != RING_FREE)
         mqtt_send_pid_variable(idx);
     send_mqtt_remote_tds_status();
     //send_network_config(&mqtt_client);
     //send_light_controler();
     //send_know_device();
     //send_mesh_status();
+    ///
+    internal_temp = lm75_temp.readTemperatureC();
+    ///
+    if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) != 0) // Automatika
+    {
+      brigthness_display_auto_values = (float) (light_curr - light_max) / (light_max - light_min) * 200;
+      if (brigthness_display_auto_values > 200)
+        brigthness_display_auto_values = 200;
+      if (brigthness_display_auto_values < 5)
+        brigthness_display_auto_values = 5;
+      my_touch.TP_SetBacklight(brigthness_display_auto_values);
+    }
+
   }
 
   if ((millis() - milis_1s) >= 1000)
@@ -4103,16 +4158,6 @@ void loop() {
   /// automaticke nastaveni jasu displaye
   if (light_curr < light_min) light_min = light_curr;
   if (light_curr > light_max) light_max = light_curr;
-  ///
-  /*
-    if (jas_disp == 0) // Automatika
-    {
-      auto_jas = (float) (light_curr - light_min) / (light_max - light_min) * 255;
-      itmp = auto_jas;
-      if (itmp > 240) itmp = 240;
-      analogWrite(PWM_DISP, itmp);
-    }
-  */
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------------
@@ -4207,7 +4252,7 @@ void display_element_show_date_1(uint16_t x, uint16_t y, uint16_t size_x, uint16
   }
   else
   {
-    strcpy(str1, "--.--.----");
+    strcpy_P(str1, new_text_date_error);
   }
   my_lcd.Set_Draw_color(WHITE); my_lcd.Draw_Fast_HLine(x, y, 142); my_lcd.Draw_Fast_HLine(x, y + 1, 142); show_string(str1, x, y + 2, 3, BLACK, WHITE, 0);
 }
@@ -4686,6 +4731,7 @@ void clik_button_onewire_scan_bus(uint16_t args1, uint16_t args2, uint8_t args3)
   one_hw_search_device(0);
   tds_update_associate();
   MenuHistoryNextMenu(MENU_DIALOG_OK, 0, 0);
+  /// TODO text
   sprintf(str1, "Nalezeno: %d novych 1Wire", Global_HWwirenum);
   strcpy(dialog_text, str1);
 }
@@ -4943,7 +4989,6 @@ void button_click_deactivate_term_ring(uint16_t args1, uint16_t args2, uint8_t a
 }
 
 /****************************************************************************************************************/
-//saric
 /*
     funkce pro vyber programu pro regulator
     funkce vrati 1 pokud je vybrany dany program
@@ -5384,17 +5429,185 @@ uint8_t display_enable_show_term_mode_prog(uint16_t args1, uint16_t args2, uint8
 
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void button_change_brightness_display_get_status_string(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
+{
+  char str2[8];
+  strcpy_P(line1, new_text_jas_display);
+  if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) != 0 )
+  {
+    strcpy_P(line2, new_text_jas_display_automat);
+    itoa(brigthness_display_auto_values / 2, str2, 10);
+    strcat(line2, str2);
+    strcat(line2, "%");
+  }
+  if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) == 0 )
+  {
+    strcpy_P(line2, new_text_jas_display_manual);
+    itoa(brigthness_display_values, str2, 10);
+    strcat(line2, str2);
+    strcat(line2, "%");
+  }
+}
 
+void button_change_brightness_display_dyn_button_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  MenuHistoryNextMenu(NEW_MENU_DISPLAY_NASTAVENI_BRIGTHNESS_SCREEN, 0, 0);
+}
+
+
+void button_set_brightness_auto_shutdown_get_status_string(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
+{
+  strcpy(line1, "automaticke vypnuti displaye");
+  strcpy(line2, "OFF");
+}
+
+
+void button_set_brightness_auto_shutdown_dyn_symbol_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  printf("ukaz dialog vyberu casu vypnuti displaye\n");
+}
+
+
+uint8_t button_set_brightness_auto_shutdown_get_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  return 1;
+
+}
+
+
+
+uint8_t switch_brightness_automode_get_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t ret = 0;
+  if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) != 0 ) ret = 1;
+  return ret;
+}
+
+void switch_brightness_automode_get_status_string(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
+{
+  char str2[8];
+  if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) != 0 )
+  {
+    strcpy_P(line1, new_text_jas_display_automat);
+    itoa(brigthness_display_auto_values / 2, str2, 10);
+    strcat(line1, str2);
+    strcat(line1, "%");
+  }
+  if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) == 0 )
+  {
+    strcpy_P(line1, new_text_jas_display_manual);
+  }
+}
+
+void switch_brightness_automode_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t fake = 0;
+  if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) != 0 )
+  {
+    cbi(brigthness_display_mode, DISPLAY_MODE_STATUS_BIT);
+    my_touch.TP_SetBacklight(brigthness_display_values * 2);
+    goto switch_brightness_automode_onclick_end;
+  }
+  if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) == 0 )
+  {
+    sbi(brigthness_display_mode, DISPLAY_MODE_STATUS_BIT);
+  }
+switch_brightness_automode_onclick_end:
+  EEPROM.write(my_brightness_mode, brigthness_display_mode);
+}
+
+uint8_t preload_display_setting_brightness(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  display_function_set_variable(brigthness_display_values, 5, 100, 5, 0, NUMBER_TYPE_INT,  H_TRUE, 0, &helper_display_set_brightness);
+}
+
+
+
+void helper_display_set_brightness(uint16_t args1, float args2, uint8_t args3)
+{
+  brigthness_display_values = args3;
+  my_touch.TP_SetBacklight(brigthness_display_values * 2);
+  EEPROM.write(my_brightness_values, brigthness_display_values);
+}
+
+
+uint8_t display_enable_show_brightness_manual_mode(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t ret = 0;
+  if (switch_brightness_automode_get_status_fnt(0, 0, 0) == 0)
+    ret = 1;
+  return ret;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void display_element_show_network_detail(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
+{
+  char str1[36];
+  char str2[16];
+  my_lcd.Set_Draw_color(BLACK);
+  my_lcd.Draw_Rectangle(x, y, x + size_x , y + size_y);
+
+  /// mac adresa
+  strcpy_P(str1, new_text_device_mac);
+  strcat(str1, ": ");
+  createString(str2, '.', device.mac, 6, 16);
+  strcat(str1, str2);
+  show_string(str1, x + 5 , y + 10 , 1, BLACK, WHITE, 0);
+  /// nazev
+  strcpy_P(str1, new_text_device_nazev);
+  strcat(str1, ": ");
+  strcat(str1, device.nazev);
+  show_string(str1, x + 5 , y + 25 , 1, BLACK, WHITE, 0);
+  /// automaticky z dhcp
+  strcpy_P(str1, new_text_device_dhcp);
+  strcat(str1, ": ");
+  strcat(str1, "TODO");
+  show_string(str1, x + 5 , y + 40 , 1, BLACK, WHITE, 0);
+  /// ip adresa
+  ip2CharArray(device.myIP, str2);
+  strcpy_P(str1, new_text_device_ip);
+  strcat(str1, ": ");
+  strcat(str1, str2);
+  show_string(str1, x + 5 , y + 55 , 1, BLACK, WHITE, 0);
+  /// ip maska
+  ip2CharArray(device.myMASK, str2);
+  strcpy_P(str1, new_text_device_mask);
+  strcat(str1, ": ");
+  strcat(str1, str2);
+  show_string(str1, x + 5 , y + 70 , 1, BLACK, WHITE, 0);
+  /// ip gw
+  ip2CharArray(device.myGW, str2);
+  strcpy_P(str1, new_text_device_gw);
+  strcat(str1, ": ");
+  strcat(str1, str2);
+  show_string(str1, x + 5 , y + 85 , 1, BLACK, WHITE, 0);
+  /// ip dns serveru
+  ip2CharArray(device.myDNS, str2);
+  strcpy_P(str1, new_text_device_dns);
+  strcat(str1, ": ");
+  strcat(str1, str2);
+  show_string(str1, x + 5 , y + 100 , 1, BLACK, WHITE, 0);
+}
 ////////////////////////////////////////////////////////////////////////////////////////////
+/*
+   Obsluha tlacitka synchronizace NTP casu
+*/
 void button_click_ntp_sync_time(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  char str1[32];
+  char str2[6];
   NTPClient timeClient(udpClient);
-  if (ntp_update(&timeClient, &rtc, time_get_offset()) == 1)
+  DateTime ted;
+  if (ntp_update(&timeClient, &rtc, time_get_offset(), &ted) == 1)
   {
     selftest_clear_0(SELFTEST_ERR_NTP);
     MenuHistoryNextMenu(MENU_DIALOG_OK, 0, 0);
+    sprintf(str2, "%d:%02d", ted.hour(), ted.minute());
     strcpy_P(dialog_text, new_text_ok_ntp_time);
+    strcat(dialog_text, " ");
+    strcat(dialog_text, str2);
   }
   else
   {
@@ -5403,16 +5616,140 @@ void button_click_ntp_sync_time(uint16_t args1, uint16_t args2, uint8_t args3)
     strcpy_P(dialog_text, new_text_error_ntp_time);
   }
 }
+////////////////////////////////////////////////////////////////////////////////
+/*
+   Obsluha tlacitka casovy offset
+*/
+void button_click_set_time_offset(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  MenuHistoryNextMenu(MENU_DIALOG_SET_VARIABLE, 0, 0);
+  display_function_set_variable(time_get_offset(), -12, 12, 1, 0, NUMBER_TYPE_INT, H_FALSE, 0, &helper_set_menu_time_offset);
+}
+/*
+   obsluzna funkce nastaveni offsetu casu
+*/
+void helper_set_menu_time_offset(uint16_t args1, float args2, uint8_t args3)
+{
+  time_set_offset((int8_t)display_function_get_variable_int(0));
+}
 
 
-//////////////////////////
+////////////////////////////////////////////////////////////////////
+/*
+   Obsluha tlacitka vychozi hodnoty
+*/
 void click_button_default_value(uint16_t args1, uint16_t args2, uint8_t args3)
 {
+  /// TODO dialog ANO/NE
   EEPROM.write(set_default_values, 255);
   resetFunc();
+}
+///////////////////////////////////////////////////////////////////
+/*
+   Obsluha tlacitka kontrola konektivity
+*/
+void button_set_network_test_connection_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  check_connectivity_connection();
+  /// TODO - pridat do selfcheck testu
+}
+///////////////////////////////////////////////////////////////////
+/*
+   Funkce ktera overi zda jde udelat SYN->ACK na vzdaleny server
+   return
+      1 - OK
+      0 - ERR
+*/
+uint8_t check_connectivity_connection(void)
+{
+  char server[16];
+  uint8_t ret = 0;
+  strcpy_P(server, seznam_server);
+  if (!ethClient1.connected())
+  {
+    if (ethClient1.connect(server, 80))
+    {
+      MenuHistoryNextMenu(MENU_DIALOG_OK, 0, 0);
+      strcpy_P(dialog_text, new_text_ok_connect_seznam);
+      ret = 1;
+    }
+    else
+    {
+      MenuHistoryNextMenu(MENU_DIALOG_OK, 0, 0);
+      strcpy_P(dialog_text, new_text_err_connect_seznam);
+      ret = 0;
+    }
+  }
+  return ret;
 }
 
 
 
+
+void display_element_show_about_device(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
+{
+  char str1[32];
+  char str2[8];
+  strcpy_P(str1, new_text_input_volt);
+  dtostrf(prepocet_napeti(dvanact, CONST_PREVOD_DVANACTV), 4, 2, str2);
+  strcat(str1, str2);
+  strcat(str1, "V");
+  show_string(str1, x + 5 , y + 10 , 1, BLACK, WHITE, 0);
+
+  strcpy_P(str1, new_text_pet_volt);
+  strcat(str1, ": ");
+  dtostrf(prepocet_napeti(petnula, CONST_PREVOD_PETV), 4, 2, str2);
+  strcat(str1, str2);
+  strcat(str1, "V");
+  show_string(str1, x + 5 , y + 25 , 1, BLACK, WHITE, 0);
+
+  strcpy_P(str1, new_text_tritri_volt);
+
+  dtostrf(prepocet_napeti(tritri, CONST_PREVOD_TRIV), 4, 2, str2);
+  strcat(str1, str2);
+  strcat(str1, "V");
+  show_string(str1, x + 5 , y + 40 , 1, BLACK, WHITE, 0);
+
+  strcpy_P(str1, new_text_consume_ampere);;
+  dtostrf(prepocet_proudu(proud), 4, 2, str2);
+  strcat(str1, str2);
+  strcat(str1, "mA");
+  show_string(str1, x + 5 , y + 55 , 1, BLACK, WHITE, 0);
+
+  strcpy_P(str1, new_text_internal_temp);
+  dtostrf(internal_temp, 4, 2, str2);
+  strcat(str1, str2);
+  strcat(str1, "C");
+  show_string(str1, x + 5 , y + 70 , 1, BLACK, WHITE, 0);
+
+  strcpy_P(str1, new_text_selfcheck_test);
+  itoa(selftest_data, str2, 16);
+  strcat(str1, str2);
+  show_string(str1, x + 5 , y + 85 , 1, BLACK, WHITE, 0);
+
+  strcpy_P(str1, new_text_mqtt_send);
+  itoa(mqtt_send_message, str2, 16);
+  strcat(str1, str2);
+  show_string(str1, x + 5 , y + 100 , 1, BLACK, WHITE, 0);
+
+  strcpy_P(str1, new_text_mqtt_receive);
+  itoa(mqtt_receive_message, str2, 16);
+  strcat(str1, str2);
+  show_string(str1, x + 5 , y + 115 , 1, BLACK, WHITE, 0);
+
+  strcpy_P(str1, new_text_mqtt_processed);
+  itoa(mqtt_process_message, str2, 16);
+  strcat(str1, str2);
+  show_string(str1, x + 5 , y + 130 , 1, BLACK, WHITE, 0);
+
+  strcpy_P(str1, new_text_mqtt_error);
+  itoa(mqtt_error, str2, 16);
+  strcat(str1, str2);
+  show_string(str1, x + 5 , y + 145 , 1, BLACK, WHITE, 0);
+  
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////

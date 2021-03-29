@@ -11,6 +11,7 @@
 #include <SPI.h>
 #include <Ethernet2.h>
 #include <EthernetUdp2.h>
+#include <utility/w5500.h>
 
 #include "saric_utils.h"
 #include <PID_v1.h>
@@ -78,6 +79,9 @@
 #define SELFTEST_MQTT_LINK 5
 #define SELFTEST_ETH_LINK 6
 #define SELFTEST_RESTART_NEEDED 7
+
+#define DISPLAY_MODE_STATUS_BIT 7
+
 
 /// null fake funkce ///
 uint8_t returnnullfceargs(uint16_t args1, uint16_t args2, uint8_t args3);
@@ -245,6 +249,7 @@ void button_get_term_mode_labels(uint8_t args1, uint8_t args2, uint8_t args3, ch
 ///////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+const char seznam_server[] PROGMEM = "www.seznam.cz";
 
 const char new_text_nastaveni_system_full[] PROGMEM = "Nastaveni systemu";
 const char new_text_nastaveni_system[] PROGMEM = "N. systemu";
@@ -270,6 +275,53 @@ const char new_text_ok[] PROGMEM = "OK";
 const char new_text_ok_ntp_time[] PROGMEM = "Aktualizace NTP OK";
 const char new_text_error_ntp_time[] PROGMEM = "Aktualizace NTP ERROR";
 
+const char new_text_nastaveni_mqtt_pripojeni[] PROGMEM = "Nastaveni MQTT";
+
+const char new_text_jas_display[] PROGMEM = "Nastaveni jasu displaye";
+
+
+const char new_text_device_nazev[] PROGMEM = "Nazev zarizeni";
+const char new_text_device_ip[] PROGMEM = "IP adresa";
+const char new_text_device_mask[] PROGMEM = "IP maska";
+const char new_text_device_gw[] PROGMEM = "Vychozi brana";
+const char new_text_device_dns[] PROGMEM = "DNS server";
+const char new_text_device_dhcp[] PROGMEM = "DHCP";
+const char new_text_device_mac[] PROGMEM = "MAC adresa";
+
+const char new_text_set_network_dhcp[] PROGMEM = "Z DHCP serveru";
+const char new_text_set_network_ip[] PROGMEM = "Nastaveni IP";
+const char new_text_set_network_mask[] PROGMEM = "Nastaveni masky site";
+const char new_text_set_network_gw[] PROGMEM = "Nastaveni vychozi brany";
+const char new_text_set_network_dns[] PROGMEM = "Nastaveni DNS serveru";
+const char new_text_set_network_mac[] PROGMEM = "Nastaveni MAC adresy";
+const char new_text_set_network_name[] PROGMEM = "Nastaveni nazvu zarizeni";
+
+const char new_text_set_network_test_connection[] PROGMEM = "Test pripojeni";
+const char new_text_ntp_set_server[] PROGMEM = "Nastaveni NTP serveru";
+const char new_text_time_set_offset[] PROGMEM = "Posunuti casu";
+const char new_text_time_set_time_manualy[] PROGMEM = "Rucni nastaveni casu";
+const char new_text_time_set_date_manualy[] PROGMEM = "Rucni nastaveni datumu";
+
+
+const char new_text_ok_connect_seznam[] PROGMEM = "Konektivita OK";
+const char new_text_err_connect_seznam[] PROGMEM = "Konektivita ERROR";
+
+const char new_text_switch_brightness_automode[] PROGMEM = "Automaticky jas";
+const char new_text_jas_display_automat[] PROGMEM = "Automaticke rizeni";
+const char new_text_jas_display_manual[] PROGMEM =  "Manualni rizeni ";
+
+
+const char new_text_input_volt[] PROGMEM = "Vstupni napeti ";
+const char new_text_pet_volt[] PROGMEM = "Interni napeti 5.0 ";
+const char new_text_tritri_volt[] PROGMEM = "Interni napeti 3.3 ";
+const char new_text_consume_ampere[] PROGMEM = "Odber proudu: ";
+const char new_text_internal_temp[] PROGMEM = "Interni teplota: ";
+const char new_text_selfcheck_test[] PROGMEM = "Selfcheck: ";
+const char new_text_mqtt_send[] PROGMEM = "MQTT odeslanych: ";
+const char new_text_mqtt_receive[] PROGMEM = "MQTT prijatych: ";
+const char new_text_mqtt_processed[] PROGMEM = "MQTT zpracovanych: ";
+const char new_text_mqtt_error[] PROGMEM = "MQTT v chybe: ";
+const char new_text_date_error[] PROGMEM = "--.--.----";
 /***************************************************************/
 /*
         spolecne display funkce
