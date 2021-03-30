@@ -6,6 +6,8 @@
 /// tlacitkem si rucne synchronizuji cas
 void button_click_ntp_sync_time(uint16_t args1, uint16_t args2, uint8_t args3);
 void button_click_set_time_offset(uint16_t args1, uint16_t args2, uint8_t args3);
+void button_time_set_time_manualy_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
+void button_time_set_date_manualy_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
 
 
 
@@ -56,7 +58,7 @@ const Element_Button_1 button_time_set_time_manualy PROGMEM = {
   .size_y = 40,
   .font_size = 1,
   .args = 0,
-  .onclick = nullfce, //button_click_ntp_sync_time,
+  .onclick = button_time_set_time_manualy_onclick,
   .redraw_class = REDRAW_BUTTON,
   .enable_show = display_enable_show,
 };
@@ -69,7 +71,7 @@ const Element_Button_1 button_time_set_date_manualy PROGMEM = {
   .size_y = 40,
   .font_size = 1,
   .args = 0,
-  .onclick = nullfce, //button_click_ntp_sync_time,
+  .onclick = button_time_set_date_manualy_onclick,
   .redraw_class = REDRAW_BUTTON,
   .enable_show = display_enable_show,
 };

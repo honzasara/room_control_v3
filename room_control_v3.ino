@@ -19,8 +19,8 @@
       - co2
       - humadity
       - vitr
-
     15. umet nastavit promeou seznam_server pro ucel testovani konektivity, port
+    16. po upgrade casu udelat hned aktualizci obrazovky
 
   zapojeni pinu z leva do prava hneda -> zluta -> oranzova -> zelena -> cervena -> cerna
 */
@@ -887,12 +887,12 @@ const Menu1 MenuProgramator PROGMEM = {
 
 const MenuAll Menu_All PROGMEM = {
   .len_menu1 = 6,
-  .len_menu2 = 4,
+  .len_menu2 = 5,
   .len_menu3 = 3,
   .len_menu4 = 6,
 
   .ListMenu1 = {HlavniMenu, MenuNastaveniSite, OneWireMenu, MenuNastaveniCas, SelectMenuDefaultTemp, MenuNastaveniMQTT},
-  .ListMenu2 = {DialogYESNO, DialogSetVariable, DialogKyeboardAlfa, DialogOK},
+  .ListMenu2 = {DialogYESNO, DialogSetVariable, DialogKyeboardAlfa, DialogKyeboardNumber , DialogOK},
   .ListMenu3 = {TDSMenu, RTDS_Menu_Detail, List_RTDS_Menu},
   .ListMenu4 = {SystemSettingsMenu, New_NastaveniMenu, PeriferieSettingsMenu, New_DisplaySettingMenu, New_DisplaySetting_Brigthness, AboutDeviceMenu},
 };
@@ -1784,7 +1784,7 @@ void get_function_budik_text_state(uint8_t args1, uint8_t args2, uint8_t args3, 
 /// funkce, ktera vraci pocet polozek dynamickeho menu
 uint8_t get_function_keyboard_number_max_keys(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  return 11;
+  return 12;
 }
 /*
    args1 ... argument ze statickeho menu nastaveni
@@ -1796,6 +1796,7 @@ void click_keyboard_number(uint16_t args1, uint16_t args2, uint8_t args3)
   char znak;
   znak = '0' + args3;
   if (args3 == 10) znak = '.';
+  if (args3 == 11) znak = ':';
   display_element_set_string_add_char(znak);
 }
 ///////////////////////////
@@ -1807,6 +1808,7 @@ void get_function_keyboard_number_char(uint8_t args1, uint8_t args2, uint8_t arg
 {
   line1[0] = '0' + args1;
   if (args1 == 10) line1[0] = '.';
+  if (args1 == 11) line1[0] = ':';
   line2[0] = 0;
 }
 
@@ -5604,7 +5606,7 @@ void button_click_ntp_sync_time(uint16_t args1, uint16_t args2, uint8_t args3)
   {
     selftest_clear_0(SELFTEST_ERR_NTP);
     MenuHistoryNextMenu(MENU_DIALOG_OK, 0, 0);
-    sprintf(str2, "%d:%02d", ted.hour(), ted.minute());
+    sprintf(str2, "%02d:%02d", ted.hour(), ted.minute());
     strcpy_P(dialog_text, new_text_ok_ntp_time);
     strcat(dialog_text, " ");
     strcat(dialog_text, str2);
@@ -5632,8 +5634,41 @@ void helper_set_menu_time_offset(uint16_t args1, float args2, uint8_t args3)
 {
   time_set_offset((int8_t)display_function_get_variable_int(0));
 }
-
-
+/////////////////////////////////////////////////////////////////////////////////
+/*
+ * Funkce pro rucni nastaveni casu a datumu 
+ */
+void button_time_set_time_manualy_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char cas_text[10];
+  MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
+  sprintf(cas_text, "%02d:%02d:%02d", now.hour(), now.minute(), now.second());
+  display_element_set_string(cas_text, 9, 0, &helper_set_time_manualy);
+}
+void helper_set_time_manualy(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char cas_text[10];
+  uint8_t tim[3];
+  display_element_get_string(cas_text);
+  parseBytes(cas_text, ':', tim, 3, 10);
+  rtc.adjust(DateTime(now.year(), now.month(), now.day(), tim[0], tim[1], tim[2]));
+}
+////
+void button_time_set_date_manualy_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char datum_text[12];
+  MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
+  sprintf(datum_text, "%02d.%02d.%04d", now.day() , now.month() ,now.year());
+  display_element_set_string(datum_text, 11, 0, &helper_set_date_manualy);
+}
+void helper_set_date_manualy(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char datum_text[12];
+  uint16_t dat[3];
+  display_element_get_string(datum_text);
+  parseBytes(datum_text, '.', dat, 3, 10);
+  rtc.adjust(DateTime(dat[2], dat[1], dat[0], now.hour(), now.minute(), now.second()));
+}
 ////////////////////////////////////////////////////////////////////
 /*
    Obsluha tlacitka vychozi hodnoty
@@ -5685,7 +5720,11 @@ uint8_t check_connectivity_connection(void)
 
 
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
 
+   Funkce ktera zobrazuje vsechny interni veliciny vhodne k diagnostice zarizeni
+*/
 void display_element_show_about_device(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
 {
   char str1[32];
@@ -5728,25 +5767,25 @@ void display_element_show_about_device(uint16_t x, uint16_t y, uint16_t size_x, 
   show_string(str1, x + 5 , y + 85 , 1, BLACK, WHITE, 0);
 
   strcpy_P(str1, new_text_mqtt_send);
-  itoa(mqtt_send_message, str2, 16);
+  itoa(mqtt_send_message, str2, 10);
   strcat(str1, str2);
   show_string(str1, x + 5 , y + 100 , 1, BLACK, WHITE, 0);
 
   strcpy_P(str1, new_text_mqtt_receive);
-  itoa(mqtt_receive_message, str2, 16);
+  itoa(mqtt_receive_message, str2, 10);
   strcat(str1, str2);
   show_string(str1, x + 5 , y + 115 , 1, BLACK, WHITE, 0);
 
   strcpy_P(str1, new_text_mqtt_processed);
-  itoa(mqtt_process_message, str2, 16);
+  itoa(mqtt_process_message, str2, 10);
   strcat(str1, str2);
   show_string(str1, x + 5 , y + 130 , 1, BLACK, WHITE, 0);
 
   strcpy_P(str1, new_text_mqtt_error);
-  itoa(mqtt_error, str2, 16);
+  itoa(mqtt_error, str2, 10);
   strcat(str1, str2);
   show_string(str1, x + 5 , y + 145 , 1, BLACK, WHITE, 0);
-  
+
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

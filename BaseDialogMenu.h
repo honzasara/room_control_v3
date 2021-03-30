@@ -97,7 +97,7 @@ const Element_Function_1 f_dialog_set_string PROGMEM = {
 
 const Element_Dyn_Symbol_1 keyboard_number PROGMEM = {
   .first_x = 10,
-  .first_y = 60,
+  .first_y = 80,
   .size_x = 30,
   .size_y = 30,
   .font_size = 2,
