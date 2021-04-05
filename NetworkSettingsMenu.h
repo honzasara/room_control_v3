@@ -4,9 +4,9 @@
 
 /***************************************************************/
 /*
- *  primitivni funkce
- * 
- */
+    primitivni funkce
+
+*/
 
 
 void display_element_show_network_detail(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
@@ -63,7 +63,7 @@ const Element_Button_1 button_set_network_name PROGMEM = {
   .redraw_class = REDRAW_BUTTON,
   .enable_show = display_enable_show,
 };
- 
+
 const Element_Button_1 button_set_network_dns PROGMEM = {
   .name = new_text_set_network_dns,
   .x = 280,
@@ -90,20 +90,6 @@ const Element_Button_1 button_set_network_mac PROGMEM = {
   .enable_show = display_enable_show,
 };
 
-
-const Element_Button_1 button_set_network_dhcp PROGMEM = {
-  .name = new_text_set_network_dhcp,
-  .x = 280,
-  .y = 260,
-  .size_x = 190,
-  .size_y = 30,
-  .font_size = 1,
-  .args = 0, //MENU_SELECT_DEFAULT_TEMP,
-  .onclick = nullfce, //MenuHistoryNextMenu,
-  .redraw_class = REDRAW_BUTTON,
-  .enable_show = display_enable_show,
-};
-
 const Element_Button_1 button_set_network_test_connection PROGMEM = {
   .name = new_text_set_network_test_connection,
   .x = 10,
@@ -111,7 +97,7 @@ const Element_Button_1 button_set_network_test_connection PROGMEM = {
   .size_x = 190,
   .size_y = 40,
   .font_size = 1,
-  .args = 0, 
+  .args = 0,
   .onclick = button_set_network_test_connection_onclick,
   .redraw_class = REDRAW_BUTTON,
   .enable_show = display_enable_show,
@@ -137,7 +123,7 @@ const Element_Function_1 f_show_network_detail PROGMEM = {
 
 const Menu1 MenuNastaveniSite PROGMEM = {
   .name = nastaveni_site,
-  .button_1 = {button_back, button_set_network_mac, button_set_network_dns, button_set_network_name, button_set_network_gw, button_set_network_mask, button_set_network_ip, button_set_network_dhcp,button_set_network_test_connection},
+  .button_1 = {button_back, button_set_network_mac, button_set_network_dns, button_set_network_name, button_set_network_gw, button_set_network_mask, button_set_network_ip, button_set_network_test_connection},
   .button_2 = {NULL},
   .function_1 = {f_show_network_detail},
   .switch_1 = {NULL},

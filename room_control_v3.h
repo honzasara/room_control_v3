@@ -81,6 +81,8 @@
 #define SELFTEST_RESTART_NEEDED 7
 
 #define DISPLAY_MODE_STATUS_BIT 7
+#define DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY 6
+
 
 
 /// null fake funkce ///
@@ -249,6 +251,9 @@ void button_get_term_mode_labels(uint8_t args1, uint8_t args2, uint8_t args3, ch
 ///////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+const char new_text_zapnuto[] PROGMEM = "Zapnoto";
+const char new_text_vypnuto[] PROGMEM = "Vypnuto";
+
 const char seznam_server[] PROGMEM = "www.seznam.cz";
 
 const char new_text_nastaveni_system_full[] PROGMEM = "Nastaveni systemu";
@@ -270,12 +275,19 @@ const char new_nastaveni_nrf_input[] PROGMEM = "NRF vstup";
 
 const char new_text_scan_onewire_bus[] PROGMEM = "Scan sbernice";
 
+const char new_text_nastaveni_reload[] PROGMEM = "Restart zarizeni";
+
 const char new_text_ok[] PROGMEM = "OK";
 
 const char new_text_ok_ntp_time[] PROGMEM = "Aktualizace NTP OK";
 const char new_text_error_ntp_time[] PROGMEM = "Aktualizace NTP ERROR";
 
 const char new_text_nastaveni_mqtt_pripojeni[] PROGMEM = "Nastaveni MQTT";
+const char new_text_mqtt_broker[] PROGMEM = "MQTT server";
+const char new_text_mqtt_user[] PROGMEM = "MQTT uzivatel";
+const char new_text_mqtt_check[] PROGMEM = "MQTT overit spojeni";
+const char new_text_mqtt_pass[] PROGMEM = "MQTT heslo";
+
 
 const char new_text_jas_display[] PROGMEM = "Nastaveni jasu displaye";
 
@@ -288,7 +300,6 @@ const char new_text_device_dns[] PROGMEM = "DNS server";
 const char new_text_device_dhcp[] PROGMEM = "DHCP";
 const char new_text_device_mac[] PROGMEM = "MAC adresa";
 
-const char new_text_set_network_dhcp[] PROGMEM = "Z DHCP serveru";
 const char new_text_set_network_ip[] PROGMEM = "Nastaveni IP";
 const char new_text_set_network_mask[] PROGMEM = "Nastaveni masky site";
 const char new_text_set_network_gw[] PROGMEM = "Nastaveni vychozi brany";
@@ -298,7 +309,7 @@ const char new_text_set_network_name[] PROGMEM = "Nastaveni nazvu zarizeni";
 
 const char new_text_set_network_test_connection[] PROGMEM = "Test pripojeni";
 const char new_text_ntp_set_server[] PROGMEM = "Nastaveni NTP serveru";
-const char new_text_time_set_offset[] PROGMEM = "Posunuti casu";
+const char new_text_time_set_offset[] PROGMEM = "NTP posunuti casu";
 const char new_text_time_set_time_manualy[] PROGMEM = "Rucni nastaveni casu";
 const char new_text_time_set_date_manualy[] PROGMEM = "Rucni nastaveni datumu";
 
@@ -309,6 +320,7 @@ const char new_text_err_connect_seznam[] PROGMEM = "Konektivita ERROR";
 const char new_text_switch_brightness_automode[] PROGMEM = "Automaticky jas";
 const char new_text_jas_display_automat[] PROGMEM = "Automaticke rizeni";
 const char new_text_jas_display_manual[] PROGMEM =  "Manualni rizeni ";
+const char new_text_auto_display_shutdown[] PROGMEM = "Automaticke vypnuti displaye";
 
 
 const char new_text_input_volt[] PROGMEM = "Vstupni napeti ";
@@ -322,6 +334,11 @@ const char new_text_mqtt_receive[] PROGMEM = "MQTT prijatych: ";
 const char new_text_mqtt_processed[] PROGMEM = "MQTT zpracovanych: ";
 const char new_text_mqtt_error[] PROGMEM = "MQTT v chybe: ";
 const char new_text_date_error[] PROGMEM = "--.--.----";
+
+const char new_text_rtds_type_temp[] PROGMEM = "Typ: vzdalena teplota";
+
+const char new_text_slash_rtds_slash[] PROGMEM = "/rtds/";
+const char new_text_slash_rtds_control_list[] PROGMEM = "/rtds-control/list";
 /***************************************************************/
 /*
         spolecne display funkce

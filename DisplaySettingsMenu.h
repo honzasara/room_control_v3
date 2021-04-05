@@ -30,6 +30,13 @@ uint8_t preload_display_setting_brightness(uint16_t args1, uint16_t args2, uint8
 
 uint8_t display_enable_show_brightness_manual_mode(uint16_t args1, uint16_t args2, uint8_t args3);
 
+
+void button_set_brightness_auto_shutdown_select_time_get_status_string(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2);
+void button_set_brightness_auto_shutdown_select_time_dyn_symbol_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
+uint8_t button_set_brightness_auto_shutdown_select_time_get_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3);
+
+
+
 const Element_Button_1 button_default_show_temp PROGMEM = {
   .name = text_select_default_temp,
   .x = 10,
@@ -83,6 +90,30 @@ const Element_Dyn_Select_1 button_set_brightness_auto_shutdown PROGMEM = {
   .dyn_symbol_onclick =  button_set_brightness_auto_shutdown_dyn_symbol_onclick,
   .function_for_max_items = get_function_return_args_1,
   .get_status_fnt = button_set_brightness_auto_shutdown_get_status_fnt,
+  .redraw_class = REDRAW_BUTTON,
+};
+
+
+const Element_Dyn_Select_1 button_set_brightness_auto_shutdown_select_time PROGMEM = {
+  .first_x = 10,
+  .first_y = 40,
+  .size_x = 100,
+  .size_y = 40,
+  .font_size_1 = 1,
+  .font_size_2 = 1,
+  .color_active = GREEN,
+  .color_inactive = WHITE,
+  .step_x = 110,
+  .step_y = 50,
+  .direction = HORIZONTAL_NEW_LINE,
+  .max_items_count = 4,
+  .max_row_count = 2,
+  .slider_args = MENU_SLIDER_OFF,
+  .args = 6,
+  .get_status_string = button_set_brightness_auto_shutdown_select_time_get_status_string,
+  .dyn_symbol_onclick =  button_set_brightness_auto_shutdown_select_time_dyn_symbol_onclick,
+  .function_for_max_items = get_function_return_args_1,
+  .get_status_fnt = button_set_brightness_auto_shutdown_select_time_get_status_fnt,
   .redraw_class = REDRAW_BUTTON,
 };
 
@@ -303,6 +334,40 @@ const Menu1 New_DisplaySetting_Brigthness PROGMEM = {
   .len_dyn_symbol_1 = 0,
   .len_dyn_select_box_1 = 0,
   .idx = NEW_MENU_DISPLAY_NASTAVENI_BRIGTHNESS_SCREEN,
+  .x = 10,
+  .y = 10,
+  .size_x = 460,
+  .size_y = 280,
+  .atributes = (1 << MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE | 1 << MENU_ATTRIBUTES_DECORATE_MENU),
+  .color_background = YELLOW,
+  .redraw_class = (1 << REDRAW_FORCE),
+  .redraw_class_0 = returnnullfceargs,
+  .redraw_class_1 = returnnullfceargs,
+  .redraw_class_2 = returnnullfceargs,
+  .preload_function = preload_display_setting_brightness,
+};
+
+
+
+const Menu1 New_DisplaySetting_Auto_Shutdown PROGMEM = {
+  .name = new_text_auto_display_shutdown,
+  .button_1 = {button_back},
+  .button_2 = {NULL},
+  .function_1 = {NULL},
+  .switch_1 = {NULL},
+  .dyn_button = {NULL},
+  .symbol_button_1 = {NULL},
+  .dyn_symbol_1 = {NULL},
+  .dyn_select_box_1 = {button_set_brightness_auto_shutdown_select_time},
+  .len_button_1 = 1,
+  .len_button_2 = 0,
+  .len_function_1 = 0,
+  .len_switch_1 = 1,
+  .len_dyn_button_1 = 0,
+  .len_symbol_button_1 = 0,
+  .len_dyn_symbol_1 = 0,
+  .len_dyn_select_box_1 = 1,
+  .idx = NEW_MENU_DISPLAY_NASTAVENI_AUTO_SHUTDOWN_SCREEN,
   .x = 10,
   .y = 10,
   .size_x = 460,

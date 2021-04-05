@@ -8,19 +8,24 @@
    6. Dialog klavesnice - rozvreni tlacitek jako je na klavesnici
    7. Dialog editace PID - zobrazit krivku vypoctu
    8. tlacitko synchronizace NTP casu -> dialog povedlo se/ nepovedlo se - HOTOVO
-   9. moznost si nastavit time offset letni/zimni
+      - nice have ukazat time diff
+   9. moznost si nastavit time offset letni/zimni - vyreseno tim, ze si muzu posunout cas +- hodiny - HOTOVO
    10. tftp bootloader
-   11. statistika pripojeni mqtt
+   11. statistika pripojeni mqtt - HOTOVO
    12. vyber vychoziho teplomeru, kdyz je mrtvy/neaktivni zobrazit jinou barvou. Stav je nenalezene cidlo na sbernici
       - vraci online i kdyz neni online
    13. vytvorit menu seznam vsech teplomeru ukazovat hodnoty
-   14. rtds pridat informaci o typu zpravy
+   14. rtds pridat informaci o typu zpravy - HOTOVO
       - teplota
       - co2
       - humadity
       - vitr
     15. umet nastavit promeou seznam_server pro ucel testovani konektivity, port
     16. po upgrade casu udelat hned aktualizci obrazovky
+    17. validace zadanych hodnot pro cas a datum, nedovolit ulozit!
+    18. funkce pro validaci IP adres
+    19. tlacitko pro restart - HOTOVO
+    20. po najeti rychle blika dvojtecka u casu
 
   zapojeni pinu z leva do prava hneda -> zluta -> oranzova -> zelena -> cervena -> cerna
 */
@@ -113,6 +118,8 @@ uint8_t brigthness_display_values = 0;
 uint8_t brigthness_display_auto_values = 0;
 
 uint8_t brigthness_display_mode = 0;
+uint8_t display_auto_shutdown = 0;
+uint8_t display_auto_shutdown_now = 0;
 
 uint8_t use_rtds = 0;
 uint8_t use_tds = 0;
@@ -149,6 +156,7 @@ uint8_t dialog_set_string_max_length;
 uint8_t dialog_set_string_args;
 uint8_t dialog_set_string_keyboard_type = 0;
 fptr_args dialog_save_string_function;
+ret_fptr_no_args dialog_save_valid_function;
 
 
 uint8_t menu_redraw05s = 0;
@@ -889,12 +897,12 @@ const MenuAll Menu_All PROGMEM = {
   .len_menu1 = 6,
   .len_menu2 = 5,
   .len_menu3 = 3,
-  .len_menu4 = 6,
+  .len_menu4 = 7,
 
   .ListMenu1 = {HlavniMenu, MenuNastaveniSite, OneWireMenu, MenuNastaveniCas, SelectMenuDefaultTemp, MenuNastaveniMQTT},
   .ListMenu2 = {DialogYESNO, DialogSetVariable, DialogKyeboardAlfa, DialogKyeboardNumber , DialogOK},
   .ListMenu3 = {TDSMenu, RTDS_Menu_Detail, List_RTDS_Menu},
-  .ListMenu4 = {SystemSettingsMenu, New_NastaveniMenu, PeriferieSettingsMenu, New_DisplaySettingMenu, New_DisplaySetting_Brigthness, AboutDeviceMenu},
+  .ListMenu4 = {SystemSettingsMenu, New_NastaveniMenu, PeriferieSettingsMenu, New_DisplaySettingMenu, New_DisplaySetting_Brigthness, AboutDeviceMenu, New_DisplaySetting_Auto_Shutdown},
 };
 
 
@@ -993,6 +1001,11 @@ bool draw_menu(bool redraw)
   {
     click_x = my_touch.x;
     click_y = my_touch.y;
+    display_auto_shutdown_now = 0;
+    if ((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY)) != 0)
+      {
+      my_touch.TP_SetOnOff(LED_ON);
+      }
   }
 
   global_x = pgm_read_word(&current->x);
@@ -1659,12 +1672,13 @@ void display_function_set_variable(float now, float min, float max, float step, 
   menu_dialog_variable[idx].save_function = save_function;
 }
 /////
-void display_element_set_string(char *str, uint8_t max_length, uint8_t idx, fptr_args save_function)
+void display_element_set_string(char *str, uint8_t max_length, uint8_t idx, fptr_args save_function, ret_fptr_no_args valid_function)
 {
   strcpy(dialog_set_string, str);
   dialog_set_string_max_length = max_length;
   dialog_set_string_args = idx;
   dialog_save_string_function = save_function;
+  dialog_save_valid_function = valid_function;
 }
 
 uint8_t display_element_get_string_args(void)
@@ -1746,7 +1760,7 @@ void display_menu_tds_set_name(uint16_t args1, uint16_t args2, uint8_t args3)
   char name[10];
   tds_get_name(args2, name);
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, args3);
-  display_element_set_string(name, 8, args2, &menu_tds_save_name);
+  display_element_set_string(name, 8, args2, &menu_tds_save_name, &valid_true);
   //dialog_save_variable_function = ;
 }
 /// funkce pro nastaveni nazvu rtds
@@ -1756,7 +1770,7 @@ void display_menu_rtds_update_name(uint16_t args1, uint16_t args2, uint8_t args3
   uint8_t active;
   remote_tds_get_complete(args2, &active, name);
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, args3);
-  display_element_set_string(name, RTDS_DEVICE_STRING_LEN, args2, &menu_rtds_update_name);
+  display_element_set_string(name, RTDS_DEVICE_STRING_LEN, args2, &menu_rtds_update_name, &valid_true);
   //dialog_save_variable_function = ;
 }
 ////////////////////////////////////////////////////////
@@ -1878,8 +1892,11 @@ void dialog_set_variable_button_click(uint16_t args1, uint16_t args2, uint8_t ar
 
 void dialog_set_string_button_click(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  dialog_save_string_function(args1, args2, args3);
-  MenuHistoryPrevMenu(0, 0, 0);
+  if (dialog_save_valid_function() == 1)
+  {
+    dialog_save_string_function(args1, args2, args3);
+    MenuHistoryPrevMenu(0, 0, 0);
+  }
 }
 
 
@@ -2039,11 +2056,15 @@ void remote_tds_get_active(uint8_t idx, uint8_t *active)
     *active = 255;
 }
 
+
 void remote_tds_set_active(uint8_t idx, uint8_t active)
 {
   if (idx <  MAX_RTDS)
     EEPROM.write(remote_tds_name0 + (RTDS_DEVICE_TOTAL_LEN * idx) + RTDS_DEVICE_ACTIVE_BYTE_POS, active);
 }
+
+
+
 ///
 void remote_tds_clear(uint8_t idx)
 {
@@ -2056,6 +2077,8 @@ void remote_tds_clear(uint8_t idx)
 /*
   idx - index nazvu topicu, ktery si chci subscribnout/unsubscribnout
 */
+
+
 void remote_tds_subscibe_topic(uint8_t idx)
 {
   char tmp1[64];
@@ -2064,8 +2087,9 @@ void remote_tds_subscibe_topic(uint8_t idx)
   remote_tds_get_complete(idx, &active, tmp1);
   if (active == 1)
   {
-    strcpy(tmp2, "/rtds/");
+    strcpy_P(tmp2, new_text_slash_rtds_slash); /// /rtds/
     strcat(tmp2, tmp1);
+    strcat(tmp2, "/#");
     mqtt_client.subscribe(tmp2);
   }
 }
@@ -2079,8 +2103,9 @@ void remote_tds_unsubscibe_topic(uint8_t idx)
   remote_tds_get_complete(idx, &active, tmp1);
   if (active == 1)
   {
-    strcpy(tmp2, "/rtds/");
+    strcpy_P(tmp2, new_text_slash_rtds_slash);
     strcat(tmp2, tmp1);
+    strcat(tmp2, "/#");
     mqtt_client.unsubscribe(tmp2);
   }
 }
@@ -2121,24 +2146,41 @@ uint8_t remote_tds_name_exist(char *name)
   return found;
 }
 ///
-void remote_tds_set_data(uint8_t idx, int temp)
+void remote_tds_set_type(uint8_t idx, uint8_t type)
 {
   if (idx < MAX_RTDS)
   {
-    SRAM.writeByte(ram_remote_tds_store_data_low + (ram_remote_tds_store_size * idx), (temp & 0xff));
-    SRAM.writeByte(ram_remote_tds_store_data_high + (ram_remote_tds_store_size * idx), ((temp >> 8) & 0xff));
+    SRAM.writeByte(ram_remote_tds_store_type + (ram_remote_tds_store_size * idx), type);
+  }
+}
+uint8_t remote_tds_get_type(uint8_t idx)
+{
+  uint8_t type = 255;
+  if (idx < MAX_RTDS)
+  {
+    type = SRAM.readByte(ram_remote_tds_store_type + (ram_remote_tds_store_size * idx));
+  }
+  return type;
+}
+
+void remote_tds_set_data(uint8_t idx, int value)
+{
+  if (idx < MAX_RTDS)
+  {
+    SRAM.writeByte(ram_remote_tds_store_data_low + (ram_remote_tds_store_size * idx), (value & 0xff));
+    SRAM.writeByte(ram_remote_tds_store_data_high + (ram_remote_tds_store_size * idx), ((value >> 8) & 0xff));
     SRAM.writeByte(ram_remote_tds_store_last_update + (ram_remote_tds_store_size * idx), 0);
   }
 }
 int remote_tds_get_data(uint8_t idx)
 {
-  int temp = 0;
+  int value = 0;
   if (idx < MAX_RTDS)
   {
-    temp = SRAM.readByte(ram_remote_tds_store_data_high + (ram_remote_tds_store_size * idx)) << 8;
-    temp = temp + SRAM.readByte(ram_remote_tds_store_data_low + (ram_remote_tds_store_size * idx));
+    value = SRAM.readByte(ram_remote_tds_store_data_high + (ram_remote_tds_store_size * idx)) << 8;
+    value = value + SRAM.readByte(ram_remote_tds_store_data_low + (ram_remote_tds_store_size * idx));
   }
-  return temp;
+  return value;
 }
 uint8_t remote_tds_get_last_update(uint8_t idx)
 {
@@ -2374,11 +2416,11 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   ////////
   ////////
   /// nastavovani vlastnosti RTDS ///
-
-  //// thermctl-in/XXXXX/rtds/register - registruje nove vzdalene cidlo
+  ///
+  //// thermctl-in/XXXXX/rtds-control/register - registruje nove vzdalene cidlo
   strcpy_P(str1, thermctl_header_in);
   strcat(str1, device.nazev);
-  strcat(str1, "/rtds/register");
+  strcat(str1, "/rtds-control/register");
   if (strncmp(str1, topic, strlen(str1)) == 0)
   {
     mqtt_process_message++;
@@ -2390,11 +2432,11 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
     }
     ///TODO - vratit ze jiz existuje
   }
-
+  ///
   //// thermctl-in/XXXXX/rtds/set/IDX/name - nastavi a udela prihlaseni
   strcpy_P(str1, thermctl_header_in);
   strcat(str1, device.nazev);
-  strcat(str1, "/rtds/set/");
+  strcat(str1, "/rtds-control/set/");
   if (strncmp(str1, topic, strlen(str1)) == 0)
   {
     mqtt_process_message++;
@@ -2427,12 +2469,11 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
       cnt++;
     }
   }
-
-  ////
+  ///
   //// /thermctl-in/XXXX/rtds/clear index vymaze a odhlasi
   strcpy_P(str1, thermctl_header_in);
   strcat(str1, device.nazev);
-  strcat(str1, "/rtds/clear");
+  strcat(str1, "/rtds-control/clear");
   if (strncmp(str1, topic, strlen(str1)) == 0)
   {
     mqtt_process_message++;
@@ -2445,14 +2486,14 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   //// ziska nastaveni remote_tds
   strcpy_P(str1, thermctl_header_in);
   strcat(str1, device.nazev);
-  strcat(str1, "/rtds/get");
+  strcat(str1, "/rtds-control/get");
   if (strncmp(str1, topic, strlen(str1)) == 0)
   {
     send_mqtt_remote_tds_status();
   }
   ////
   //// rtds/NAME - hodnota, kde NAME je nazev cidla
-  strcpy(str1, "/rtds/");
+  strcpy_P(str1, new_text_slash_rtds_slash); /// /rtds/
   if (strncmp(str1, topic, strlen(str1)) == 0)
   {
     mqtt_process_message++;
@@ -2463,17 +2504,34 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
       str1[cnt + 1] = 0;
       cnt++;
     }
+    cnt = 0;
+    pch = strtok (str1, "/");
+    while (pch != NULL)
+    {
+      if (cnt == 0)
+        strcpy(tmp1, pch);
+      if (cnt == 1)
+        strcpy(tmp2, pch);
+      pch = strtok (NULL, "/");
+      cnt++;
+    }
     for (uint8_t idx = 0; idx < MAX_RTDS; idx++)
     {
       uint8_t active = 0;
-      remote_tds_get_complete(idx, &active, tmp1);
-      if (active == 1 && strcmp(tmp1, str1) == 0)
+      str1[0] = 0;
+      remote_tds_get_complete(idx, &active, str1);
+      if (active == 1 && strcmp(str1, tmp1) == 0)
       {
-        remote_tds_set_data(idx, atoi(my_payload));
+        if (strcmp(tmp2, "value") == 0)
+          remote_tds_set_data(idx, atoi(my_payload));
+        if (strcmp(tmp2, "type") == 0)
+          remote_tds_set_type(idx, atoi(my_payload));
       }
     }
   }
-  strcpy(str1, "/rtds/list");
+  ///
+
+  strcpy_P(str1, new_text_slash_rtds_control_list); /// /rtds-control/list"
   if (strncmp(str1, topic, strlen(str1)) == 0)
   {
 
@@ -3225,7 +3283,9 @@ void send_mqtt_remote_tds_status(void)
       itoa(active, payload, 10);
       send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "rtds", idx, "active", payload);
       itoa(remote_tds_get_data(idx), payload, 10);
-      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "rtds", idx, "temp", payload);
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "rtds", idx, "value", payload);
+      itoa(remote_tds_get_type(idx), payload, 10);
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "rtds", idx, "type", payload);
       itoa(remote_tds_get_last_update(idx), payload, 10);
       send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "rtds", idx, "last_update", payload);
     }
@@ -3528,7 +3588,7 @@ void thermostat(void)
       act = tdsid - HW_ONEWIRE_MAXROMS;
       remote_tds_get_active(act , &active);
 
-      if (active == 1 && remote_tds_get_last_update(act) < 180)
+      if (active == 1 && remote_tds_get_last_update(act) < 180 && remote_tds_get_type(act) == RTDS_REMOTE_TYPE_TEMP)
       {
         thermostat_pid_input(tix, remote_tds_get_data(act) / 1000.0);
         thermostat_pid_setpoint(tix, thresh);
@@ -3760,6 +3820,7 @@ void setup()
         set_default_ring(default_ring);
         EEPROM.write(my_brightness_values, 50);
         EEPROM.write(my_brightness_mode, 0);
+        EEPROM.write(my_display_auto_shutdown, 60);
       }
       else
       {
@@ -3800,14 +3861,13 @@ void setup()
         show_string(str1, 30, 50 + (init * 10), 1, RED, WHITE, 0 );
       }
     }
-
-    //// init EEPROMKY
+    ///
+    /// init EEPROMKY
     if (init == 4)
     {
       SROM.begin();
       SROM.writeByte(0, 0xBA);
       if (SROM.readByte(0) == 0xBA)
-
       {
         strcpy_P(str1, text_test_eeprom);
         strcat_P(str1, text_ok);
@@ -3820,7 +3880,7 @@ void setup()
         show_string(str1, 30, 50 + (init * 10), 1, RED, WHITE, 0 );
       }
     }
-
+    ///
     ///  nacteni provoznich parametru
     if (init == 5)
     {
@@ -3835,6 +3895,13 @@ void setup()
       ///
       for (uint8_t idx = 0; idx < MAX_THERMOSTAT; idx++)
         last_output_update[idx] = 0;
+
+      for (uint8_t idx = 0; idx < MAX_RTDS; idx++)
+      {
+        remote_tds_set_data(idx, 0);
+        remote_tds_set_type(idx, RTDS_REMOTE_TYPE_FREE);
+        remote_tds_set_last_update(idx, 255);
+      }
     }
     ///
     /// zobrazeni kalibracnich informaci touchscreenu
@@ -3852,6 +3919,7 @@ void setup()
         digitalWrite(LED, HIGH);
         delay(100);
       }
+      display_auto_shutdown = EEPROM.read(my_display_auto_shutdown);
       brigthness_display_values = EEPROM.read(my_brightness_values);
       brigthness_display_mode = EEPROM.read(my_brightness_mode);
       my_touch.TP_SetBacklight(brigthness_display_values * 2);
@@ -3951,7 +4019,6 @@ void setup()
         strcpy_P(str1, text_ok);
         show_string(str1, 160, 50 + (init * 10), 1, GREEN, WHITE, 0 );
       }
-
     }
     ///
     /// inicializace rest api rozhrani
@@ -4058,6 +4125,7 @@ void loop() {
   if (ethClient1.connected())
     ethClient1.stop();
 
+
   EthernetClient http_client = http_server.available();
   if (http_client.connected())
   {
@@ -4068,7 +4136,9 @@ void loop() {
 
 
   if (draw_menu(false) == true)
+  {
     draw_menu(true);
+  }
 
 
 
@@ -4120,6 +4190,19 @@ void loop() {
   {
     milis_1s += 1000;
     uptime++;
+    if ((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY)) != 0)
+    {
+      if (display_auto_shutdown > display_auto_shutdown_now)
+      {
+        display_auto_shutdown_now++;
+      }
+      else
+      {
+        my_touch.TP_SetOnOff(LED_OFF);
+      }
+
+    }
+
     mereni_hwwire(uptime);
     tds_extended_memory_store();
     remote_tds_update_last_update();
@@ -4341,23 +4424,29 @@ void display_element_show_rtds_info_dynamics(uint16_t x, uint16_t y, uint16_t si
     show_string(str1, x + 5 , y + 10 , 2, BLACK, WHITE, 0);
     strcpy(str1, name);
     show_string(str1, x + 20 , y + 30 , 2 , BLACK, WHITE, 0);
-    /// teplota
-    te = remote_tds_get_data(args2) / 1000.0;
-    dtostrf(te, 4, 2, str1);
-    strcat(str1, "C");
-    strcpy_P(str2, current_temp_short);
-    strcat(str2, str1);
-    show_string(str2, x + 5, y + 60 , 2, BLACK, WHITE, 0);
-    /// posledni aktualizace
-    last_update = remote_tds_get_last_update(args2);
-    strcpy_P(str2, text_last_update);
-    sprintf(str1, "%s: %d", str2, last_update);
-    show_string(str1, x + 5, y + 80 , 1, BLACK, WHITE, 0);
-    active = 1;
-    if (last_update >= 250) active = 0;
-    strcpy_P(str2, text_online);
-    sprintf(str1, "%s: %d", str2, active);
-    show_string(str1, x + 5, y + 100 , 2, BLACK, WHITE, 0);
+    if (remote_tds_get_type(args2) == RTDS_REMOTE_TYPE_TEMP)
+    {
+      /// teplota
+      strcpy_P(str1, new_text_rtds_type_temp);
+      show_string(str1, x + 5, y + 60 , 1, BLACK, WHITE, 0);
+
+      te = remote_tds_get_data(args2) / 1000.0;
+      dtostrf(te, 4, 2, str1);
+      strcat(str1, "C");
+      strcpy_P(str2, current_temp_short);
+      strcat(str2, str1);
+      show_string(str2, x + 5, y + 80 , 2, BLACK, WHITE, 0);
+      /// posledni aktualizace
+      last_update = remote_tds_get_last_update(args2);
+      strcpy_P(str2, text_last_update);
+      sprintf(str1, "%s: %d", str2, last_update);
+      show_string(str1, x + 5, y + 100 , 1, BLACK, WHITE, 0);
+      active = 1;
+      if (last_update >= 250) active = 0;
+      strcpy_P(str2, text_online);
+      sprintf(str1, "%s: %d", str2, active);
+      show_string(str1, x + 5, y + 120 , 2, BLACK, WHITE, 0);
+    }
   }
 }
 ////////////////////////////////////////////////////////
@@ -4628,12 +4717,13 @@ void get_function_rtds_text_button(uint8_t args1, uint8_t args2, uint8_t args3, 
 {
   uint8_t active;
   strcpy_P(line1, text_not_used);
-  //sprintf(line2, "%d %d", args1, args2);
   line2[0] = 0;
   remote_tds_get_active(args1, &active);
   if (active == 1)
   {
     remote_tds_get_complete(args1, &active, line1);
+    if (remote_tds_get_type(args1) == RTDS_REMOTE_TYPE_TEMP)
+      strcpy_P(line2, new_text_rtds_type_temp);
   }
 }
 
@@ -4643,14 +4733,12 @@ void get_function_rtds_text_button(uint8_t args1, uint8_t args2, uint8_t args3, 
 */
 void click_rtds_deassociate_onewire(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  //printf("mazu rtds args1:%d args2:%d\n", args1, args2);
   remote_tds_clear(args2);
   MenuHistoryPrevMenu(0, 0, 0);
 }
 ////
 void click_rtds_subscribe(uint16_t args1, uint16_t idx, uint8_t args3)
 {
-  //printf("prihlasuji %d %d\n", args1, idx);
   remote_tds_subscibe_topic(idx);
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4738,7 +4826,6 @@ void clik_button_onewire_scan_bus(uint16_t args1, uint16_t args2, uint8_t args3)
   strcpy(dialog_text, str1);
 }
 //////////////////////////////////////////////////////////////
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// vraci pocet pouzitych vzdalenych mqtt tds cidel
 uint8_t count_use_rtds(void)
@@ -4762,7 +4849,7 @@ void click_rtds_add_sensor(uint16_t args1, uint16_t args2, uint8_t args3)
   {
     strcpy_P(rtds_topic, text_rtds_prefix);
     MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, args3);
-    display_element_set_string(rtds_topic, RTDS_DEVICE_STRING_LEN, idx, &menu_rtds_create_name);
+    display_element_set_string(rtds_topic, RTDS_DEVICE_STRING_LEN, idx, &menu_rtds_create_name, &valid_true);
   }
 }
 
@@ -4848,7 +4935,7 @@ uint8_t get_global_temp(uint8_t device, char*name, float *temp)
       if (cri == device)
       {
         remote_tds_get_complete(idx, &active, name);
-        if (remote_tds_get_last_update(idx) < 250)
+        if (remote_tds_get_last_update(idx) < 250 && remote_tds_get_type(idx) == RTDS_REMOTE_TYPE_TEMP)
         {
           *temp = remote_tds_get_data(idx) / 1000.0;
           ret = 1;
@@ -4896,7 +4983,7 @@ void button_get_show_default_temp(uint8_t args1, uint8_t args2, uint8_t args3, c
   for (uint8_t idx = 0; idx < MAX_RTDS; idx++)
   {
     remote_tds_get_active(idx, &active);
-    if (((active == 1) && (args3 == INPUT_SENSOR_SHOW_ACTIVE)) || args3 == INPUT_SENSOR_SHOW_ALL)
+    if (((active == 1) && (args3 == INPUT_SENSOR_SHOW_ACTIVE) && (remote_tds_get_type(idx) == RTDS_REMOTE_TYPE_TEMP )) || args3 == INPUT_SENSOR_SHOW_ALL)
     {
       if (cri == args1)
       {
@@ -5210,6 +5297,8 @@ void helper_set_term_ring_name(uint16_t args1, uint16_t args2, uint8_t args3)
   thermostat_ring_set_name(args2, name);
 }
 
+
+
 ///////////////////////////////////
 /*
    pomocna funkce pro nastaveni nazvu regulatoru
@@ -5225,9 +5314,9 @@ void button_click_set_term_ring_name_via_keyboard(uint16_t args1, uint16_t args2
   args2 = default_ring;
   thermostat_ring_get_name(args2, name);
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, args3);
-  display_element_set_string(name, 9, args2, &helper_set_term_ring_name);
-
+  display_element_set_string(name, 9, args2, &helper_set_term_ring_name, &valid_true);
 }
+
 
 
 
@@ -5458,27 +5547,12 @@ void button_change_brightness_display_dyn_button_onclick(uint16_t args1, uint16_
 }
 
 
-void button_set_brightness_auto_shutdown_get_status_string(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
-{
-  strcpy(line1, "automaticke vypnuti displaye");
-  strcpy(line2, "OFF");
-}
-
-
-void button_set_brightness_auto_shutdown_dyn_symbol_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
-{
-  printf("ukaz dialog vyberu casu vypnuti displaye\n");
-}
-
-
-uint8_t button_set_brightness_auto_shutdown_get_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3)
-{
-  return 1;
-
-}
 
 
 
+
+
+/////////
 uint8_t switch_brightness_automode_get_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   uint8_t ret = 0;
@@ -5504,7 +5578,6 @@ void switch_brightness_automode_get_status_string(uint8_t args1, uint8_t args2, 
 
 void switch_brightness_automode_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  uint8_t fake = 0;
   if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) != 0 )
   {
     cbi(brigthness_display_mode, DISPLAY_MODE_STATUS_BIT);
@@ -5542,6 +5615,118 @@ uint8_t display_enable_show_brightness_manual_mode(uint16_t args1, uint16_t args
   return ret;
 }
 
+///////////////////////////////////////////////////////////////////////////////////
+/*
+   Funkce pro automaticke vypinani displaye pri neaktivite
+*/
+void button_set_brightness_auto_shutdown_get_status_string(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
+{
+  strcpy_P(line1, new_text_auto_display_shutdown);
+  if ((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY)) == 0)
+    strcpy_P(line2, new_text_vypnuto);
+  else
+    sprintf(line2, "Povoleno: %d sec", display_auto_shutdown);
+}
+
+
+void button_set_brightness_auto_shutdown_dyn_symbol_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  MenuHistoryNextMenu(NEW_MENU_DISPLAY_NASTAVENI_AUTO_SHUTDOWN_SCREEN, 0, 0);
+}
+
+
+uint8_t button_set_brightness_auto_shutdown_get_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t ret = 0;
+  if ((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY)) != 0)
+    ret = 1;
+  return ret;
+}
+
+void button_set_brightness_auto_shutdown_select_time_get_status_string(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
+{
+  line2[0] = 0;
+  if (args1 == 0)
+    strcpy_P(line1, new_text_vypnuto);
+  if (args1 == 1)
+    strcpy(line1, "30 sec");
+  if (args1 == 2)
+    strcpy(line1, "1 min");
+  if (args1 == 3)
+    strcpy(line1, "2 min");
+  if (args1 == 4)
+    strcpy(line1, "3 min");
+  if (args1 == 5)
+    strcpy(line1, "4 min");
+}
+
+void button_set_brightness_auto_shutdown_select_time_dyn_symbol_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t click1 = 0;
+  display_auto_shutdown_now = 0;
+  if (args3 == 0)
+  {
+    cbi(brigthness_display_mode, DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY);
+    display_auto_shutdown = 0;
+    click1 = 1;
+  }
+  if (args3 == 1)
+  {
+    sbi(brigthness_display_mode, DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY);
+    display_auto_shutdown = 30;
+    click1 = 1;
+  }
+  if (args3 == 2)
+  {
+    sbi(brigthness_display_mode, DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY);
+    display_auto_shutdown = 60;
+    click1 = 1;
+  }
+  if (args3 == 3)
+  {
+    sbi(brigthness_display_mode, DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY);
+    display_auto_shutdown = 120;
+    click1 = 1;
+  }
+  if (args3 == 4)
+  {
+    sbi(brigthness_display_mode, DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY);
+    display_auto_shutdown = 180;
+    click1 = 1;
+  }
+  if (args3 == 5)
+  {
+    sbi(brigthness_display_mode, DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY);
+    display_auto_shutdown = 250;
+    click1 = 1;
+  }
+  if (click1 == 1)
+  {
+    EEPROM.write(my_display_auto_shutdown, display_auto_shutdown);
+    EEPROM.write(my_brightness_mode, brigthness_display_mode);
+  }
+}
+
+uint8_t button_set_brightness_auto_shutdown_select_time_get_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t ret = 0;
+  if (args3 == 0 && display_auto_shutdown == 0)
+    ret = 1;
+  if (args3 == 1 && display_auto_shutdown == 30)
+    ret = 1;
+  if (args3 == 2 && display_auto_shutdown == 60)
+    ret = 1;
+  if (args3 == 3 && display_auto_shutdown == 120)
+    ret = 1;
+  if (args3 == 4 && display_auto_shutdown == 180)
+    ret = 1;
+  if (args3 == 5 && display_auto_shutdown == 250)
+    ret = 1;
+
+  return ret;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -5563,11 +5748,6 @@ void display_element_show_network_detail(uint16_t x, uint16_t y, uint16_t size_x
   strcat(str1, ": ");
   strcat(str1, device.nazev);
   show_string(str1, x + 5 , y + 25 , 1, BLACK, WHITE, 0);
-  /// automaticky z dhcp
-  strcpy_P(str1, new_text_device_dhcp);
-  strcat(str1, ": ");
-  strcat(str1, "TODO");
-  show_string(str1, x + 5 , y + 40 , 1, BLACK, WHITE, 0);
   /// ip adresa
   ip2CharArray(device.myIP, str2);
   strcpy_P(str1, new_text_device_ip);
@@ -5618,6 +5798,26 @@ void button_click_ntp_sync_time(uint16_t args1, uint16_t args2, uint8_t args3)
     strcpy_P(dialog_text, new_text_error_ntp_time);
   }
 }
+///
+void button_ntp_set_server_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char ip_text[16];
+  MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
+  sprintf(ip_text, "%d.%d.%d.%d", device.ntp_server[0], device.ntp_server[1], device.ntp_server[2], device.ntp_server[3]);
+  display_element_set_string(ip_text, 16, 0, &helper_dialog_ntp_set_server, &valid_ipv4_address_element_string);
+}
+
+void helper_dialog_ntp_set_server(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t ip[4];
+  char ip_text[16];
+  display_element_get_string(ip_text);
+  parseBytes(ip_text, '.', device.ntp_server, 4, 10);
+  save_setup_network();
+  selftest_set_0(SELFTEST_RESTART_NEEDED);
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 /*
    Obsluha tlacitka casovy offset
@@ -5636,14 +5836,14 @@ void helper_set_menu_time_offset(uint16_t args1, float args2, uint8_t args3)
 }
 /////////////////////////////////////////////////////////////////////////////////
 /*
- * Funkce pro rucni nastaveni casu a datumu 
- */
+   Funkce pro rucni nastaveni casu a datumu
+*/
 void button_time_set_time_manualy_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   char cas_text[10];
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
   sprintf(cas_text, "%02d:%02d:%02d", now.hour(), now.minute(), now.second());
-  display_element_set_string(cas_text, 9, 0, &helper_set_time_manualy);
+  display_element_set_string(cas_text, 9, 0, &helper_set_time_manualy, &valid_true);
 }
 void helper_set_time_manualy(uint16_t args1, uint16_t args2, uint8_t args3)
 {
@@ -5658,8 +5858,8 @@ void button_time_set_date_manualy_onclick(uint16_t args1, uint16_t args2, uint8_
 {
   char datum_text[12];
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
-  sprintf(datum_text, "%02d.%02d.%04d", now.day() , now.month() ,now.year());
-  display_element_set_string(datum_text, 11, 0, &helper_set_date_manualy);
+  sprintf(datum_text, "%02d.%02d.%04d", now.day() , now.month() , now.year());
+  display_element_set_string(datum_text, 11, 0, &helper_set_date_manualy, &valid_true);
 }
 void helper_set_date_manualy(uint16_t args1, uint16_t args2, uint8_t args3)
 {
@@ -5670,13 +5870,79 @@ void helper_set_date_manualy(uint16_t args1, uint16_t args2, uint8_t args3)
   rtc.adjust(DateTime(dat[2], dat[1], dat[0], now.hour(), now.minute(), now.second()));
 }
 ////////////////////////////////////////////////////////////////////
+//// funkce obsluha tlacitka nastaveni mqqt serveru
+void button_set_mqtt_broker_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char ip_text[16];
+  MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
+  sprintf(ip_text, "%d.%d.%d.%d", device.mqtt_server[0], device.mqtt_server[1], device.mqtt_server[2], device.mqtt_server[3]);
+  display_element_set_string(ip_text, 16, 0, &helper_dialog_mqtt_set_server, &valid_ipv4_address_element_string);
+}
+//// funkce obsluha tlacitka nastaveni mqtt uzivatele
+void button_set_mqtt_user_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, 0);
+  display_element_set_string(device.mqtt_user, 20, 0, &helper_dialog_mqtt_set_user, &valid_true);
+}
+//// funkce obsluha tlacika nastaveni mqtt klice
+void button_set_mqtt_pass_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, 0);
+  display_element_set_string(device.mqtt_key, 20, 0, &helper_dialog_mqtt_set_pass, &valid_true);
+}
+//// funkce obsluha tlacitka check connection
+void button_check_mqtt_connection_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+/// TODO
+}
+
+
+void helper_dialog_mqtt_set_server(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char ip_text[16];
+  display_element_get_string(ip_text);
+  parseBytes(ip_text, '.', device.mqtt_server, 4, 10);
+  save_setup_network();
+  selftest_set_0(SELFTEST_RESTART_NEEDED);
+}
+
+void helper_dialog_mqtt_set_user(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char user[20];
+  display_element_get_string(user);
+  strcpy(device.mqtt_user, user);
+  save_setup_network();
+  selftest_set_0(SELFTEST_RESTART_NEEDED);
+}
+
+void helper_dialog_mqtt_set_pass(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char key[20];
+  display_element_get_string(key);
+  strcpy(device.mqtt_key, key);
+  save_setup_network();
+  selftest_set_0(SELFTEST_RESTART_NEEDED);
+}
+
+
+
+////////////////////////////////////////////////////////////////////
 /*
    Obsluha tlacitka vychozi hodnoty
+   a pak restart
 */
 void click_button_default_value(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   /// TODO dialog ANO/NE
   EEPROM.write(set_default_values, 255);
+  resetFunc();
+}
+/*
+ * funkce pro restartovani zarizeni
+ */
+void button_nastaveni_reload_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  /// TODO dialog ANO/NE
   resetFunc();
 }
 ///////////////////////////////////////////////////////////////////
@@ -5743,7 +6009,6 @@ void display_element_show_about_device(uint16_t x, uint16_t y, uint16_t size_x, 
   show_string(str1, x + 5 , y + 25 , 1, BLACK, WHITE, 0);
 
   strcpy_P(str1, new_text_tritri_volt);
-
   dtostrf(prepocet_napeti(tritri, CONST_PREVOD_TRIV), 4, 2, str2);
   strcat(str1, str2);
   strcat(str1, "V");
@@ -5785,8 +6050,36 @@ void display_element_show_about_device(uint16_t x, uint16_t y, uint16_t size_x, 
   itoa(mqtt_error, str2, 10);
   strcat(str1, str2);
   show_string(str1, x + 5 , y + 145 , 1, BLACK, WHITE, 0);
-
 }
+////
+////////////////
+/*
+
+   Funkce pro validace dat zadanych pres vstupni formular
+*/
+uint8_t valid_ipv4_address_element_string(void)
+{
+  /*
+    uint8_t ip[4];
+    char ip_text[16];
+    uint8_t ret = 0;
+    display_element_get_string(ip_text);
+    if (parseBytes(ip_text, '.', ip, 4, 10) == 3) ret = 1;
+    printf("ret: %d\n", ret);
+  */
+  return 1;
+}
+////
+uint8_t valid_true(void)
+{
+  return 1;
+}
+
+
+
+
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

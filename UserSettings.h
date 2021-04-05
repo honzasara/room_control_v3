@@ -24,12 +24,16 @@
 #define my_default_show_temp 93
 #define my_brightness_values 94
 #define my_brightness_mode 95
+#define my_display_auto_shutdown 96
 
 
 #define MAX_RTDS 10
 #define RTDS_DEVICE_TOTAL_LEN 20
 #define RTDS_DEVICE_STRING_LEN 18
 #define RTDS_DEVICE_ACTIVE_BYTE_POS 19
+
+#define RTDS_REMOTE_TYPE_TEMP 1
+#define RTDS_REMOTE_TYPE_FREE 255
 
 #define remote_tds_name0  1450
 #define remote_tds_name1  1470
@@ -42,10 +46,11 @@
 #define remote_tds_name8  1630
 #define remote_tds_name9  1650
 
-#define ram_remote_tds_store_size 3
+#define ram_remote_tds_store_size 4
 #define ram_remote_tds_store_data_low 100
 #define ram_remote_tds_store_data_high 101
 #define ram_remote_tds_store_last_update 102
+#define ram_remote_tds_store_type 103
 
 #define ram_remote_tds_store_last (ram_remote_tds_store_data_low+(ram_remote_tds_store_size*MAX_RTDS))
 
@@ -105,6 +110,7 @@
 #define NEW_MENU_NASTAVENI_MQTT_SCREEN 154
 #define NEW_MENU_DISPLAY_NASTAVENI_BRIGTHNESS_SCREEN 155
 #define NEW_MENU_ABOUT_DEVICE 156
+#define NEW_MENU_DISPLAY_NASTAVENI_AUTO_SHUTDOWN_SCREEN 157
 
 
 #define MENU_ATTRIBUTES_CLEAN_DISPLAY 0
@@ -309,6 +315,7 @@ typedef void (*ret_string_fptr)(uint8_t args1, uint8_t args2, uint8_t args3, cha
 typedef void (*fptr_coordinate_xy)(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
 typedef void (*fptr_args)(uint16_t args1, uint16_t args2, uint8_t args3);
 typedef uint8_t (*ret_fptr)(uint16_t args1, uint16_t args2, uint8_t args3);
+typedef uint8_t (*ret_fptr_no_args)(void);
 
 typedef void (*fptr_save_function)(uint16_t args, float now, uint8_t now1);
 
@@ -542,7 +549,7 @@ typedef struct t_MenuAll
   Menu1 ListMenu1[10];
   Menu1 ListMenu2[6];
   Menu1 ListMenu3[6];
-  Menu1 ListMenu4[6];
+  Menu1 ListMenu4[7];
 } MenuAll;
 
 

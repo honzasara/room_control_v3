@@ -4,6 +4,7 @@
 
 void click_button_default_value(uint16_t args1, uint16_t args2, uint8_t args3);
 void display_element_show_about_device(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
+void button_nastaveni_reload_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
 
 const Element_Button_1 button_nastaveni_site PROGMEM = {
   .name = nastaveni_site,
@@ -57,6 +58,19 @@ const Element_Button_1 button_nastaveni_default PROGMEM = {
   .enable_show = display_enable_show,
 };
 
+const Element_Button_1 button_nastaveni_reload PROGMEM = {
+  .name = new_text_nastaveni_reload,
+  .x = 280,
+  .y = 220,
+  .size_x = 190,
+  .size_y = 40,
+  .font_size = 1,
+  .args = 0,
+  .onclick = button_nastaveni_reload_onclick,
+  .redraw_class = REDRAW_BUTTON,
+  .enable_show = display_enable_show,
+};
+
 const Element_Button_1 button_nastaveni_casu PROGMEM = {
   .name = new_text_nastaveni_casu,
   .x = 280,
@@ -99,7 +113,7 @@ const Element_Function_1 f_show_about_device PROGMEM = {
 
 const Menu1 SystemSettingsMenu PROGMEM = {
   .name = new_text_nastaveni_system_full,
-  .button_1 = {button_back, button_nastaveni_site, button_nastaveni_nrf, button_nastaveni_default, button_nastaveni_casu, button_about_device, button_nastaveni_mqtt},
+  .button_1 = {button_back, button_nastaveni_site, button_nastaveni_nrf, button_nastaveni_default, button_nastaveni_casu, button_about_device, button_nastaveni_mqtt, button_nastaveni_reload},
   .button_2 = {NULL},
   .function_1 = {f_show_date},
   .switch_1 = {NULL},
@@ -107,7 +121,7 @@ const Menu1 SystemSettingsMenu PROGMEM = {
   .symbol_button_1 = {NULL},
   .dyn_symbol_1 = {NULL},
   .dyn_select_box_1 = {NULL},
-  .len_button_1 = 7,
+  .len_button_1 = 8,
   .len_button_2 = 0,
   .len_function_1 = 1,
   .len_switch_1 = 0,
