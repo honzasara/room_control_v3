@@ -9,7 +9,7 @@
 */
 
 
-void display_element_show_network_detail(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
+void display_element_show_network_detail(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text);
 void button_network_test_connection_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
 
 const Element_Button_1 button_set_network_ip PROGMEM = {

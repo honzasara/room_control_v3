@@ -3,7 +3,7 @@
 #include "room_control_v3.h"
 
 void button_nastaveni_default_value(uint16_t args1, uint16_t args2, uint8_t args3);
-void display_element_show_about_device(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
+void display_element_show_about_device(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text);
 void button_nastaveni_reload_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
 
 const Element_Button_1 button_nastaveni_site PROGMEM = {

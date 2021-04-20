@@ -12,8 +12,8 @@ void display_menu_tds_set_period(uint16_t args1, uint16_t args2, uint8_t args3);
 void display_menu_tds_set_name(uint16_t args1, uint16_t args2, uint8_t args3);
 void click_tds_deassociate_onewire(uint16_t args1, uint16_t idx, uint8_t args3);
 
-void display_element_show_tds_info_static(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
-void display_element_show_tds_info_dynamics(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
+void display_element_show_tds_info_static(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text);
+void display_element_show_tds_info_dynamics(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text);
 
 void clik_button_onewire_scan_bus(uint16_t args1, uint16_t args2, uint8_t args3);
 

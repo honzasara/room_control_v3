@@ -113,6 +113,7 @@
 #define NEW_MENU_DISPLAY_NASTAVENI_AUTO_SHUTDOWN_SCREEN 157
 #define NEW_MENU_THERMOSTAT_SETTINGS 158
 #define NEW_MENU_DIALOG_SELECT_TERM_MODE 159
+#define NEW_MENU_THERMOSTAT_TIME_MENU 160
 
 #define MENU_ATTRIBUTES_CLEAN_DISPLAY 0
 #define MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE 1
@@ -315,7 +316,7 @@ const char keyboad_number_char_special[KEYBOARD_SIZE_CHAR_SPECIAL] PROGMEM = {'0
 
 
 typedef void (*ret_string_fptr)(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2);
-typedef void (*fptr_coordinate_xy)(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
+typedef void (*fptr_coordinate_xy)(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text);
 typedef void (*fptr_args)(uint16_t args1, uint16_t args2, uint8_t args3);
 typedef uint8_t (*ret_fptr)(uint16_t args1, uint16_t args2, uint8_t args3);
 typedef uint8_t (*ret_fptr_no_args)(void);
@@ -329,7 +330,7 @@ typedef struct t_Element_Function_1
 {
   uint16_t x;
   uint16_t y;
-  uint8_t args;
+  uint16_t args;
   fptr_coordinate_xy fnt_coordinate_xy;
   uint16_t size_x;
   uint16_t size_y;
@@ -535,9 +536,9 @@ typedef struct t_MenuAll
   uint8_t len_menu3;
   uint8_t len_menu4;
   Menu1 ListMenu1[10];
-  Menu1 ListMenu2[7];
+  Menu1 ListMenu2[10];
   Menu1 ListMenu3[10];
-  Menu1 ListMenu4[7];
+  Menu1 ListMenu4[10];
 } MenuAll;
 
 

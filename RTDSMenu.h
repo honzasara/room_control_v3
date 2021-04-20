@@ -14,7 +14,7 @@ uint8_t get_function_rtds_last_index_for_menu(uint16_t args1, uint16_t args2, ui
 void get_function_rtds_text_button(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2);
 
 
-void display_element_show_rtds_info_dynamics(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
+void display_element_show_rtds_info_dynamics(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text);
 
 
 const Element_Button_1 button_rtds_novy PROGMEM = {

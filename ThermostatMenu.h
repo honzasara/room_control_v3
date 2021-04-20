@@ -15,7 +15,7 @@ void dyn_button_show_all_thermostat_get_status_string(uint8_t args1, uint8_t arg
 void dyn_button_show_all_thermostat_dyn_button_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
 
 void thermostat_button_set_ring_name_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
-void display_element_dialog_default_ring(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
+void display_element_dialog_default_ring(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text);
 void thermostat_button_deactivate_ring_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
 void thermostat_button_activate_ring_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
 
@@ -46,9 +46,23 @@ uint8_t menu_redraw_slider(uint16_t args1, uint16_t args2, uint8_t args3);
 uint8_t menu_redraw_change_default_ring(uint16_t args1, uint16_t args2, uint8_t args3);
 uint8_t menu_redraw_change_variable(uint16_t args1, uint16_t args2, uint8_t args3);
 uint8_t menu_redraw_change_term_mode(uint16_t args1, uint16_t args2, uint8_t args3);
+uint8_t menu_redraw_change_term_mode_cool_heat(uint16_t args1, uint16_t args2, uint8_t args3);
 
 uint8_t preload_regulator_menu(uint16_t args1, uint16_t args2, uint8_t args3);
 
+
+const Element_Function_1 f_show_fill_rectangle_term_mode_dialog PROGMEM = {
+  .x = 10,
+  .y = 40,
+  .args = YELLOW,
+  .fnt_coordinate_xy = display_element_fill_rectangle,
+  .size_x = 190,
+  .size_y = 160,
+  .redraw_class = ( 1 << REDRAW_CLASS_1),
+  .onclick = nullfce,
+  .enable_show = display_enable_show,
+  .name = char_NULL,
+};
 
 const Element_Button_1 button_nastaveni_ring_input_sensor PROGMEM = {
   .name = text_assocoivat,
@@ -102,7 +116,7 @@ const Element_Button_2 button_term_ring_mode_heat PROGMEM = {
   .args = TERM_MODE_MAN_HEAT,
   .onclick = button_click_set_term_heat_or_cool,
   .get_status_fnt = button_get_term_heat_or_cool,
-  .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_1),
+  .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_2 | 1 << REDRAW_CLASS_1 ),
   .enable_show = display_enable_show_term_mode_man
 };
 
@@ -118,7 +132,7 @@ const Element_Button_2 button_term_ring_mode_cool PROGMEM = {
   .args = TERM_MODE_MAN_COOL,
   .onclick = button_click_set_term_heat_or_cool,
   .get_status_fnt = button_get_term_heat_or_cool,
-  .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_1),
+  .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_2 | 1 << REDRAW_CLASS_1),
   .enable_show = display_enable_show_term_mode_man
 };
 
@@ -134,6 +148,7 @@ const Element_Function_1 f_default_ring_set_temp PROGMEM = {
   .enable_show = display_enable_show_term_mode_man,
   .name = char_NULL,
 };
+
 const Element_Symbol_1 dialog_set_default_ring_temp_plus PROGMEM =  {
   .znak = '+',
   .x = 160,
@@ -167,8 +182,8 @@ const Element_Button_1 button_set_time_program PROGMEM = {
   .size_x = 190,
   .size_y = 40,
   .font_size = 1,
-  .args = 0,
-  .onclick = nullfce,
+  .args = NEW_MENU_THERMOSTAT_TIME_MENU,
+  .onclick = MenuHistoryNextMenu,
   .redraw_class = (1 << REDRAW_ONCE),
   .enable_show = display_enable_show,
 };
@@ -448,7 +463,7 @@ const Menu1 DialogSelectTermMode PROGMEM = {
   .name = text_select_term_mode,
   .button_1 = {button_back },
   .button_2 = {button_term_ring_mode_heat, button_term_ring_mode_cool},
-  .function_1 = {f_default_ring_set_temp},
+  .function_1 = {f_show_fill_rectangle_term_mode_dialog, f_default_ring_set_temp},
   .switch_1 = {NULL},
   .dyn_button = {NULL},
   .symbol_button_1 = {dialog_set_default_ring_temp_plus, dialog_set_default_ring_temp_minus},
@@ -456,7 +471,7 @@ const Menu1 DialogSelectTermMode PROGMEM = {
   .dyn_select_box_1 = {button_select_term_mode},
   .len_button_1 = 1,
   .len_button_2 = 2,
-  .len_function_1 = 1,
+  .len_function_1 = 2,
   .len_switch_1 = 0,
   .len_dyn_button_1 = 0,
   .len_symbol_button_1 = 2,
@@ -472,7 +487,7 @@ const Menu1 DialogSelectTermMode PROGMEM = {
   .redraw_class = (1 << REDRAW_ONCE),
   .redraw_class_0 = menu_redraw_change_variable,
   .redraw_class_1 = menu_redraw_change_term_mode,
-  .redraw_class_2 = returnnullfceargs,
+  .redraw_class_2 = menu_redraw_change_term_mode_cool_heat,
   .redraw_class_3 = returnnullfceargs,
   .preload_function = preload_regulator_menu,
 };
@@ -503,7 +518,7 @@ const Menu1 DialogSelectInputSensorsForTerm PROGMEM = {
   .atributes = (1 << MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE | 1 << MENU_ATTRIBUTES_DECORATE_MENU),
   .color_background = YELLOW,
   .redraw_class = (1 << REDRAW_ONCE),
-  .redraw_class_0 = returnnullfceargs, 
+  .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
   .redraw_class_3 = returnnullfceargs,
@@ -570,7 +585,7 @@ const Menu1 DialogSelectRing PROGMEM = {
   .atributes = (1 << MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE | 1 << MENU_ATTRIBUTES_DECORATE_MENU),
   .color_background = YELLOW,
   .redraw_class = (1 << REDRAW_ONCE),
-  .redraw_class_0 = menu_redraw_change_default_ring, 
+  .redraw_class_0 = menu_redraw_change_default_ring,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
   .redraw_class_3 = returnnullfceargs,

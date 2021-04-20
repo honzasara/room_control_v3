@@ -27,6 +27,8 @@
     19. tlacitko pro restart/bootloader -> dialog pro vyber moznosti
     20.
     21. po najeti rychle blika dvojtecka u casu - fixnuto - HOTOVO
+    22. change_term_mode - rozdelit po bitech
+    
 
   zapojeni pinu z leva do prava hneda -> zluta -> oranzova -> zelena -> cervena -> cerna
 */
@@ -52,6 +54,7 @@
 #include "MenuNastaveniMqtt.h"
 #include "ThermostatMenu.h"
 #include "pidDialogMenu.h"
+#include "ThermostatTimeMenu.h"
 
 SoftSPIB swSPI(STORAGE_MOSI, STORAGE_MISO, STORAGE_CLK);
 
@@ -568,12 +571,12 @@ fptr_args dialog_yes_function;
 const MenuAll Menu_All PROGMEM = {
   .len_menu1 = 6,
   .len_menu2 = 5,
-  .len_menu3 = 9,
+  .len_menu3 = 10,
   .len_menu4 = 7,
 
   .ListMenu1 = {HlavniMenu, MenuNastaveniSite, OneWireMenu, MenuNastaveniCas, SelectMenuDefaultTemp, MenuNastaveniMQTT},
   .ListMenu2 = {DialogYESNO, DialogSetVariable, DialogKyeboardAlfa, DialogKyeboardNumber , DialogOK},
-  .ListMenu3 = {TDSMenu, RTDS_Menu_Detail, List_RTDS_Menu, MenuThermostat_Setting, DialogSelectRing, MenuThermostatRingSetup, DialogSelectInputSensorsForTerm, DialogSelectTermMode, DialogSelectPIDSensor},
+  .ListMenu3 = {TDSMenu, RTDS_Menu_Detail, List_RTDS_Menu, MenuThermostat_Setting, DialogSelectRing, MenuThermostatRingSetup, DialogSelectInputSensorsForTerm, DialogSelectTermMode, DialogSelectPIDSensor, New_ThermostatTimeMenu},
   .ListMenu4 = {SystemSettingsMenu, New_NastaveniMenu, PeriferieSettingsMenu, New_DisplaySettingMenu, New_DisplaySetting_Brigthness, AboutDeviceMenu, New_DisplaySetting_Auto_Shutdown},
 };
 
@@ -664,29 +667,6 @@ bool draw_menu(bool redraw, uint8_t click_type, uint16_t click_x, uint16_t click
 
   current = MenuHistoryGetMenu(&menu_args1);
 
-  /*
-    click_x = 0;
-    click_y = 0;
-
-
-    my_touch.TP_Scan(0);
-    if (my_touch.TP_Get_State() & TP_PRES_DOWN)
-    {
-    display_touch_click = 1;
-    if (redraw == false)
-    {
-      click_x = my_touch.x;
-      click_y = my_touch.y;
-      display_auto_shutdown_now = 0;
-      if (((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY)) != 0) && my_touch.TP_GetOnOff() == 0)
-      {
-        my_touch.TP_SetOnOff(LED_ON);
-        goto draw_menu_end;
-      }
-    }
-    }
-  */
-
   global_x = pgm_read_word(&current->x);
   global_y = pgm_read_word(&current->y);
 
@@ -730,8 +710,9 @@ bool draw_menu(bool redraw, uint8_t click_type, uint16_t click_x, uint16_t click
     sbi(redraw_class, 5);
   }
   else
+  {
     cbi(redraw_class, 5);
-
+  }
   /////
   rdr = pgm_read_byte(&current->redraw_class);
   if (enable_redraw(rdr, redraw_class) == true)
@@ -739,6 +720,32 @@ bool draw_menu(bool redraw, uint8_t click_type, uint16_t click_x, uint16_t click
     strcpy_P(str1, (char*)pgm_read_word(&current->name));
     show_string(str1, pgm_read_word(&current->x) + 5, pgm_read_word(&current->y) + 5, 2, BLACK, WHITE, 0);
   }
+  ///
+  /// menu programy
+  for (uint8_t idx = 0; idx < pgm_read_byte(&current->len_function_1); idx++)
+  {
+    function_1 = &current->function_1[idx];
+    rfnt = (ret_fptr*)pgm_read_word(&function_1->enable_show);
+    active = (ret_fptr(rfnt))(pgm_read_byte(&function_1->args), menu_args1, idx);
+    if (active == 0) continue;
+    rdr = pgm_read_byte(&function_1->redraw_class);
+    if (enable_redraw(rdr, redraw_class) == true)
+    {
+      strcpy_P(str1, (char*)pgm_read_word(&function_1->name));
+      fnt_coordinate_xy =  (fptr_coordinate_xy*)pgm_read_word(&function_1->fnt_coordinate_xy);
+      ((fptr_coordinate_xy)fnt_coordinate_xy)(global_x + pgm_read_word(&function_1->x), global_y + pgm_read_word(&function_1->y), pgm_read_word(&function_1->size_x), pgm_read_word(&function_1->size_y), pgm_read_word(&function_1->args), menu_args1, str1);
+    }
+    if (click_x > 0 && click_y > 0)
+      if (button_click_touch(global_x + pgm_read_word(&function_1->x), global_y + pgm_read_word(&function_1->y), pgm_read_word(&function_1->size_x), pgm_read_word(&function_1->size_y), click_x, click_y) == true)
+      {
+        //fntargs =  pgm_read_word(&function_1->onclick);
+        //((fptr_args)fntargs)(pgm_read_byte(&function_1->args), menu_args1);
+        //ret = true;
+        printf("mrdka funkce\n");
+      }
+  }
+  if (ret == true)  goto draw_menu_end;
+  ///
   /// tlacitko typ 1 se prekresluje s celym menu
   /// tlacitko typ 1
   for (uint8_t idx = 0; idx < pgm_read_byte(&current->len_button_1); idx++)
@@ -763,6 +770,7 @@ bool draw_menu(bool redraw, uint8_t click_type, uint16_t click_x, uint16_t click
       }
   }
   if (ret == true)  goto draw_menu_end;
+  ///
   /// tlacitko typ 2
   for (uint8_t idx = 0; idx < pgm_read_byte(&current->len_button_2); idx++)
   {
@@ -791,30 +799,6 @@ bool draw_menu(bool redraw, uint8_t click_type, uint16_t click_x, uint16_t click
         fntargs =  (fptr_args*)pgm_read_word(&button_2->onclick);
         ((fptr_args)fntargs)(pgm_read_byte(&button_2->args), menu_args1, idx);
         ret = true;
-      }
-  }
-  if (ret == true)  goto draw_menu_end;
-  /// menu programy
-  for (uint8_t idx = 0; idx < pgm_read_byte(&current->len_function_1); idx++)
-  {
-    function_1 = &current->function_1[idx];
-    rfnt = (ret_fptr*)pgm_read_word(&function_1->enable_show);
-    active = (ret_fptr(rfnt))(pgm_read_byte(&function_1->args), menu_args1, idx);
-    if (active == 0) continue;
-    rdr = pgm_read_byte(&function_1->redraw_class);
-    if (enable_redraw(rdr, redraw_class) == true)
-    {
-      strcpy_P(str1, (char*)pgm_read_word(&function_1->name));
-      fnt_coordinate_xy =  (fptr_coordinate_xy*)pgm_read_word(&function_1->fnt_coordinate_xy);
-      ((fptr_coordinate_xy)fnt_coordinate_xy)(global_x + pgm_read_word(&function_1->x), global_y + pgm_read_word(&function_1->y), pgm_read_word(&function_1->size_x), pgm_read_word(&function_1->size_y), pgm_read_byte(&function_1->args), menu_args1, str1);
-    }
-    if (click_x > 0 && click_y > 0)
-      if (button_click_touch(global_x + pgm_read_word(&function_1->x), global_y + pgm_read_word(&function_1->y), pgm_read_word(&function_1->size_x), pgm_read_word(&function_1->size_y), click_x, click_y) == true)
-      {
-        //fntargs =  pgm_read_word(&function_1->onclick);
-        //((fptr_args)fntargs)(pgm_read_byte(&function_1->args), menu_args1);
-        //ret = true;
-        printf("mrdka funkce\n");
       }
   }
   if (ret == true)  goto draw_menu_end;
@@ -849,6 +833,7 @@ bool draw_menu(bool redraw, uint8_t click_type, uint16_t click_x, uint16_t click
   }
   if (ret == true)  goto draw_menu_end;
   ////
+  ////
   for (uint8_t idx = 0; idx < pgm_read_byte(&current->len_symbol_button_1); idx++)
   {
     symbol_button_1 = &current->symbol_button_1[idx];
@@ -871,6 +856,7 @@ bool draw_menu(bool redraw, uint8_t click_type, uint16_t click_x, uint16_t click
       }
   }
   if (ret == true)  goto draw_menu_end;
+  ////
   ////
   for (uint8_t idx = 0; idx < pgm_read_byte(&current->len_dyn_symbol_1); idx++)
   {
@@ -960,6 +946,7 @@ bool draw_menu(bool redraw, uint8_t click_type, uint16_t click_x, uint16_t click
   }
   if (ret == true)  goto draw_menu_end;
   ////
+  ////
   for (uint8_t idx = 0; idx < pgm_read_byte(&current->len_dyn_button_1); idx++)
   {
     dyn_button_1 = &current->dyn_button[idx];
@@ -1020,6 +1007,7 @@ bool draw_menu(bool redraw, uint8_t click_type, uint16_t click_x, uint16_t click
     }
   }
   if (ret == true)  goto draw_menu_end;
+  ////
   for (uint8_t idx = 0; idx < pgm_read_byte(&current->len_dyn_select_box_1); idx++)
   {
     dyn_select_box_1 = &current->dyn_select_box_1[idx];
@@ -1635,6 +1623,17 @@ uint8_t menu_redraw_time05s(uint16_t args1, uint16_t args2, uint8_t args3)
 uint8_t menu_redraw_change_term_mode(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   if (change_term_mode == 1)
+  {
+    change_term_mode = 0;
+    return 1;
+  }
+  return 0;
+}
+
+uint8_t menu_redraw_change_term_mode_cool_heat(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+
+  if (change_term_mode == 2)
   {
     change_term_mode = 0;
     return 1;
@@ -4076,13 +4075,19 @@ void loop() {
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------------
-void display_element_rectangle(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
+void display_element_rectangle(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
   my_lcd.Draw_Rectangle(x, y, x + size_x, y + size_y);
 }
 
+void display_element_fill_rectangle(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
+{
+  my_lcd.Set_Draw_color(args1);
+  my_lcd.Fill_Rectangle(x, y, x + size_x, y + size_y);
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void display_element_dialog_default_ring(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
+void display_element_dialog_default_ring(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
   char name[10];
   char default_text[30];
@@ -4110,7 +4115,7 @@ void display_element_dialog_default_ring(uint16_t x, uint16_t y, uint16_t size_x
 
 
 /// dekorativni funkce zobrazeni casu
-void display_element_show_time_decorate_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
+void display_element_show_time_decorate_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
   uint16_t pos = 0;
   char str1[24];
@@ -4121,7 +4126,7 @@ void display_element_show_time_decorate_1(uint16_t x, uint16_t y, uint16_t size_
 }
 
 /// funkce pro zobrazeni casu
-void display_element_show_time_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
+void display_element_show_time_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
   char str1[24];
   if (selftest_get_0(SELFTEST_ERR_RTC) == 0)
@@ -4138,7 +4143,7 @@ void display_element_show_time_1(uint16_t x, uint16_t y, uint16_t size_x, uint16
 ///
 
 /// dekorativni funkce pro zobrazeni teploty
-void display_element_show_temp_decorate_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
+void display_element_show_temp_decorate_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
   char str1[32];
   char str2[20];
@@ -4152,7 +4157,7 @@ void display_element_show_temp_decorate_1(uint16_t x, uint16_t y, uint16_t size_
   my_lcd.Draw_Rectangle(x, y, x + 244, y + 84);
 }
 /// funkce pro zobrazeni teploty
-void display_element_show_temp_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
+void display_element_show_temp_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
   char str1[32];
   char str2[20];
@@ -4173,7 +4178,7 @@ void display_element_show_temp_1(uint16_t x, uint16_t y, uint16_t size_x, uint16
   }
 }
 ////////////////////////////////////////////////////
-void display_element_show_date_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
+void display_element_show_date_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
   char str1[16];
   if (selftest_get_0(SELFTEST_ERR_RTC) == 0)
@@ -4187,12 +4192,12 @@ void display_element_show_date_1(uint16_t x, uint16_t y, uint16_t size_x, uint16
   my_lcd.Set_Draw_color(WHITE); my_lcd.Draw_Fast_HLine(x, y, 142); my_lcd.Draw_Fast_HLine(x, y + 1, 142); show_string(str1, x, y + 2, 3, BLACK, WHITE, 0);
 }
 /////
-void display_element_dialog_show_text(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
+void display_element_dialog_show_text(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
   show_string(dialog_text, x, y, 2, BLACK, WHITE, 0);
 }
 //////////////////////////////////////////////
-void display_element_show_tds_info_dynamics(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
+void display_element_show_tds_info_dynamics(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
   struct_DDS18s20 tds;
   char str1[26];
@@ -4210,7 +4215,7 @@ void display_element_show_tds_info_dynamics(uint16_t x, uint16_t y, uint16_t siz
   }
 }
 ////
-void display_element_show_tds_info_static(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
+void display_element_show_tds_info_static(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
   struct_DDS18s20 tds;
   char str1[26];
@@ -4251,7 +4256,7 @@ void display_element_show_tds_info_static(uint16_t x, uint16_t y, uint16_t size_
   }
 }
 /////
-void display_element_show_rtds_info_dynamics(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
+void display_element_show_rtds_info_dynamics(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
   char str1[32];
   char str2[26];
@@ -4295,7 +4300,7 @@ void display_element_show_rtds_info_dynamics(uint16_t x, uint16_t y, uint16_t si
   }
 }
 ////////////////////////////////////////////////////////
-void display_element_dialog_set_variable(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t idx, uint8_t args2, char *text)
+void display_element_dialog_set_variable(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t idx, uint8_t args2, char *text)
 {
   uint16_t tmp1, posx1, posy1;
   char line1[9];
@@ -4324,7 +4329,7 @@ void display_element_dialog_set_variable(uint16_t x, uint16_t y, uint16_t size_x
     show_string(text, x + 5 , y + posy1 - 1 , 2, BLACK, WHITE, 0);
 }
 //////////////
-void display_element_dialog_set_string(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
+void display_element_dialog_set_string(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
   uint16_t tmp1, posx1, posy1;
   my_lcd.Set_Draw_color(BLACK);
@@ -4345,7 +4350,7 @@ void display_element_dialog_set_string(uint16_t x, uint16_t y, uint16_t size_x, 
 /*
    dynamicke posouvani v menu
 */
-void display_element_vertical_slider(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
+void display_element_vertical_slider(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
   uint8_t sy;
   my_lcd.Set_Draw_color(BLACK);
@@ -5454,11 +5459,11 @@ void button_click_set_term_heat_or_cool(uint16_t args1, uint16_t args2, uint8_t 
 {
   if (thermostat_ring_get_active(args2) != RING_FREE)
   {
-    change_term_mode = 1;
     if (args1 == TERM_MODE_MAN_HEAT)
       thermostat_ring_update_bites(args2, STATUS_BIT_HEAT_OR_COOL, 0);
     if (args1 == TERM_MODE_MAN_COOL)
       thermostat_ring_update_bites(args2, STATUS_BIT_HEAT_OR_COOL, 1);
+    change_term_mode = 2;
   }
 }
 
@@ -5728,7 +5733,7 @@ uint8_t button_set_brightness_auto_shutdown_select_time_get_status_fnt(uint16_t 
    Funkce pro zobrazeni sitovych informaci
 
 */
-void display_element_show_network_detail(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
+void display_element_show_network_detail(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
   char str1[36];
   char str2[24];
@@ -5997,7 +6002,7 @@ uint8_t check_connectivity_connection(void)
 
    Funkce ktera zobrazuje vsechny interni veliciny vhodne k diagnostice zarizeni
 */
-void display_element_show_about_device(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
+void display_element_show_about_device(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
   char str1[32];
   char str2[8];
