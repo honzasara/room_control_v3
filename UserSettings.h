@@ -98,7 +98,7 @@
 #define MENU_DIALOG_KEYBOARD_ALFA 103
 #define MENU_DIALOG_OK 104
 
-#define MENU_DIALOG_SELECT_TERM_MODE 104
+//#define MENU_DIALOG_SELECT_TERM_MODE 104
 
 
 
@@ -111,7 +111,8 @@
 #define NEW_MENU_DISPLAY_NASTAVENI_BRIGTHNESS_SCREEN 155
 #define NEW_MENU_ABOUT_DEVICE 156
 #define NEW_MENU_DISPLAY_NASTAVENI_AUTO_SHUTDOWN_SCREEN 157
-
+#define NEW_MENU_THERMOSTAT_SETTINGS 158
+#define NEW_MENU_DIALOG_SELECT_TERM_MODE 159
 
 #define MENU_ATTRIBUTES_CLEAN_DISPLAY 0
 #define MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE 1
@@ -125,6 +126,7 @@
 #define MENU_SLIDER_RTDS 1
 #define MENU_SLIDER_DEFAULT_TEMP 2
 #define MENU_SLIDER_INPUT_TEMP 3
+#define MENU_SLIDER_ALL_THERMOSTAT 4
 #define MENU_SLIDER_OFF 255
 
 
@@ -212,7 +214,8 @@ const char text_button_term_fan[] PROGMEM = "FAN";
 const char text_term_active[] PROGMEM = "Aktivni";
 const char text_term_deactive[] PROGMEM = "Neaktivni";
 const char text_term_do_activate[] PROGMEM = "Aktivovat novy regulator?";
-const char text_term_do_deactivate[] PROGMEM = "Deaktivovat regulator";
+const char text_term_do_deactivate[] PROGMEM = "Deaktivovat reg.";
+const char text_term_do_activate1[] PROGMEM = "Aktivovat reg.";
 
 const char nastaveni_site[] PROGMEM = "Nastaveni site";
 const char nastaveni_nrf[] PROGMEM = "NRF pripojeni";
@@ -320,23 +323,7 @@ typedef uint8_t (*ret_fptr_no_args)(void);
 typedef void (*fptr_save_function)(uint16_t args, float now, uint8_t now1);
 
 
-//#define REDRAW_FORCE 3
-#define REDRAW_EVERY_500MS 0
-#define REDRAW_EXTERNAL_EVENT 1
-#define REDRAW_EVERY_10SEC 2
 
-#define REDRAW_CLASS_SHOW_TIME (1<<REDRAW_FORCE | 1<<REDRAW_EVERY_500MS)
-
-#define REDRAW_PROGRAM_BUTTON (1<<REDRAW_EXTERNAL_EVENT| 1<<REDRAW_FORCE)
-#define REDRAW_CLASS_SHOW (1<<REDRAW_FORCE | 1<< REDRAW_EVERY_10SEC)
-
-
-#define REDRAW_BUTTON (1<<REDRAW_FORCE)
-
-#define REDRAW_FORCE 3
-#define REDRAW_CLASS_0 0
-#define REDRAW_CLASS_1 1
-#define REDRAW_CLASS_2 2
 
 typedef struct t_Element_Function_1
 {
@@ -509,7 +496,7 @@ typedef struct t_Menu1
   const char *name;
   Element_Button_1 button_1[10];
   Element_Button_2 button_2[5];
-  Element_Function_1 function_1[4];
+  Element_Function_1 function_1[5];
   Element_Switch_1 switch_1[3];
   Element_Dyn_Button_1 dyn_button[2];
   Element_Symbol_1 symbol_button_1[8];
@@ -534,6 +521,7 @@ typedef struct t_Menu1
   ret_fptr redraw_class_0;
   ret_fptr redraw_class_1;
   ret_fptr redraw_class_2;
+  ret_fptr redraw_class_3;
   ret_fptr preload_function;
 } Menu1;
 
@@ -547,8 +535,8 @@ typedef struct t_MenuAll
   uint8_t len_menu3;
   uint8_t len_menu4;
   Menu1 ListMenu1[10];
-  Menu1 ListMenu2[6];
-  Menu1 ListMenu3[6];
+  Menu1 ListMenu2[7];
+  Menu1 ListMenu3[10];
   Menu1 ListMenu4[7];
 } MenuAll;
 

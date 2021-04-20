@@ -50,7 +50,6 @@ const Element_Button_1 button_default_show_temp PROGMEM = {
   .enable_show = display_enable_show,
 };
 
-
 const Element_Dyn_Button_1 button_change_brightness_display PROGMEM = {
   .first_x = 10,
   .first_y = 100,
@@ -279,6 +278,7 @@ const Menu1 SelectMenuDefaultTemp PROGMEM = {
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
+  .redraw_class_3 = returnnullfceargs,
   .preload_function = returnnullfceargs,
 };
 
@@ -312,6 +312,7 @@ const Menu1 New_DisplaySettingMenu PROGMEM = {
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
+  .redraw_class_3 = returnnullfceargs,
   .preload_function = returnnullfceargs,
 };
 
@@ -344,6 +345,7 @@ const Menu1 New_DisplaySetting_Brigthness PROGMEM = {
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
+  .redraw_class_3 = returnnullfceargs,
   .preload_function = preload_display_setting_brightness,
 };
 
@@ -378,6 +380,7 @@ const Menu1 New_DisplaySetting_Auto_Shutdown PROGMEM = {
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
+  .redraw_class_3 = returnnullfceargs,
   .preload_function = preload_display_setting_brightness,
 };
 

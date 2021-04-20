@@ -24,8 +24,9 @@
     16. po upgrade casu udelat hned aktualizci obrazovky
     17. validace zadanych hodnot pro cas a datum, nedovolit ulozit!
     18. funkce pro validaci IP adres
-    19. tlacitko pro restart - HOTOVO
-    20. po najeti rychle blika dvojtecka u casu
+    19. tlacitko pro restart/bootloader -> dialog pro vyber moznosti
+    20.
+    21. po najeti rychle blika dvojtecka u casu - fixnuto - HOTOVO
 
   zapojeni pinu z leva do prava hneda -> zluta -> oranzova -> zelena -> cervena -> cerna
 */
@@ -49,12 +50,23 @@
 #include "MenuSettingsTime.h"
 
 #include "MenuNastaveniMqtt.h"
+#include "ThermostatMenu.h"
+#include "pidDialogMenu.h"
 
 SoftSPIB swSPI(STORAGE_MOSI, STORAGE_MISO, STORAGE_CLK);
 
 
 RTC_DS1307 rtc;
 DateTime now;
+uint16_t last_year = 0;
+uint8_t last_month = 0;
+uint8_t last_day = 0;
+uint8_t last_time_hour = 0;
+uint8_t last_time_minute = 0;
+uint8_t display_update_date = 0;
+uint8_t display_redraw_once = 0;
+uint8_t display_update_slider = 0;
+uint8_t display_redraw_default_ring = 0;
 
 
 EthernetClient ethClient;
@@ -101,10 +113,16 @@ long milis_1s = 0;
 long milis_10s = 0;
 long milis_1ms = 0;
 
+uint8_t display_touch_click = 0;
+uint8_t click_on_display = 0;
+uint8_t click_on_display_last = 0;
+long click_time = 0;
 
 
 uint8_t default_ring = 0;
+uint8_t last_default_ring = 0;
 uint8_t default_show_temp = 0;
+uint8_t thermostat_mode_default_ring_last_state = 0;
 
 long load = 0;
 long load_max = 0;
@@ -124,12 +142,13 @@ uint8_t display_auto_shutdown_now = 0;
 uint8_t use_rtds = 0;
 uint8_t use_tds = 0;
 
-uint8_t menu_slider_data_current[5];
+uint8_t menu_slider_data_current[6];
 uint8_t menu_slider_data_max;
 uint8_t menu_slider_data_min;
 uint8_t menu_slider_data_max_element;
 
 float internal_temp;
+
 
 
 struct tt_menu_dialog_variable
@@ -143,7 +162,7 @@ struct tt_menu_dialog_variable
   uint8_t args;
   fptr_save_function save_function;
 } menu_dialog_variable[4];
-
+uint8_t menu_dialog_variable_change;
 
 
 
@@ -185,30 +204,7 @@ fptr_args dialog_yes_function;
    definice menu pro vyber zobrazeni teplomeru na vychozi obrazovce
 */
 
-
-
-const Element_Dyn_Select_1 button_select_term_mode PROGMEM = {
-  .first_x = 230,
-  .first_y = 40,
-  .size_x = 200,
-  .size_y = 40,
-  .font_size_1 = 2,
-  .font_size_2 = 1,
-  .color_active = GREEN,
-  .color_inactive = WHITE,
-  .step_x = 1,
-  .step_y = 50,
-  .direction = VERTICAL,
-  .max_items_count = 5,
-  .max_row_count = 1,
-  .slider_args = MENU_SLIDER_OFF,
-  .args = 5,
-  .get_status_string = button_get_term_mode_labels,
-  .dyn_symbol_onclick =  button_click_term_set_mode,
-  .function_for_max_items = get_function_return_args_1,
-  .get_status_fnt = button_get_term_mode_is_selected,
-  .redraw_class = REDRAW_BUTTON,
-};
+/*
 
 
 
@@ -220,7 +216,9 @@ const Element_Dyn_Select_1 button_select_term_mode PROGMEM = {
 
 
 
-const Element_Dyn_Button_1 button_change_term_mode_via_dialog PROGMEM = {
+
+
+  const Element_Dyn_Button_1 button_change_term_mode_via_dialog PROGMEM = {
   .first_x = 10,
   .first_y = 100,
   .size_x = 190,
@@ -237,79 +235,20 @@ const Element_Dyn_Button_1 button_change_term_mode_via_dialog PROGMEM = {
   .dyn_button_onclick = button_click_term_set_mode_via_dialog,
   .function_for_max_items = get_function_return_args_1,
   .redraw_class = (1 << REDRAW_FORCE)
-};
+  };
 
 
 
 
-const Element_Dyn_Button_1 button_change_default_ring_via_dialog PROGMEM = {
-  .first_x = 10,
-  .first_y = 40,
-  .size_x = 190,
-  .size_y = 40,
-  .font_size = 1,
-  .step_x = 1,
-  .step_y = 1,
-  .direction = VERTICAL,
-  .max_items_count = 1,
-  .max_row_count = 1,
-  .slider_args = 0,
-  .args = 1,
-  .get_status_string = button_get_default_ring_labels,
-  .dyn_button_onclick =  click_thermostat_set_ring_via_dialog,
-  .function_for_max_items = get_function_return_args_1,
-  .redraw_class = REDRAW_BUTTON,
-};
-
-const Element_Dyn_Select_1 button_change_default_ring_in_dialog PROGMEM = {
-  .first_x = 10,
-  .first_y = 40,
-  .size_x = 120,
-  .size_y = 50,
-  .font_size_1 = 2,
-  .font_size_2 = 1,
-  .color_active = GREEN,
-  .color_inactive = WHITE,
-  .step_x = 130,
-  .step_y = 60,
-  .direction = HORIZONTAL_NEW_LINE,
-  .max_items_count = 3,
-  .max_row_count = 3,
-  .slider_args = MENU_SLIDER_OFF,
-  .args = MAX_THERMOSTAT,
-  .get_status_string =  button_change_default_ring_labels_in_dialog,
-  .dyn_symbol_onclick =  button_click_set_new_default_ring_in_dialog,
-  .function_for_max_items = get_function_return_args_1,
-  .get_status_fnt = button_get_term_ring_is_selected,
-  .redraw_class = REDRAW_BUTTON,
-};
-
-//saric
-const Element_Dyn_Select_1 button_select_term_ring_input_in_dialog PROGMEM = {
-  .first_x = 10,
-  .first_y = 40,
-  .size_x = 120,
-  .size_y = 50,
-  .font_size_1 = 1,
-  .font_size_2 = 1,
-  .color_active = GREEN,
-  .color_inactive = WHITE,
-  .step_x = 130,
-  .step_y = 60,
-  .direction = HORIZONTAL_NEW_LINE,
-  .max_items_count = 3,
-  .max_row_count = 3,
-  .slider_args = MENU_SLIDER_INPUT_TEMP,
-  .args = INPUT_SENSOR_SHOW_ALL,
-  .get_status_string =  button_get_show_default_temp,
-  .dyn_symbol_onclick =  button_click_set_show_default_ring_input,
-  .function_for_max_items =  button_get_show_default_temp_max_items,
-  .get_status_fnt = button_get_show_default_ring_input_active,
-  .redraw_class = REDRAW_BUTTON,
-};
 
 
-const Element_Dyn_Select_1 button_select_term_ring_program_in_dialog PROGMEM = {
+
+
+  //saric
+
+
+
+  const Element_Dyn_Select_1 button_select_term_ring_program_in_dialog PROGMEM = {
   .first_x = 10,
   .first_y = 40,
   .size_x = 120,
@@ -330,13 +269,13 @@ const Element_Dyn_Select_1 button_select_term_ring_program_in_dialog PROGMEM = {
   .function_for_max_items =  button_get_show_default_ring_program_max_items,
   .get_status_fnt = button_get_show_default_ring_program_active,
   .redraw_class = REDRAW_BUTTON,
-};
+  };
 
 
-const Element_Button_2 button_term_ring_mode_heat PROGMEM = {.name = text_button_mode_heat, .x = 240, .y = 90, .size_x = 100, .size_y = 40, .font_size = 1, .color_active = RED, .color_inactive = WHITE, .args = TERM_MODE_MAN_HEAT, .onclick = button_click_set_term_heat_or_cool, .get_status_fnt = button_get_term_heat_or_cool,  .redraw_class = REDRAW_PROGRAM_BUTTON, .enable_show = display_enable_show_term_mode_man};
-const Element_Button_2 button_term_ring_mode_cool PROGMEM = {.name = text_button_mode_cool, .x = 360, .y = 90, .size_x = 100, .size_y = 40, .font_size = 1, .color_active = BLUE, .color_inactive = WHITE, .args = TERM_MODE_MAN_COOL, .onclick = button_click_set_term_heat_or_cool, .get_status_fnt = button_get_term_heat_or_cool,  .redraw_class = REDRAW_PROGRAM_BUTTON, .enable_show = display_enable_show_term_mode_man};
+  const Element_Button_2 button_term_ring_mode_heat PROGMEM = {.name = text_button_mode_heat, .x = 240, .y = 90, .size_x = 100, .size_y = 40, .font_size = 1, .color_active = RED, .color_inactive = WHITE, .args = TERM_MODE_MAN_HEAT, .onclick = button_click_set_term_heat_or_cool, .get_status_fnt = button_get_term_heat_or_cool,  .redraw_class = REDRAW_PROGRAM_BUTTON, .enable_show = display_enable_show_term_mode_man};
+  const Element_Button_2 button_term_ring_mode_cool PROGMEM = {.name = text_button_mode_cool, .x = 360, .y = 90, .size_x = 100, .size_y = 40, .font_size = 1, .color_active = BLUE, .color_inactive = WHITE, .args = TERM_MODE_MAN_COOL, .onclick = button_click_set_term_heat_or_cool, .get_status_fnt = button_get_term_heat_or_cool,  .redraw_class = REDRAW_PROGRAM_BUTTON, .enable_show = display_enable_show_term_mode_man};
 
-const Element_Button_1 button_term_ring_select_program PROGMEM = {
+  const Element_Button_1 button_term_ring_select_program PROGMEM = {
   .name = text_nastaveni_ring_program,
   .x = 240,
   .y = 40,
@@ -347,9 +286,9 @@ const Element_Button_1 button_term_ring_select_program PROGMEM = {
   .onclick = MenuHistoryNextMenu,
   .redraw_class = (1 << REDRAW_FORCE),
   .enable_show = display_enable_show_term_mode_prog,
-};
+  };
 
-const Element_Button_1 button_term_ring_setup_program PROGMEM = {
+  const Element_Button_1 button_term_ring_setup_program PROGMEM = {
   .name = text_nastaveni_setup_program,
   .x = 240,
   .y = 90,
@@ -360,9 +299,9 @@ const Element_Button_1 button_term_ring_setup_program PROGMEM = {
   .onclick = MenuHistoryNextMenu,
   .redraw_class = (1 << REDRAW_FORCE),
   .enable_show = display_enable_show_term_mode_prog,
-};
+  };
 
-const Element_Button_1 button_term_ring_setting_menu PROGMEM = {
+  const Element_Button_1 button_term_ring_setting_menu PROGMEM = {
   .name = nastaveni_ring_text,
   .x = 10,
   .y = 160,
@@ -373,55 +312,22 @@ const Element_Button_1 button_term_ring_setting_menu PROGMEM = {
   .onclick = button_click_nastaveni_ring_screen,
   .redraw_class = (1 << REDRAW_FORCE),
   .enable_show = display_enable_show,
-};
+  };
 
-const Element_Button_1 button_nastaveni_ring_nazev PROGMEM = {
-  .name = nastaveni_name_sensor,
-  .x = 280,
-  .y = 40,
-  .size_x = 190,
-  .size_y = 40,
-  .font_size = 2,
-  .args = 0,
-  .onclick = button_click_set_term_ring_name_via_keyboard,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .enable_show = display_enable_show,
-};
 
-const Element_Button_1 button_nastaveni_ring_input_sensor PROGMEM = { .name = text_assocoivat, .x = 280, .y = 100, .size_x = 190, .size_y = 40, .font_size = 2, .args = MENU_NASTAVENI_SELECT_INPUT_SENSORS, .onclick = MenuHistoryNextMenu,  .redraw_class = (1 << REDRAW_FORCE), .enable_show = display_enable_show,};
-const Element_Button_1 button_nastaveni_ring_output PROGMEM = { .name = text_assocoivat_output, .x = 280, .y = 160, .size_x = 190, .size_y = 40, .font_size = 1, .args = 0, .onclick = nullfce,  .redraw_class = (1 << REDRAW_FORCE), .enable_show = display_enable_show,};
-const Element_Button_1 button_nastaveni_ring_pid PROGMEM = { .name = text_nastavit_pid, .x = 280, .y = 220, .size_x = 190, .size_y = 40, .font_size = 2, .args = MENU_NASTAVENI_SELECT_PID_PARAMETRS, .onclick = MenuHistoryNextMenu,  .redraw_class = (1 << REDRAW_FORCE), .enable_show = display_enable_show,};
+*/
+
+/*
+*/
 
 //const Element_Function_1 f_show_ring_therm_info PROGMEM = {.x = 20, .y = 20, .args = 0, .fnt_coordinate_xy = ,  .size_x = 0, .size_y = 0, .redraw_class = REDRAW_CLASS_SHOW, .onclick = nullfce, .enable_show = display_enable_show, .name = char_NULL,};
-//saric
 
-const Element_Button_1 button_nastaveni_ring_deactivate PROGMEM = {
-  .name = text_term_do_deactivate,
-  .x = 10,
-  .y = 40,
-  .size_x = 190,
-  .size_y = 40,
-  .font_size = 1,
-  .args = 0,
-  .onclick = button_click_deactivate_term_ring,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .enable_show = display_enable_show,
-};
+/*
 
-const Element_Button_1 button_deassociate_input_sensor_for_term = {
-  .name = nastaveni_deassociate_sensor,
-  .x = 210,
-  .y = 220,
-  .size_x = 170,
-  .size_y = 40,
-  .font_size = 2,
-  .args = 0,
-  .onclick = button_click_deassociate_default_ring_input_sensor_for_term,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .enable_show = display_enable_show,
-};
 
-const Element_Button_1 button_deassociate_program_for_term = {
+
+
+  const Element_Button_1 button_deassociate_program_for_term = {
   .name = nastaveni_deassociate_program,
   .x = 210,
   .y = 220,
@@ -432,9 +338,9 @@ const Element_Button_1 button_deassociate_program_for_term = {
   .onclick = button_click_deassociate_default_ring_program_for_term,
   .redraw_class = (1 << REDRAW_FORCE),
   .enable_show = display_enable_show,
-};
+  };
 
-
+*/
 
 
 
@@ -468,21 +374,9 @@ const Element_Button_1 button_deassociate_program_for_term = {
 
 
 
+/*
 
-
-const Element_Function_1 f_show_default_ring PROGMEM = {
-  .x = 140,
-  .y = 5,
-  .args = 0,
-  .fnt_coordinate_xy = display_element_dialog_default_ring,
-  .size_x = 0,
-  .size_y = 0,
-  .redraw_class = REDRAW_BUTTON,
-  .onclick = nullfce,
-  .enable_show = display_enable_show,
-  .name = char_NULL,
-};
-
+*/
 
 
 /******************************************************************************/
@@ -490,43 +384,9 @@ const Element_Function_1 f_show_default_ring PROGMEM = {
     graficke prvky pro nastaveni rucni teploty
     kdyz neni vybrany mod MAN prvky se nezobrazuji, resi funkce display_enable_show_term_mode_man
 */
-const Element_Function_1 f_default_ring_set_temp PROGMEM = {
-  .x = 280,
-  .y = 40,
-  .args = DIALOG_SET_VARIABLE_GENERAL,
-  .fnt_coordinate_xy = display_element_dialog_set_variable,
-  .size_x = 140,
-  .size_y = 40,
-  .redraw_class = REDRAW_BUTTON,
-  .onclick = nullfce,
-  .enable_show = display_enable_show_term_mode_man,
-  .name = char_NULL,
-};
-const Element_Symbol_1 dialog_set_default_ring_temp_plus PROGMEM =  {
-  .znak = '+',
-  .x = 420,
-  .y = 40,
-  .size_x = 40,
-  .size_y = 40,
-  .znak_size = 2,
-  .args = DIALOG_SET_VARIABLE_GENERAL,
-  .onclick = display_function_set_variable_plus,
-  .redraw_class = REDRAW_BUTTON,
-  .enable_show = display_enable_show_term_mode_man
-};
-const Element_Symbol_1 dialog_set_default_ring_temp_minus PROGMEM =  {
-  .znak = '-',
-  .x = 240,
-  .y = 40,
-  .size_x = 40,
-  .size_y = 40,
-  .znak_size = 2,
-  .args = DIALOG_SET_VARIABLE_GENERAL,
-  .onclick = display_function_set_variable_minus,
-  .redraw_class = REDRAW_BUTTON,
-  .enable_show = display_enable_show_term_mode_man
-};
+/*
 
+*/
 
 
 
@@ -542,49 +402,7 @@ const Element_Symbol_1 dialog_set_default_ring_temp_minus PROGMEM =  {
 
 
 
-/*********************************************************/
-/*
-    slider pro vyber vstupniho cidla pro regulatory
-*/
-const Element_Function_1 f_vertical_slider_term_ring_input_temp PROGMEM = {
-  .x = 410,
-  .y = 82,
-  .args = MENU_SLIDER_INPUT_TEMP,
-  .fnt_coordinate_xy = display_element_vertical_slider,
-  .size_x = 40,
-  .size_y = 86,
-  .redraw_class = REDRAW_BUTTON,
-  .onclick = nullfce,
-  .enable_show = display_enable_show,
-  .name = char_NULL,
-};
 
-const Element_Symbol_1 slider_menu_plus_term_ring_input_temp PROGMEM =  {
-  .znak = '+',
-  .x = 410,
-  .y = 40,
-  .size_x = 40,
-  .size_y = 40,
-  .znak_size = 2,
-  .args = MENU_SLIDER_INPUT_TEMP,
-  .onclick = display_function_vertical_slider_dec,
-  .redraw_class = REDRAW_BUTTON,
-  .enable_show = display_enable_show,
-};
-const Element_Symbol_1 slider_menu_minus_term_ring_input_temp PROGMEM =  {
-  .znak = '-',
-  .x = 410,
-  .y = 170,
-  .size_x = 40,
-  .size_y = 40,
-  .znak_size = 2,
-  .args = MENU_SLIDER_INPUT_TEMP,
-  .onclick = display_function_vertical_slider_inc,
-  .redraw_class = REDRAW_BUTTON,
-  .enable_show = display_enable_show,
-};
-
-/*******************************************************************/
 
 
 
@@ -620,9 +438,9 @@ const Element_Symbol_1 slider_menu_minus_term_ring_input_temp PROGMEM =  {
 
 
 
+/*
 
-
-const Menu1 RegulatorMenu PROGMEM = {
+  const Menu1 RegulatorMenu PROGMEM = {
   .name = regulator_text,
   .button_1 = {button_back, button_term_ring_setting_menu, button_term_ring_select_program, button_term_ring_setup_program},
   .button_2 = {button_term_ring_mode_heat, button_term_ring_mode_cool},
@@ -652,149 +470,30 @@ const Menu1 RegulatorMenu PROGMEM = {
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
   .preload_function = preload_regulator_menu,
-};
+  };
+
+
+*/
 
 
 
+/*
 
+*/
+/*
 
+*/
+/*
 
+*/
+/*
 
-const Menu1 RingSetup PROGMEM = {
-  .name = ring_text_setup,
-  .button_1 = {button_back, button_nastaveni_ring_nazev, button_nastaveni_ring_input_sensor, button_nastaveni_ring_output, button_nastaveni_ring_pid, button_nastaveni_ring_deactivate},
-  .button_2 = {NULL},
-  .function_1 = {f_show_date, f_show_default_ring},
-  .switch_1 = {NULL},
-  .dyn_button = {NULL},
-  .symbol_button_1 = {NULL},
-  .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {NULL},
-  .len_button_1 = 6,
-  .len_button_2 = 0,
-  .len_function_1 = 2,
-  .len_switch_1 = 0,
-  .len_dyn_button_1 = 0,
-  .len_symbol_button_1 = 0,
-  .len_dyn_symbol_1 = 0,
-  .len_dyn_select_box_1 = 0,
-  .idx = MENU_NASTAVENI_RING_SCREEN,
-  .x = 0,
-  .y = 0,
-  .size_x = 480,
-  .size_y = 320,
-  .atributes = (1 << MENU_ATTRIBUTES_CLEAN_DISPLAY),
-  .color_background = WHITE,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .redraw_class_0 = returnnullfceargs,
-  .redraw_class_1 = returnnullfceargs,
-  .redraw_class_2 = returnnullfceargs,
-  .preload_function = returnnullfceargs,
-};
-
-
-const Menu1 DialogSelectTermMode PROGMEM = {
-  .name = text_select_term_mode,
-  .button_1 = {button_back },
-  .button_2 = {NULL},
-  .function_1 = {NULL},
-  .switch_1 = {NULL},
-  .dyn_button = {NULL},
-  .symbol_button_1 = {NULL},
-  .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {button_select_term_mode},
-  .len_button_1 = 1,
-  .len_button_2 = 0,
-  .len_function_1 = 0,
-  .len_switch_1 = 0,
-  .len_dyn_button_1 = 0,
-  .len_symbol_button_1 = 0,
-  .len_dyn_symbol_1 = 0,
-  .len_dyn_select_box_1 = 1,
-  .idx = MENU_DIALOG_SELECT_TERM_MODE,
-  .x = 10,
-  .y = 10,
-  .size_x = 460,
-  .size_y = 300,
-  .atributes = (1 << MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE | 1 << MENU_ATTRIBUTES_DECORATE_MENU),
-  .color_background = YELLOW,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .redraw_class_0 = returnnullfceargs,
-  .redraw_class_1 = returnnullfceargs,
-  .redraw_class_2 = returnnullfceargs,
-  .preload_function = returnnullfceargs,
-};
-
-
-const Menu1 DialogSelectRing PROGMEM = {
-  .name = text_select_term_default_ring,
-  .button_1 = {button_back},
-  .button_2 = {NULL},
-  .function_1 = {NULL},
-  .switch_1 = {NULL},
-  .dyn_button = {NULL},
-  .symbol_button_1 = {NULL},
-  .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {button_change_default_ring_in_dialog},
-  .len_button_1 = 1,
-  .len_button_2 = 0,
-  .len_function_1 = 0,
-  .len_switch_1 = 0,
-  .len_dyn_button_1 = 0,
-  .len_symbol_button_1 = 0,
-  .len_dyn_symbol_1 = 0,
-  .len_dyn_select_box_1 = 1,
-  .idx = MENU_NASTAVENI_SELECT_RING_SCREEN,
-  .x = 10,
-  .y = 10,
-  .size_x = 460,
-  .size_y = 300,
-  .atributes = (1 << MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE | 1 << MENU_ATTRIBUTES_DECORATE_MENU),
-  .color_background = YELLOW,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .redraw_class_0 = returnnullfceargs,
-  .redraw_class_1 = returnnullfceargs,
-  .redraw_class_2 = returnnullfceargs,
-  .preload_function = returnnullfceargs,
-};
-
-
-const Menu1 DialogSelectInputSensorsForTerm PROGMEM = {
-  .name = text_assocoivat,
-  .button_1 = {button_back, button_deassociate_input_sensor_for_term},
-  .button_2 = {NULL},
-  .function_1 = {f_vertical_slider_term_ring_input_temp},
-  .switch_1 = {NULL},
-  .dyn_button = {NULL},
-  .symbol_button_1 = {slider_menu_plus_term_ring_input_temp, slider_menu_minus_term_ring_input_temp},
-  .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {button_select_term_ring_input_in_dialog},
-  .len_button_1 = 2,
-  .len_button_2 = 0,
-  .len_function_1 = 1,
-  .len_switch_1 = 0,
-  .len_dyn_button_1 = 0,
-  .len_symbol_button_1 = 2,
-  .len_dyn_symbol_1 = 0,
-  .len_dyn_select_box_1 = 1,
-  .idx = MENU_NASTAVENI_SELECT_INPUT_SENSORS,
-  .x = 10,
-  .y = 10,
-  .size_x = 460,
-  .size_y = 300,
-  .atributes = (1 << MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE | 1 << MENU_ATTRIBUTES_DECORATE_MENU),
-  .color_background = YELLOW,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .redraw_class_0 = returnnullfceargs,
-  .redraw_class_1 = returnnullfceargs,
-  .redraw_class_2 = returnnullfceargs,
-  .preload_function = returnnullfceargs,
-};
+*/
 
 //saric
 
-
-const Menu1 DialogSelectProgramForTerm PROGMEM = {
+/*
+  const Menu1 DialogSelectProgramForTerm PROGMEM = {
   .name = text_nastaveni_ring_program,
   .button_1 = {button_back, button_deassociate_program_for_term},
   .button_2 = {NULL},
@@ -824,10 +523,11 @@ const Menu1 DialogSelectProgramForTerm PROGMEM = {
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
   .preload_function = returnnullfceargs,
-};
+  };
+*/
 
-
-const Menu1 DialogSetupProgramForTerm PROGMEM = {
+/*
+  const Menu1 DialogSetupProgramForTerm PROGMEM = {
   .name = text_nastaveni_setup_program,
   .button_1 = {button_back},
   .button_2 = {NULL},
@@ -857,51 +557,23 @@ const Menu1 DialogSetupProgramForTerm PROGMEM = {
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
   .preload_function = returnnullfceargs,
-};
+  };
+*/
 
-const Menu1 MenuProgramator PROGMEM = {
-  .name = text_nastaveni_programator,
-  .button_1 = {button_back},
-  .button_2 = {NULL},
-  .function_1 = {NULL},
-  .switch_1 = {NULL},
-  .dyn_button = {NULL},
-  .symbol_button_1 = {NULL},
-  .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {NULL},
-  .len_button_1 = 1,
-  .len_button_2 = 0,
-  .len_function_1 = 0,
-  .len_switch_1 = 0,
-  .len_dyn_button_1 = 0,
-  .len_symbol_button_1 = 0,
-  .len_dyn_symbol_1 = 0,
-  .len_dyn_select_box_1 = 0,
-  .idx = MENU_NASTAVENI_PROGRAMATOR,
-  .x = 0,
-  .y = 0,
-  .size_x = 480,
-  .size_y = 320,
-  .atributes = (1 << MENU_ATTRIBUTES_CLEAN_DISPLAY),
-  .color_background = WHITE,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .redraw_class_0 = returnnullfceargs,
-  .redraw_class_1 = returnnullfceargs,
-  .redraw_class_2 = returnnullfceargs,
-  .preload_function = returnnullfceargs,
-};
+/*
 
+*/
 
 
 const MenuAll Menu_All PROGMEM = {
   .len_menu1 = 6,
   .len_menu2 = 5,
-  .len_menu3 = 3,
+  .len_menu3 = 9,
   .len_menu4 = 7,
 
   .ListMenu1 = {HlavniMenu, MenuNastaveniSite, OneWireMenu, MenuNastaveniCas, SelectMenuDefaultTemp, MenuNastaveniMQTT},
   .ListMenu2 = {DialogYESNO, DialogSetVariable, DialogKyeboardAlfa, DialogKyeboardNumber , DialogOK},
-  .ListMenu3 = {TDSMenu, RTDS_Menu_Detail, List_RTDS_Menu},
+  .ListMenu3 = {TDSMenu, RTDS_Menu_Detail, List_RTDS_Menu, MenuThermostat_Setting, DialogSelectRing, MenuThermostatRingSetup, DialogSelectInputSensorsForTerm, DialogSelectTermMode, DialogSelectPIDSensor},
   .ListMenu4 = {SystemSettingsMenu, New_NastaveniMenu, PeriferieSettingsMenu, New_DisplaySettingMenu, New_DisplaySetting_Brigthness, AboutDeviceMenu, New_DisplaySetting_Auto_Shutdown},
 };
 
@@ -937,7 +609,6 @@ uint8_t display_enable_show(uint16_t args1, uint16_t args2, uint8_t args3)
 
 
 
-
 bool enable_redraw(uint8_t mask, uint8_t data)
 {
   bool ret = false;
@@ -958,7 +629,7 @@ bool enable_redraw(uint8_t mask, uint8_t data)
 
 
 
-bool draw_menu(bool redraw)
+bool draw_menu(bool redraw, uint8_t click_type, uint16_t click_x, uint16_t click_y)
 {
   bool ret = false;
   char str1[128];
@@ -977,8 +648,8 @@ bool draw_menu(bool redraw)
   fptr_coordinate_xy *fnt_coordinate_xy;
   ret_string_fptr *gss;
   const Menu1 *current;
-  uint16_t click_x, click_y;
-  bool state;
+  //uint16_t click_x, click_y;
+  uint8_t state;
   uint8_t loop_cnt, loop_i, loop_t, loop_r;
   uint8_t index_items;
   uint16_t new_x;
@@ -993,20 +664,28 @@ bool draw_menu(bool redraw)
 
   current = MenuHistoryGetMenu(&menu_args1);
 
-  click_x = 0;
-  click_y = 0;
+  /*
+    click_x = 0;
+    click_y = 0;
 
-  my_touch.TP_Scan(0);
-  if (my_touch.TP_Get_State()&TP_PRES_DOWN && redraw == false)
-  {
-    click_x = my_touch.x;
-    click_y = my_touch.y;
-    display_auto_shutdown_now = 0;
-    if ((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY)) != 0)
+
+    my_touch.TP_Scan(0);
+    if (my_touch.TP_Get_State() & TP_PRES_DOWN)
+    {
+    display_touch_click = 1;
+    if (redraw == false)
+    {
+      click_x = my_touch.x;
+      click_y = my_touch.y;
+      display_auto_shutdown_now = 0;
+      if (((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY)) != 0) && my_touch.TP_GetOnOff() == 0)
       {
-      my_touch.TP_SetOnOff(LED_ON);
+        my_touch.TP_SetOnOff(LED_ON);
+        goto draw_menu_end;
       }
-  }
+    }
+    }
+  */
 
   global_x = pgm_read_word(&current->x);
   global_y = pgm_read_word(&current->y);
@@ -1033,11 +712,26 @@ bool draw_menu(bool redraw)
   else
     sbi(redraw_class, 2);
   ///
-  if (redraw == false)
+  rfnt = (ret_fptr*)pgm_read_word(&current->redraw_class_3);
+  rdr = (ret_fptr(rfnt))(pgm_read_byte(&current->idx), menu_args1, -1);
+  if (rdr == 0)
     cbi(redraw_class, 3);
   else
     sbi(redraw_class, 3);
+  ///
+  if (redraw == false)
+    cbi(redraw_class, 4);
+  else
+    sbi(redraw_class, 4);
   /////
+  if (display_redraw_once == 0)
+  {
+    display_redraw_once = 1;
+    sbi(redraw_class, 5);
+  }
+  else
+    cbi(redraw_class, 5);
+
   /////
   rdr = pgm_read_byte(&current->redraw_class);
   if (enable_redraw(rdr, redraw_class) == true)
@@ -1082,6 +776,8 @@ bool draw_menu(bool redraw)
       strcpy_P(str2, (char*)pgm_read_word(&button_2->name));
       rfnt = (ret_fptr*)pgm_read_word(&button_2->get_status_fnt);
       state = ((ret_fptr)rfnt)(pgm_read_byte(&button_2->args), menu_args1, idx);
+      /// pro REDRAW_ONCE, kdyz mi vyjde stev 2, to je neni na tlacitku zadna zmena, tak vykresli jako neaktivni, bez teto podminky, by se nic neukazalo
+      if ((enable_redraw(redraw_class, (1 << REDRAW_ONCE)) == true) && (state == 2)) state = 0;
       str1[0] = 0;
       button_click_2( global_x + pgm_read_word(&button_2->x), \
                       global_y + pgm_read_word(&button_2->y), pgm_read_word(&button_2->size_x), \
@@ -1367,6 +1063,8 @@ bool draw_menu(bool redraw)
         ((ret_string_fptr)gss)(loop_i, menu_args1, pgm_read_byte(&dyn_select_box_1->args), str1, str2);
         rfnt = (ret_fptr*)pgm_read_word(&dyn_select_box_1->get_status_fnt);
         state = ((ret_fptr)rfnt)(pgm_read_byte(&dyn_select_box_1->args), menu_args1, loop_i);
+        /// pro REDRAW_ONCE, kdyz mi vyjde stev 2, to je neni na tlacitku zadna zmena, tak vykresli jako neaktivni, bez teto podminky, by se nic neukazalo
+        if ((enable_redraw(redraw_class, (1 << REDRAW_ONCE)) == true) && (state == 2)) state = 0;
         button_click_2(new_x, new_y, pgm_read_word(&dyn_select_box_1->size_x), \
                        pgm_read_word(&dyn_select_box_1->size_y), pgm_read_byte(&dyn_select_box_1->font_size_1), pgm_read_byte(&dyn_select_box_1->font_size_2), \
                        pgm_read_word(&dyn_select_box_1->color_active), \
@@ -1473,8 +1171,9 @@ void MenuPrepareStyle(void)
     }
   }
   rfnt = (ret_fptr*)pgm_read_word(&current->preload_function);
-  (ret_fptr(rfnt))(pgm_read_byte(&current->idx), 0, 0);
+  (ret_fptr(rfnt))(pgm_read_byte(&current->idx), args1, -1);
 
+  display_redraw_once = 0;
 }
 
 
@@ -1492,7 +1191,7 @@ void MenuHistoryPrevMenu(uint16_t args1, uint16_t args2, uint8_t args3)
   }
 }
 ///
-void MenuHistoryNextMenu(uint16_t id, uint16_t args1, uint8_t args3)
+void MenuHistoryNextMenu(uint16_t id, uint16_t args1, uint8_t fake)
 {
   if (MenuHistoryIndex < MENU_MAX_HISTORY)
   {
@@ -1591,27 +1290,27 @@ void helper_thermostat_set_pid_time(uint16_t args1, float args2, uint8_t args3)
 }
 void button_click_ring_term_set_pid_default(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  thermostat_ring_pid_set_kp(default_ring, 1.0);
-  thermostat_ring_pid_set_ki(default_ring, 0.5);
-  thermostat_ring_pid_set_kd(default_ring, 1.0);
-  thermostat_ring_pid_set_time(default_ring, 60);
-  preload_pid_menu(0, 0, 0);
-
+  thermostat_ring_pid_set_kp(args2, 1.0);
+  thermostat_ring_pid_set_ki(args2, 0.5);
+  thermostat_ring_pid_set_kd(args2, 1.0);
+  thermostat_ring_pid_set_time(args2, 60);
+  preload_pid_menu(0, args2, 0);
 }
+
 
 uint8_t preload_regulator_menu(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  display_function_set_variable(thermostat_ring_get_mezni(default_ring) / 10.0, 16.0, 32.0, 0.5, default_ring, NUMBER_TYPE_FLOAT,  H_TRUE, DIALOG_SET_VARIABLE_GENERAL, &helper_thermostat_set_mezni);
+  display_function_set_variable(thermostat_ring_get_mezni(args2) / 10.0, 16.0, 32.0, 0.5, args2, NUMBER_TYPE_FLOAT,  H_TRUE, DIALOG_SET_VARIABLE_GENERAL, &helper_thermostat_set_mezni);
 }
 
 
-
+/// TODO spravne predat id ringu
 uint8_t preload_pid_menu(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  display_function_set_variable(thermostat_get_pid_p(default_ring), -10.0, 10.0, 0.1, default_ring, NUMBER_TYPE_FLOAT,  H_TRUE, DIALOG_SET_VARIABLE_PID_P, &helper_thermostat_set_pid_p);
-  display_function_set_variable(thermostat_get_pid_i(default_ring), -10.0, 10.0, 0.1, default_ring, NUMBER_TYPE_FLOAT,  H_TRUE, DIALOG_SET_VARIABLE_PID_I, &helper_thermostat_set_pid_i);
-  display_function_set_variable(thermostat_get_pid_d(default_ring), -10.0, 10.0, 0.1, default_ring, NUMBER_TYPE_FLOAT,  H_TRUE, DIALOG_SET_VARIABLE_PID_D, &helper_thermostat_set_pid_d);
-  display_function_set_variable(thermostat_get_pid_time(default_ring),  10, 254, 2, default_ring, NUMBER_TYPE_INT,  H_TRUE, DIALOG_SET_VARIABLE_PID_T, &helper_thermostat_set_pid_time);
+  display_function_set_variable(thermostat_get_pid_p(args2), -10.0, 10.0, 0.1, args2, NUMBER_TYPE_FLOAT,  H_TRUE, DIALOG_SET_VARIABLE_PID_P, &helper_thermostat_set_pid_p);
+  display_function_set_variable(thermostat_get_pid_i(args2), -10.0, 10.0, 0.1, args2, NUMBER_TYPE_FLOAT,  H_TRUE, DIALOG_SET_VARIABLE_PID_I, &helper_thermostat_set_pid_i);
+  display_function_set_variable(thermostat_get_pid_d(args2), -10.0, 10.0, 0.1, args2, NUMBER_TYPE_FLOAT,  H_TRUE, DIALOG_SET_VARIABLE_PID_D, &helper_thermostat_set_pid_d);
+  display_function_set_variable(thermostat_get_pid_time(args2),  10, 254, 2, args2, NUMBER_TYPE_INT,  H_TRUE, DIALOG_SET_VARIABLE_PID_T, &helper_thermostat_set_pid_time);
 }
 
 
@@ -1642,6 +1341,7 @@ void display_function_set_variable_minus(uint16_t idx, uint16_t args2, uint8_t a
 {
   if (menu_dialog_variable[idx].variable_now - menu_dialog_variable[idx].variable_step >= menu_dialog_variable[idx].variable_min)
   {
+    menu_dialog_variable_change = 1;
     menu_dialog_variable[idx].variable_now = menu_dialog_variable[idx].variable_now  - menu_dialog_variable[idx].variable_step;
     if (menu_dialog_variable[idx].update_now == H_TRUE)
     {
@@ -1653,6 +1353,7 @@ void display_function_set_variable_plus(uint16_t idx, uint16_t args2, uint8_t ar
 {
   if ((menu_dialog_variable[idx].variable_now + menu_dialog_variable[idx].variable_step) <= menu_dialog_variable[idx].variable_max)
   {
+    menu_dialog_variable_change = 1;
     menu_dialog_variable[idx].variable_now = menu_dialog_variable[idx].variable_now + menu_dialog_variable[idx].variable_step;
     if (menu_dialog_variable[idx].update_now == H_TRUE)
     {
@@ -1741,7 +1442,7 @@ void menu_tds_save_name(uint16_t args1, uint16_t args2, uint8_t args3)
 /// funkce pro nastaveni offsetu tds
 void display_menu_tds_set_offset(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  MenuHistoryNextMenu(MENU_DIALOG_SET_VARIABLE, 0, args3);
+  MenuHistoryNextMenu(MENU_DIALOG_SET_VARIABLE, 0, 0);
   display_function_set_variable(tds_get_offset(args2) / 1000.0, -10, 10, 0.1, args2, NUMBER_TYPE_FLOAT, H_FALSE, args1, &menu_tds_save_offset);
   //dialog_save_variable_function = ;
 }
@@ -1749,7 +1450,7 @@ void display_menu_tds_set_offset(uint16_t args1, uint16_t args2, uint8_t args3)
 /// funkce pro nastaveni merici periody
 void display_menu_tds_set_period(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  MenuHistoryNextMenu(MENU_DIALOG_SET_VARIABLE, 0, args3);
+  MenuHistoryNextMenu(MENU_DIALOG_SET_VARIABLE, 0, 0);
   display_function_set_variable((float)tds_get_period(args2), 1, 255, 1, args2, NUMBER_TYPE_INT , H_FALSE, args1, &menu_tds_save_period);
   //dialog_save_variable_function = ;
 }
@@ -1759,7 +1460,7 @@ void display_menu_tds_set_name(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   char name[10];
   tds_get_name(args2, name);
-  MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, args3);
+  MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, 0);
   display_element_set_string(name, 8, args2, &menu_tds_save_name, &valid_true);
   //dialog_save_variable_function = ;
 }
@@ -1769,7 +1470,7 @@ void display_menu_rtds_update_name(uint16_t args1, uint16_t args2, uint8_t args3
   char name[RTDS_DEVICE_STRING_LEN];
   uint8_t active;
   remote_tds_get_complete(args2, &active, name);
-  MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, args3);
+  MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, 0);
   display_element_set_string(name, RTDS_DEVICE_STRING_LEN, args2, &menu_rtds_update_name, &valid_true);
   //dialog_save_variable_function = ;
 }
@@ -1911,13 +1612,25 @@ uint8_t button_redraw(uint8_t args1, uint8_t args2)
 
 uint8_t menu_redraw_time05s(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  if (menu_redraw05s == 1)
+  /*
+    if (menu_redraw05s == 1)
+    {
+      menu_redraw05s = 0;
+      return 1;
+    }
+    return 0;
+  */
+
+  if (last_time_hour != now.hour() || last_time_minute != now.minute())
   {
-    menu_redraw05s = 0;
+    last_time_hour = now.hour();
+    last_time_minute = now.minute();
     return 1;
   }
   return 0;
 }
+
+
 
 uint8_t menu_redraw_change_term_mode(uint16_t args1, uint16_t args2, uint8_t args3)
 {
@@ -1938,6 +1651,53 @@ uint8_t menu_redraw_update_temp(uint16_t args1, uint16_t args2, uint8_t args3)
   }
   return 0;
 }
+
+
+uint8_t menu_redraw_date(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  if (now.year() != last_year || now.month() != last_month || now.day() != last_day || display_update_date == 1)
+  {
+    display_update_date = 0;
+    last_year = now.year();
+    last_month = now.month();
+    last_day = now.day();
+    return 1;
+  }
+  return 0;
+}
+
+
+uint8_t menu_redraw_slider(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  if (display_update_slider == 1)
+  {
+    display_update_slider = 0;
+    return 1;
+  }
+  return 0;
+}
+
+
+uint8_t menu_redraw_change_default_ring(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  if (display_redraw_default_ring == 1)
+  {
+    display_redraw_default_ring = 0;
+    return 1;
+  }
+  return 0;
+}
+
+uint8_t menu_redraw_change_variable(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  if (menu_dialog_variable_change == 1)
+  {
+    menu_dialog_variable_change = 0;
+    return 1;
+  }
+  return 0;
+}
+
 
 
 uint8_t get_function_return_args_1(uint16_t args1, uint16_t args2, uint8_t args3)
@@ -2653,7 +2413,9 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   if (strcmp(str1, topic) == 0)
   {
     mqtt_process_message++;
+    last_default_ring = default_ring;
     default_ring = atoi(my_payload);
+    display_redraw_default_ring = 1;
     set_default_ring(default_ring);
   }
   ///
@@ -2726,25 +2488,36 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
         if ((cnt == 1) && (strcmp(pch, "program") == 0))
           if (atoi(my_payload) < AVAILABLE_PROGRAM)
             thermostat_ring_set_program_id(id, atoi(my_payload));
-        if ((cnt == 1) && (strcmp(pch, "threshold-f") == 0)) thermostat_ring_set_mezni(id, atof(my_payload) * 10); /// thereshold hodnota presne ve floatu * 10
-        if ((cnt == 1) && (strcmp(pch, "threshold") == 0)) thermostat_ring_set_mezni(id, atoi(my_payload));
+        if ((cnt == 1) && (strcmp(pch, "threshold-f") == 0))
+        {
+          thermostat_ring_set_mezni(id, atof(my_payload) * 10); /// thereshold hodnota presne ve floatu * 10
+        }
+        if ((cnt == 1) && (strcmp(pch, "threshold") == 0))
+        {
+          thermostat_ring_set_mezni(id, atoi(my_payload));
+        }
         if ((cnt == 1) && (strcmp(pch, "text_mode") == 0))
         {
+          thermostat_mode_default_ring_last_state = thermostat_ring_get_mode(default_ring);
           active = convert_text_mode(my_payload);
           thermostat_ring_set_mode(id, active);
           if (active == TERM_MODE_MAN_HEAT)
             thermostat_ring_update_bites(id, STATUS_BIT_HEAT_OR_COOL, 0);
           if (active == TERM_MODE_MAN_COOL)
             thermostat_ring_update_bites(id, STATUS_BIT_HEAT_OR_COOL, 1);
+          change_term_mode = 1;
+
         }
         if ((cnt == 1) && (strcmp(pch, "mode") == 0))
         {
+          thermostat_mode_default_ring_last_state = thermostat_ring_get_mode(default_ring);
           active = atoi(my_payload);
           thermostat_ring_set_mode(id, active);
           if (active == TERM_MODE_MAN_HEAT)
             thermostat_ring_update_bites(id, STATUS_BIT_HEAT_OR_COOL, 0);
           if (active == TERM_MODE_MAN_COOL)
             thermostat_ring_update_bites(id, STATUS_BIT_HEAT_OR_COOL, 1);
+          change_term_mode = 1;
         }
         if ((cnt == 1) && (strcmp(pch, "input") == 0)) thermostat_ring_set_asociate_tds(id, atoi(my_payload));
         //if ((cnt == 1) && (strcmp(pch, "rtds") == 0)) thermostat_ring_set_asociate_tds(id, atoi(my_payload) + TDS_MEMORY_MAP_RTDS);
@@ -3817,6 +3590,7 @@ void setup()
         char hostname[10];
         device_get_name(hostname);
         default_ring = NO_DEFAULT_RING;
+        last_default_ring = NO_DEFAULT_RING;
         set_default_ring(default_ring);
         EEPROM.write(my_brightness_values, 50);
         EEPROM.write(my_brightness_mode, 0);
@@ -3911,6 +3685,7 @@ void setup()
       show_string(str1, 30, 50 + (init * 10), 1, GREEN, WHITE, 0 );
       my_touch.TP_Init(my_lcd.Get_Rotation(), my_lcd.Get_Display_Width(), my_lcd.Get_Display_Height());
       my_touch.TP_Set_Rotation(3);
+      my_touch.TP_SetOnOff(LED_ON);
       for (uint8_t i = 1; i < 8; i++)
       {
         digitalWrite(LED, LOW);
@@ -4051,8 +3826,11 @@ void setup()
         thermostat_ring_get_pid_eeprom(idx);
         thermostat_ring_update_pid_parameters(idx);
       }
+
       default_ring = get_default_ring();
+      last_default_ring = default_ring;
       default_show_temp = get_default_show_temp();
+      thermostat_mode_default_ring_last_state = thermostat_ring_get_mode(default_ring);
     }
     ///
     /// kontrola NTP serveru
@@ -4096,8 +3874,13 @@ void setup()
   }
   delay(500);
   MenuPrepareStyle();
-  draw_menu(true);
+  draw_menu(true, 0, 0, 0);
   a2d_run_now = 1;
+
+  milis_10s = millis();
+  milis_1s = millis();
+  milis_05s = millis();
+  milis_005s = millis();
 
 }
 
@@ -4111,6 +3894,8 @@ void loop() {
   char str1[16];
   unsigned long load_now;
   long mil;
+  uint16_t click_x, click_y;
+
 
 
   load_now = millis();
@@ -4135,10 +3920,7 @@ void loop() {
   }
 
 
-  if (draw_menu(false) == true)
-  {
-    draw_menu(true);
-  }
+
 
 
 
@@ -4193,14 +3975,9 @@ void loop() {
     if ((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY)) != 0)
     {
       if (display_auto_shutdown > display_auto_shutdown_now)
-      {
         display_auto_shutdown_now++;
-      }
       else
-      {
         my_touch.TP_SetOnOff(LED_OFF);
-      }
-
     }
 
     mereni_hwwire(uptime);
@@ -4222,7 +3999,7 @@ void loop() {
 
 
 
-  /// kazdych 50ms
+  /// kazdych 100ms
   if ((millis() - milis_005s) >= 50 )
   {
     milis_005s += 50;
@@ -4235,6 +4012,59 @@ void loop() {
       if (a2d_done() == 0) a2d_run_now = 1;
     }
   }
+
+  ///display_touch_click
+  my_touch.TP_Scan(0);
+  if (my_touch.TP_Get_State() & TP_PRES_DOWN)
+  {
+    click_x = my_touch.x;
+    click_y = my_touch.y;
+    click_on_display = 1;
+  }
+  else
+  {
+    click_x = 0;
+    click_y = 0;
+    click_on_display = 0;
+  }
+
+
+  if (click_on_display == 1 && click_on_display_last == 0)
+  {
+    click_time = millis();
+    display_auto_shutdown_now = 0;
+    if (((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY)) != 0) && my_touch.TP_GetOnOff() == 0)
+    {
+      my_touch.TP_SetOnOff(LED_ON);
+    }
+  }
+
+  if (click_on_display == 1 && click_on_display_last == 1)
+  {
+
+  }
+
+  click_on_display_last = click_on_display;
+
+
+  if (draw_menu(false, 0, click_x, click_y) == true)
+  {
+    draw_menu(true, 0, 0, 0);
+  }
+  /*
+    {
+    click_x = my_touch.x;
+    click_y = my_touch.y;
+    display_auto_shutdown_now = 0;
+    if (((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY)) != 0) && my_touch.TP_GetOnOff() == 0)
+      my_touch.TP_SetOnOff(LED_ON);
+
+    if (draw_menu(false) == true)
+    {
+      draw_menu(true);
+    }
+    }
+  */
 
   load = millis() - load_now;
   if (load < load_min) load_min = load;
@@ -4256,10 +4086,10 @@ void display_element_dialog_default_ring(uint16_t x, uint16_t y, uint16_t size_x
 {
   char name[10];
   char default_text[30];
-  strcpy_P(default_text, regulator_default_text);
-  if (thermostat_ring_get_active(default_ring) != RING_FREE)
+  strcpy_P(default_text, new_text_regulator);
+  if (thermostat_ring_get_active(args2) != RING_FREE)
   {
-    thermostat_ring_get_name(default_ring, name);
+    thermostat_ring_get_name(args2, name);
     strcat(default_text, name);
   }
   else
@@ -4269,6 +4099,7 @@ void display_element_dialog_default_ring(uint16_t x, uint16_t y, uint16_t size_x
   }
   show_string(default_text, x, y, 2, BLACK, WHITE, 0);
 }
+
 ////
 /*
   void display_element_default_ring_set_temp(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2)
@@ -4277,20 +4108,25 @@ void display_element_dialog_default_ring(uint16_t x, uint16_t y, uint16_t size_x
   }
 */
 
+
+/// dekorativni funkce zobrazeni casu
+void display_element_show_time_decorate_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
+{
+  uint16_t pos = 0;
+  char str1[24];
+  strcpy_P(str1, current_time);
+  pos = (244 - show_string_size_width(16, 1)) / 2;
+  show_string(str1, x + pos + 5, y + 5, 1, BLACK, WHITE, 0);
+  my_lcd.Draw_Rectangle(x, y, x + 244, y + 84);
+}
+
 /// funkce pro zobrazeni casu
 void display_element_show_time_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
 {
   char str1[24];
-  uint16_t pos = 0;
-  strcpy_P(str1, current_time);
-  pos = (244 - show_string_size_width(16, 1)) / 2;
-  show_string(str1, x + pos + 5, y + 5, 1, BLACK, WHITE, 0);
   if (selftest_get_0(SELFTEST_ERR_RTC) == 0)
   {
-    if (uptime % 2 )
-      sprintf(str1, "%02d:%02d", now.hour(), now.minute());
-    else
-      sprintf(str1, "%02d %02d", now.hour(), now.minute());
+    sprintf(str1, "%02d:%02d", now.hour(), now.minute());
   }
   else
   {
@@ -4298,11 +4134,11 @@ void display_element_show_time_1(uint16_t x, uint16_t y, uint16_t size_x, uint16
   }
   my_lcd.Set_Draw_color(BLACK);
   show_string(str1, x + 4, y + 20, 8, BLACK, WHITE, 0);
-  my_lcd.Draw_Rectangle(x, y, x + 244, y + 84);
 }
 ///
-/// funkce pro zobrazeni teploty
-void display_element_show_temp_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
+
+/// dekorativni funkce pro zobrazeni teploty
+void display_element_show_temp_decorate_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
 {
   char str1[32];
   char str2[20];
@@ -4312,6 +4148,17 @@ void display_element_show_temp_1(uint16_t x, uint16_t y, uint16_t size_x, uint16
   stat = get_global_temp(default_show_temp, str2, &te);
   strcat(str1, str2);
   show_string(str1, x + 5, y + 5, 1, BLACK, WHITE, 0);
+  my_lcd.Set_Draw_color(BLACK);
+  my_lcd.Draw_Rectangle(x, y, x + 244, y + 84);
+}
+/// funkce pro zobrazeni teploty
+void display_element_show_temp_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
+{
+  char str1[32];
+  char str2[20];
+  float te;
+  uint8_t stat;
+  stat = get_global_temp(default_show_temp, str2, &te);
   if (stat == 1)
   {
     dtostrf(te, 4, 1, str1);
@@ -4324,8 +4171,6 @@ void display_element_show_temp_1(uint16_t x, uint16_t y, uint16_t size_x, uint16
     strcpy_P(str1, text_err);
     show_string(str1, x + 4, y + 20, 8, RED, WHITE, 0);
   }
-  my_lcd.Set_Draw_color(BLACK);
-  my_lcd.Draw_Rectangle(x, y, x + 244, y + 84);
 }
 ////////////////////////////////////////////////////
 void display_element_show_date_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
@@ -4516,13 +4361,19 @@ void display_element_vertical_slider(uint16_t x, uint16_t y, uint16_t size_x, ui
 void display_function_vertical_slider_inc(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   if (menu_slider_data_current[args1] < (menu_slider_data_max - menu_slider_data_max_element))
+  {
     menu_slider_data_current[args1]++;
+    display_update_slider = 1;
+  }
 }
 ///
 void display_function_vertical_slider_dec(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   if (menu_slider_data_current[args1] > menu_slider_data_min)
+  {
     menu_slider_data_current[args1]--;
+    display_update_slider = 1;
+  }
 }
 ///
 void process_display_element_slider(uint8_t *start, uint8_t *stop, uint8_t args, uint8_t max_element)
@@ -4603,6 +4454,10 @@ void button_click_2(uint16_t x, uint16_t y, uint8_t size_x, uint8_t size_y, uint
     back_color = color_inactive;
   if (state == 1)
     back_color = color_active;
+  if (state == 2)
+  {
+    goto button_click_2_end ;
+  }
   my_lcd.Set_Draw_color(BLACK);
   for (uint8_t r = 0; r < 3; r++)
     my_lcd.Draw_Rectangle(x + r, y + r, x + size_x - r, y + size_y - r);
@@ -4632,6 +4487,8 @@ void button_click_2(uint16_t x, uint16_t y, uint8_t size_x, uint8_t size_y, uint
     posy2 = posy1 + ((size_y - show_string_size_hight(font_size_2)) * 2 / num_lines_const);
     show_string(line2, x + posx2 , y + posy2 - 1 , font_size_2, BLACK, back_color, 0);
   }
+button_click_2_end:
+  state = 0;
 }
 /////////////////////
 /// typ button_1 ////
@@ -4848,7 +4705,7 @@ void click_rtds_add_sensor(uint16_t args1, uint16_t args2, uint8_t args3)
   if (idx != 255)
   {
     strcpy_P(rtds_topic, text_rtds_prefix);
-    MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, args3);
+    MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, 0);
     display_element_set_string(rtds_topic, RTDS_DEVICE_STRING_LEN, idx, &menu_rtds_create_name, &valid_true);
   }
 }
@@ -4961,7 +4818,7 @@ void button_get_show_default_temp(uint8_t args1, uint8_t args2, uint8_t args3, c
   char name[20];
   uint8_t cri = 0;
   uint8_t active;
-  strcpy(line1, "");
+  strcpy_P(line1, nastaveni_onewire);
   strcpy(line2, "");
   //printf("gg %d %d %d\n", args1, args2, args3);
   /// pro tds cidla
@@ -4980,6 +4837,8 @@ void button_get_show_default_temp(uint8_t args1, uint8_t args2, uint8_t args3, c
     }
   }
   /// pro rtds
+  strcpy_P(line1, nastaveni_rtds);
+  strcpy(line2, "");
   for (uint8_t idx = 0; idx < MAX_RTDS; idx++)
   {
     remote_tds_get_active(idx, &active);
@@ -4999,6 +4858,12 @@ button_get_show_default_temp_end:
   /// hack kvuli goto
   cri = 0;
 }
+
+void button_get_show_default_temp_1(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
+{
+  button_get_show_default_temp(args1, args2, args3, line1, line2);
+}
+
 /////
 
 //////////////////////////////////////////////////////////////////////////////
@@ -5036,46 +4901,46 @@ uint8_t button_get_show_default_temp_active(uint16_t args1, uint16_t args2, uint
 
   return ret;
 }
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*
    funkce pro zobrazeni prizareneho vstupniho cidla k ringu
    args3 ... id polozky menu
 */
-uint8_t button_get_show_default_ring_input_active(uint16_t args1, uint16_t args2, uint8_t args3)
+uint8_t button_select_term_ring_input_in_dialog_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   uint8_t ret = 0;
-  if (thermostat_ring_get_asociate_tds(default_ring) == args3)
+  if (thermostat_ring_get_asociate_tds(args2) == args3)
     ret = 1;
-
   return ret;
 }
-
-void button_click_set_show_default_ring_input(uint16_t args1, uint16_t args2, uint8_t args3)
+///
+void button_select_term_ring_input_in_dialog_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  thermostat_ring_set_asociate_tds(default_ring, args3);
+  thermostat_ring_set_asociate_tds(args2, args3);
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*
    funkce pro vymazani vazby ring a input cidlo
 */
-void button_click_deassociate_default_ring_input_sensor_for_term(uint16_t args1, uint16_t args2, uint8_t args3)
+void button_deassociate_input_sensor_for_term_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  thermostat_ring_set_asociate_tds(default_ring, RING_NO_INPUT);
+  thermostat_ring_set_asociate_tds(args2, RING_NO_INPUT);
 }
+
+
+
 /////
 /////
-void click_thermostat_set_ring_via_dialog(uint16_t args1, uint16_t args2, uint8_t args3)
+
+/// funkce vyberu vychozi ringu regulatoru
+void button_change_default_ring_via_dialog_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  MenuHistoryNextMenu(MENU_NASTAVENI_SELECT_RING_SCREEN, default_ring, args3);
+  MenuHistoryNextMenu(MENU_NASTAVENI_SELECT_RING_SCREEN, default_ring, 0);
 }
+
 ////
-void button_click_deactivate_term_ring(uint16_t args1, uint16_t args2, uint8_t args3)
-{
-  thermostat_ring_clear(default_ring);
-  default_ring = NO_DEFAULT_RING;
-  set_default_ring(default_ring);
-  MenuHistoryPrevMenu(0, 0, 0);
-}
 
 /****************************************************************************************************************/
 /*
@@ -5083,42 +4948,49 @@ void button_click_deactivate_term_ring(uint16_t args1, uint16_t args2, uint8_t a
     funkce vrati 1 pokud je vybrany dany program
     args3 je index polozky menu tj program id k default_ringu
 */
-uint8_t button_get_show_default_ring_program_active(uint16_t args1, uint16_t args2, uint8_t args3)
-{
+/*
+  uint8_t button_get_show_default_ring_program_active(uint16_t args1, uint16_t args2, uint8_t args3)
+  {
   uint8_t ret = 0;
   if ((thermostat_program_get_active(args3) != PROG_FREE) && (thermostat_ring_get_program_id(default_ring) == args3))
     ret = 1;
 
   return ret;
-}
+  }
+*/
 /*
    funkce vraci pocet dostupnych programu pro maximalni pocet polozek menu
 */
-uint8_t button_get_show_default_ring_program_max_items(uint16_t args1, uint16_t args2, uint8_t args3)
-{
+/*
+  uint8_t button_get_show_default_ring_program_max_items(uint16_t args1, uint16_t args2, uint8_t args3)
+  {
   uint8_t cnt = 0;
   for (uint8_t idx = 0; idx < AVAILABLE_PROGRAM; idx++)
     if (thermostat_program_get_active(idx) != PROG_FREE)
       cnt++;
   //printf("cnt %d\n", cnt);
   return cnt;
-}
+  }
+*/
 /*
    akce na klik na menu
    args3 je index polozky menu tj. id programu
 */
-void button_click_set_show_default_ring_program(uint16_t args1, uint16_t args2, uint8_t args3)
-{
+/*
+  void button_click_set_show_default_ring_program(uint16_t args1, uint16_t args2, uint8_t args3)
+  {
   thermostat_ring_set_program_id(default_ring, args3);
-}
+  }
+*/
 /*
    funkce vraci text pro tlacitka menu pro vybrany program
    args1 ... globalni argument z definice menu
    args2 ... zde je cislo ringu
    args3 ... id polozky dynamickeho menu
 */
-void button_get_show_default_ring_program(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
-{
+/*
+  void button_get_show_default_ring_program(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
+  {
   //printf("pp %d %d %d\n", args1, args2, args3);
   sprintf(line1, "Program %d", args1);
   line2[0] = 0;
@@ -5127,14 +4999,17 @@ void button_get_show_default_ring_program(uint8_t args1, uint8_t args2, uint8_t 
     thermostat_program_get_name(args1, line2);
   }
   //printf("pp %s\n", line1);
-}
+  }
+*/
 /*
    funkce uvolneni programu od termostatu
 */
-void button_click_deassociate_default_ring_program_for_term(uint16_t args1, uint16_t args2, uint8_t args3)
-{
+/*
+  void button_click_deassociate_default_ring_program_for_term(uint16_t args1, uint16_t args2, uint8_t args3)
+  {
   thermostat_ring_set_program_id(default_ring, PROG_FREE);
-}
+  }
+*/
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*
    funkce vraci 1, kdyz se rovna id prvku s promenou default_ring. Default_ring je vybrany
@@ -5144,14 +5019,18 @@ void button_click_deassociate_default_ring_program_for_term(uint16_t args1, uint
 */
 uint8_t button_get_term_ring_is_selected(uint16_t args1, uint16_t args2, uint8_t args3)
 {
+  uint8_t ret = 0;
   if ((args3 == default_ring) && (thermostat_ring_get_active(default_ring) == 1))
-    return 1;
-  return 0;
+    ret = 1;
+  if ((args3 != default_ring) && (args3 != last_default_ring))
+    ret = 2;
+  return ret;
 }
 ////
 void term_ring_do_activate(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   thermostat_ring_set_active(args1, 1);
+  last_default_ring = default_ring;
   default_ring = args1;
   set_default_ring(default_ring);
 }
@@ -5166,16 +5045,18 @@ void button_click_set_new_default_ring_in_dialog(uint16_t args1, uint16_t args2,
 {
   if (thermostat_ring_get_active(args3) != RING_FREE)
   {
+    last_default_ring = default_ring;
     default_ring = args3;
     MenuHistoryUpdateArgs1(args3);
   }
   else
   {
-    MenuHistoryNextMenu(MENU_DIALOG_YES_NO, 0, args3);
+    MenuHistoryNextMenu(MENU_DIALOG_YES_NO, 0, 0);
     dialog_yes_function = &term_ring_do_activate;
     dialog_yes_args1 = args3;
     strcpy_P(dialog_text, text_term_do_activate);
   }
+  display_redraw_default_ring = 1;
 }
 
 
@@ -5212,7 +5093,7 @@ void button_get_default_ring_labels(uint8_t args1, uint8_t args2, uint8_t args3,
   if (default_ring != NO_DEFAULT_RING)
   {
     thermostat_ring_get_name(default_ring, name);
-    sprintf(line2, "Regulator %d - %s", default_ring, name);
+    sprintf(line2, "Regulator: %s", name);
   }
   else
   {
@@ -5225,7 +5106,110 @@ void button_get_default_ring_labels(uint8_t args1, uint8_t args2, uint8_t args3,
 void button_click_nastaveni_ring_screen(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   if (default_ring != NO_DEFAULT_RING)
-    MenuHistoryNextMenu(args1, default_ring, args3);
+    MenuHistoryNextMenu(args1, default_ring, 0);
+}
+
+
+/////////////////////
+/// Funkce pro vyplneni popisku vyberoveho menu ringu termostatu
+void dyn_button_show_all_thermostat_get_status_string(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
+{
+  char name[10];
+  thermostat_ring_get_name(args1, name);
+  sprintf(line1, "Regulator: %s", name);
+  strcpy_P(line2, text_dashdash);
+}
+
+/*
+   funkce pro vyber menu nastaveni regulatoru
+   args3 je index dynamickeho tlacitka
+*/
+void dyn_button_show_all_thermostat_dyn_button_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  MenuHistoryNextMenu(MENU_NASTAVENI_RING_SCREEN, args3, 0);
+}
+
+
+
+
+
+
+/*******************************************************************************************************/
+/*  funkce pro nastavovani nazvu regulacniho ringu
+   pomocna funkce, ktera po stisknuti tlacitka ulozit v menu dialogu vykona akci
+   args1
+   args2
+   args3
+   promene nemaji zadny vyznam
+*/
+
+void helper_thermostat_button_set_ring_name(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char name[10];
+  display_element_get_string(name);
+  args2 = display_element_get_string_args();
+  thermostat_ring_set_name(args2, name);
+}
+///////////////////////////////////
+/*
+   pomocna funkce pro nastaveni nazvu regulatoru
+   vyplni parametry pro dialog klavesnice
+   args1 - nepotrebuji
+   args2 je idcko tlacitka
+   args3 - nepotrebuji
+   promene nemaji zadny vyznam
+*/
+
+void thermostat_button_set_ring_name_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char name[10];
+  //printf("%d -- %d -- %d\n", args1, args2, args3);
+  thermostat_ring_get_name(args2, name);
+  MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, 0);
+  display_element_set_string(name, 9, args2, &helper_thermostat_button_set_ring_name, &valid_true);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+   Funkce pro aktivovani/deaktivovani ringu termostatu
+*/
+
+void helper_thermostat_button_deactivate_ring_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  thermostat_ring_clear(args1);
+}
+
+void helper_thermostat_button_activate_ring_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  thermostat_ring_set_active(args1, 1);
+}
+
+/// funkce pro deaktivaci termostatu
+void thermostat_button_deactivate_ring_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  //printf("deaktivece %d-%d-%d\n", args1, args2, args3);
+  char str2[10];
+  MenuHistoryNextMenu(MENU_DIALOG_YES_NO, 0, 0);
+  dialog_yes_function = &helper_thermostat_button_deactivate_ring_onclick;
+  dialog_yes_args1 = args2;
+  strcpy_P(dialog_text, text_term_do_deactivate);
+  strcat(dialog_text, ": ");
+  thermostat_ring_get_name(args2, str2);
+  strcat(dialog_text, str2);
+}
+
+void thermostat_button_activate_ring_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  //printf("aktivece %d-%d-%d\n", args1, args2, args3);
+  char str2[10];
+  MenuHistoryNextMenu(MENU_DIALOG_YES_NO, 0, 0);
+  dialog_yes_function = &helper_thermostat_button_activate_ring_onclick;
+  dialog_yes_args1 = args2;
+  strcpy_P(dialog_text, text_term_do_activate1);
+  strcat(dialog_text, ": ");
+  thermostat_ring_get_name(args2, str2);
+  strcat(dialog_text, str2);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -5247,15 +5231,21 @@ void button_click_nastaveni_ring_screen(uint16_t args1, uint16_t args2, uint8_t 
    return
      - uint8_t 1... activni, 0... neaktivni
 */
+
 uint8_t button_status_default_ring_term_has_mode(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   uint8_t ret = 0;
   if (thermostat_ring_get_active(default_ring) != RING_FREE)
+  {
     if (thermostat_ring_get_mode_1(default_ring, args1) == true)
       ret = 1;
+    if (thermostat_ring_get_mode(default_ring) != args1 && thermostat_mode_default_ring_last_state != args1)
+      ret = 2;
+    //printf("last:%d, mode%d, idx%d\n", thermostat_mode_default_ring_last_state, thermostat_ring_get_mode(default_ring), args1);
+  }
+  //printf("ret %d\n\n", ret);
   return ret;
 }
-
 /////////////////////////////////////////////////////////
 /*
    funkce pro nastaveni modu regulatoru pouze ve vychozim ringu
@@ -5263,10 +5253,12 @@ uint8_t button_status_default_ring_term_has_mode(uint16_t args1, uint16_t args2,
    args2 ... parametr z defini menu
    args3 ... index prvku v menu
 */
+
 void button_click_default_term_set_mode(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   if (thermostat_ring_get_active(default_ring) != RING_FREE)
   {
+    thermostat_mode_default_ring_last_state = thermostat_ring_get_mode(default_ring);
     thermostat_ring_set_mode(default_ring, args1);
     change_term_mode = 1;
   }
@@ -5281,41 +5273,7 @@ void button_click_default_term_set_mode(uint16_t args1, uint16_t args2, uint8_t 
 
 
 
-/*******************************************************************************************************/
-/*  funkce pro nastavovani nazvu regulacniho ringu
-   pomocna funkce, ktera po stisknuti tlacitka ulozit v menu dialogu vykona akci
-   args1
-   args2
-   args3
-   promene nemaji zadny vyznam
-*/
-void helper_set_term_ring_name(uint16_t args1, uint16_t args2, uint8_t args3)
-{
-  char name[10];
-  display_element_get_string(name);
-  args2 = display_element_get_string_args();
-  thermostat_ring_set_name(args2, name);
-}
 
-
-
-///////////////////////////////////
-/*
-   pomocna funkce pro nastaveni nazvu regulatoru
-   vyplni parametry pro dialog klavesnice
-   args1
-   args2
-   args3
-   promene nemaji zadny vyznam
-*/
-void button_click_set_term_ring_name_via_keyboard(uint16_t args1, uint16_t args2, uint8_t args3)
-{
-  char name[10];
-  args2 = default_ring;
-  thermostat_ring_get_name(args2, name);
-  MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, args3);
-  display_element_set_string(name, 9, args2, &helper_set_term_ring_name, &valid_true);
-}
 
 
 
@@ -5344,24 +5302,30 @@ void button_click_set_term_ring_name_via_keyboard(uint16_t args1, uint16_t args2
 /*
    funkce pro prepnuti na dialog vyberu modu
 */
-void button_click_term_set_mode_via_dialog(uint16_t args1, uint16_t args2, uint8_t args3)
-{
+/*
+  void button_click_term_set_mode_via_dialog(uint16_t args1, uint16_t args2, uint8_t args3)
+  {
   if (default_ring != NO_DEFAULT_RING)
     MenuHistoryNextMenu(MENU_DIALOG_SELECT_TERM_MODE, default_ring, args3);
-}
+  }
+*/
+
 /*
    prevodni funkce pro dynamicke tlacitko popisku vybraneho operacniho modu
    prevede id modu na textovy popisek
    zadne vstupni parametry
 */
-void button_get_default_ring_term_mode_labels(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
-{
+/*
+  void button_get_default_ring_term_mode_labels(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
+  {
   strcpy_P(line1, text_current_ring_mode);
   if (default_ring != NO_DEFAULT_RING)
     convert_mode_text_1(thermostat_ring_get_mode(default_ring), line2);
   else
     strcpy_P(line2, text_dashdash);
-}
+  }
+*/
+
 ///
 /*
    funkce ktera vraci 1 na aktualne vybrany mod podle indexu prvku v menu. Pozor na pevne stanovene poradi modu
@@ -5369,7 +5333,7 @@ void button_get_default_ring_term_mode_labels(uint8_t args1, uint8_t args2, uint
    args2 ... zde je cislo ringu
    args3 ... id polozky dynamickeho menu
 */
-uint8_t button_get_term_mode_is_selected(uint16_t args1, uint16_t args2, uint8_t args3)
+uint8_t button_select_term_mode_get_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   uint8_t mode;
   uint8_t ret = 2;
@@ -5392,14 +5356,17 @@ uint8_t button_get_term_mode_is_selected(uint16_t args1, uint16_t args2, uint8_t
    args2 ... zde je cislo ringu,
    args3 ... id polozky menu
 */
-void button_click_term_set_mode(uint16_t args1, uint16_t args2, uint8_t args3)
+
+void button_select_term_mode_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   if (args3 == 0) thermostat_ring_set_mode(args2, TERM_MODE_OFF);
   if (args3 == 1) thermostat_ring_set_mode(args2, TERM_MODE_MAX);
   if (args3 == 2) thermostat_ring_set_mode(args2, TERM_MODE_MIN);
   if (args3 == 3) thermostat_ring_set_mode(args2, TERM_MODE_PROG);
   if (args3 == 4) thermostat_ring_set_mode(args2, TERM_MODE_MAN);
+  change_term_mode = 1;
 }
+
 ///
 /*
    prevodni funkce
@@ -5408,7 +5375,7 @@ void button_click_term_set_mode(uint16_t args1, uint16_t args2, uint8_t args3)
    line1 ... kratke pojmenovani modu
    line2 ... komentar
 */
-void button_get_term_mode_labels(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
+void button_select_term_mode_get_status_string(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
 {
   if (args1 == 0)
   {
@@ -5459,14 +5426,15 @@ void button_get_term_mode_labels(uint8_t args1, uint8_t args2, uint8_t args3, ch
    args2 ... paramentr z define menu
    args3 ... index prvku v menu
 */
+
 uint8_t button_get_term_heat_or_cool(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   uint8_t ret = 2;
   uint8_t b;
-  if (thermostat_ring_get_active(default_ring) != RING_FREE)
+  if (thermostat_ring_get_active(args2) != RING_FREE)
   {
     ret = 0;
-    b = thermostat_ring_get_status_bites(default_ring, STATUS_BIT_HEAT_OR_COOL);
+    b = thermostat_ring_get_status_bites(args2, STATUS_BIT_HEAT_OR_COOL);
     if (b == 0 && args1 == TERM_MODE_MAN_HEAT)
       ret = 1;
     if (b != 0 && args1 == TERM_MODE_MAN_COOL)
@@ -5474,33 +5442,38 @@ uint8_t button_get_term_heat_or_cool(uint16_t args1, uint16_t args2, uint8_t arg
   }
   return ret;
 }
+
 /*
    funkce pro nastaveni manualniho rezimu topeni a nebo chlazeni
    args1 ... parametr z definice prvku
    args2 ... parametr z menu
    args3 ... index prvku v poradi menu
 */
+
 void button_click_set_term_heat_or_cool(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  if (thermostat_ring_get_active(default_ring) != RING_FREE)
+  if (thermostat_ring_get_active(args2) != RING_FREE)
   {
+    change_term_mode = 1;
     if (args1 == TERM_MODE_MAN_HEAT)
-      thermostat_ring_update_bites(default_ring, STATUS_BIT_HEAT_OR_COOL, 0);
+      thermostat_ring_update_bites(args2, STATUS_BIT_HEAT_OR_COOL, 0);
     if (args1 == TERM_MODE_MAN_COOL)
-      thermostat_ring_update_bites(default_ring, STATUS_BIT_HEAT_OR_COOL, 1);
+      thermostat_ring_update_bites(args2, STATUS_BIT_HEAT_OR_COOL, 1);
   }
 }
+
 /*
    funkce vraci 1 kdyz mame vybrany z nasledujich modu, rucni rizeni a jeho alternativy
    kdyz 0 tak se nezobrazuji polozky v menu
    args1, args2, args3 nejsou zatim potreba
 */
+
 uint8_t display_enable_show_term_mode_man(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   uint8_t mode = 0;
-  if (default_ring != NO_DEFAULT_RING)
+  if (thermostat_ring_get_active(args2) != RING_FREE)
   {
-    mode = thermostat_ring_get_mode(default_ring);
+    mode = thermostat_ring_get_mode(args2);
     if (mode == TERM_MODE_MAN_HEAT || mode == TERM_MODE_MAN_COOL || mode == TERM_MODE_MAN)
       return 1;
   }
@@ -5508,19 +5481,40 @@ uint8_t display_enable_show_term_mode_man(uint16_t args1, uint16_t args2, uint8_
 }
 
 
-
-uint8_t display_enable_show_term_mode_prog(uint16_t args1, uint16_t args2, uint8_t args3)
-{
+/*
+  uint8_t display_enable_show_term_mode_prog(uint16_t args1, uint16_t args2, uint8_t args3)
+  {
   uint8_t mode = thermostat_ring_get_mode(default_ring);
   if (mode == TERM_MODE_PROG)
     return 1;
   return 0;
+  }
+*/
+
+
+uint8_t display_enable_show_thermostat_active_ring(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t ret = 0;
+  if (thermostat_ring_get_active(args2) == RING_FREE)
+    ret = 1;
+  return ret;
 }
 
-
-
-
+uint8_t display_enable_show_thermostat_deactive_ring(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t ret = 0;
+  if (thermostat_ring_get_active(args2) != RING_FREE)
+    ret = 1;
+  return ret;
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+
+   Display funkce
+
+*/
+/// Funkce ktera vrati popisek pro tlacitko
 void button_change_brightness_display_get_status_string(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
 {
   char str2[8];
@@ -5540,26 +5534,22 @@ void button_change_brightness_display_get_status_string(uint8_t args1, uint8_t a
     strcat(line2, "%");
   }
 }
-
+///
+/// Funce pro nastaveni dialogu pro zobrazeni nastaveni podsvetleni
 void button_change_brightness_display_dyn_button_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   MenuHistoryNextMenu(NEW_MENU_DISPLAY_NASTAVENI_BRIGTHNESS_SCREEN, 0, 0);
 }
-
-
-
-
-
-
-
 /////////
+/// Funkce, ktera vrati jestli je zapnute automaticke rizeni podsvetleni
 uint8_t switch_brightness_automode_get_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   uint8_t ret = 0;
   if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) != 0 ) ret = 1;
   return ret;
 }
-
+////////
+/// Funkce, ktera vraci popisky pro dynamicke tlacitko
 void switch_brightness_automode_get_status_string(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
 {
   char str2[8];
@@ -5575,7 +5565,8 @@ void switch_brightness_automode_get_status_string(uint8_t args1, uint8_t args2, 
     strcpy_P(line1, new_text_jas_display_manual);
   }
 }
-
+////////
+/// Obsluzna funkce nastaveni rizeni podsvetleni
 void switch_brightness_automode_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) != 0 )
@@ -5591,13 +5582,12 @@ void switch_brightness_automode_onclick(uint16_t args1, uint16_t args2, uint8_t 
 switch_brightness_automode_onclick_end:
   EEPROM.write(my_brightness_mode, brigthness_display_mode);
 }
-
+////////
+/// Nastaveni dialogu nastaveni promene
 uint8_t preload_display_setting_brightness(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   display_function_set_variable(brigthness_display_values, 5, 100, 5, 0, NUMBER_TYPE_INT,  H_TRUE, 0, &helper_display_set_brightness);
 }
-
-
 
 void helper_display_set_brightness(uint16_t args1, float args2, uint8_t args3)
 {
@@ -5606,7 +5596,7 @@ void helper_display_set_brightness(uint16_t args1, float args2, uint8_t args3)
   EEPROM.write(my_brightness_values, brigthness_display_values);
 }
 
-
+/////
 uint8_t display_enable_show_brightness_manual_mode(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   uint8_t ret = 0;
@@ -5615,9 +5605,15 @@ uint8_t display_enable_show_brightness_manual_mode(uint16_t args1, uint16_t args
   return ret;
 }
 
-///////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*
+
+
    Funkce pro automaticke vypinani displaye pri neaktivite
+
+
 */
 void button_set_brightness_auto_shutdown_get_status_string(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
 {
@@ -5628,12 +5624,10 @@ void button_set_brightness_auto_shutdown_get_status_string(uint8_t args1, uint8_
     sprintf(line2, "Povoleno: %d sec", display_auto_shutdown);
 }
 
-
 void button_set_brightness_auto_shutdown_dyn_symbol_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   MenuHistoryNextMenu(NEW_MENU_DISPLAY_NASTAVENI_AUTO_SHUTDOWN_SCREEN, 0, 0);
 }
-
 
 uint8_t button_set_brightness_auto_shutdown_get_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3)
 {
@@ -5722,7 +5716,6 @@ uint8_t button_set_brightness_auto_shutdown_select_time_get_status_fnt(uint16_t 
     ret = 1;
   if (args3 == 5 && display_auto_shutdown == 250)
     ret = 1;
-
   return ret;
 }
 
@@ -5730,13 +5723,17 @@ uint8_t button_set_brightness_auto_shutdown_select_time_get_status_fnt(uint16_t 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+
+   Funkce pro zobrazeni sitovych informaci
+
+*/
 void display_element_show_network_detail(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text)
 {
   char str1[36];
-  char str2[16];
+  char str2[24];
   my_lcd.Set_Draw_color(BLACK);
   my_lcd.Draw_Rectangle(x, y, x + size_x , y + size_y);
-
   /// mac adresa
   strcpy_P(str1, new_text_device_mac);
   strcat(str1, ": ");
@@ -5773,8 +5770,10 @@ void display_element_show_network_detail(uint16_t x, uint16_t y, uint16_t size_x
   strcat(str1, str2);
   show_string(str1, x + 5 , y + 100 , 1, BLACK, WHITE, 0);
 }
-////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*
+
    Obsluha tlacitka synchronizace NTP casu
 */
 void button_click_ntp_sync_time(uint16_t args1, uint16_t args2, uint8_t args3)
@@ -5816,8 +5815,8 @@ void helper_dialog_ntp_set_server(uint16_t args1, uint16_t args2, uint8_t args3)
   save_setup_network();
   selftest_set_0(SELFTEST_RESTART_NEEDED);
 }
-
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 /*
    Obsluha tlacitka casovy offset
@@ -5869,7 +5868,14 @@ void helper_set_date_manualy(uint16_t args1, uint16_t args2, uint8_t args3)
   parseBytes(datum_text, '.', dat, 3, 10);
   rtc.adjust(DateTime(dat[2], dat[1], dat[0], now.hour(), now.minute(), now.second()));
 }
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+
+   Obsluzne funkce pro nastavovani MQTT parametru pripojeni
+
+
+*/
 //// funkce obsluha tlacitka nastaveni mqqt serveru
 void button_set_mqtt_broker_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
@@ -5893,10 +5899,12 @@ void button_set_mqtt_pass_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 //// funkce obsluha tlacitka check connection
 void button_check_mqtt_connection_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-/// TODO
+  /// TODO
 }
 
+/*
 
+*/
 void helper_dialog_mqtt_set_server(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   char ip_text[16];
@@ -5905,7 +5913,6 @@ void helper_dialog_mqtt_set_server(uint16_t args1, uint16_t args2, uint8_t args3
   save_setup_network();
   selftest_set_0(SELFTEST_RESTART_NEEDED);
 }
-
 void helper_dialog_mqtt_set_user(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   char user[20];
@@ -5914,7 +5921,6 @@ void helper_dialog_mqtt_set_user(uint16_t args1, uint16_t args2, uint8_t args3)
   save_setup_network();
   selftest_set_0(SELFTEST_RESTART_NEEDED);
 }
-
 void helper_dialog_mqtt_set_pass(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   char key[20];
@@ -5931,15 +5937,15 @@ void helper_dialog_mqtt_set_pass(uint16_t args1, uint16_t args2, uint8_t args3)
    Obsluha tlacitka vychozi hodnoty
    a pak restart
 */
-void click_button_default_value(uint16_t args1, uint16_t args2, uint8_t args3)
+void button_nastaveni_default_value(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   /// TODO dialog ANO/NE
   EEPROM.write(set_default_values, 255);
   resetFunc();
 }
 /*
- * funkce pro restartovani zarizeni
- */
+   funkce pro restartovani zarizeni
+*/
 void button_nastaveni_reload_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   /// TODO dialog ANO/NE
@@ -5949,7 +5955,7 @@ void button_nastaveni_reload_onclick(uint16_t args1, uint16_t args2, uint8_t arg
 /*
    Obsluha tlacitka kontrola konektivity
 */
-void button_set_network_test_connection_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+void button_network_test_connection_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   check_connectivity_connection();
   /// TODO - pridat do selfcheck testu
@@ -6052,7 +6058,8 @@ void display_element_show_about_device(uint16_t x, uint16_t y, uint16_t size_x, 
   show_string(str1, x + 5 , y + 145 , 1, BLACK, WHITE, 0);
 }
 ////
-////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*
 
    Funkce pro validace dat zadanych pres vstupni formular

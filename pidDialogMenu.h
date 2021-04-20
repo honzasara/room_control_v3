@@ -4,6 +4,8 @@
 
 void button_click_ring_term_set_pid_default(uint16_t args1, uint16_t args2, uint8_t args3);
 
+uint8_t preload_pid_menu(uint16_t args1, uint16_t args2, uint8_t args3);
+
 const Element_Button_1 button_term_ring_set_pid_default PROGMEM = {
   .name = text_set_default,
   .x = 10,
@@ -197,6 +199,7 @@ const Menu1 DialogSelectPIDSensor PROGMEM = {
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
+  .redraw_class_3 = returnnullfceargs,
   .preload_function = preload_pid_menu,
 };
 

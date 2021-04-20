@@ -14,7 +14,7 @@ const Element_Button_1 button_nastaveni_systemu PROGMEM = {
   .font_size = 2,
   .args = NEW_MENU_SYSTEM_NASTAVENI_SCREEN,
   .onclick = MenuHistoryNextMenu,
-  .redraw_class = REDRAW_BUTTON,
+  .redraw_class = (1 << REDRAW_ONCE),
   .enable_show = display_enable_show,
 };
 
@@ -27,7 +27,7 @@ const Element_Button_1 button_nastaveni_periferie PROGMEM = {
   .font_size = 2,
   .args = NEW_MENU_PERIFERIE_NASTAVENI_SCREEN,
   .onclick = MenuHistoryNextMenu,
-  .redraw_class = REDRAW_BUTTON,
+  .redraw_class = (1 << REDRAW_ONCE),
   .enable_show = display_enable_show,
 };
 
@@ -40,7 +40,7 @@ const Element_Button_1 button_nastaveni_zobrazeni PROGMEM = {
   .font_size = 2,
   .args =  NEW_MENU_DISPLAY_NASTAVENI_SCREEN,
   .onclick = MenuHistoryNextMenu,
-  .redraw_class = REDRAW_BUTTON,
+  .redraw_class = (1 << REDRAW_ONCE),
   .enable_show = display_enable_show,
 };
 
@@ -51,9 +51,9 @@ const Element_Button_1 button_nastaveni_regulator PROGMEM = {
   .size_x = 190,
   .size_y = 40,
   .font_size = 2,
-  .args = 0, //MENU_NASTAVENI_ONEWIRE,
-  .onclick = nullfce,
-  .redraw_class = REDRAW_BUTTON,
+  .args = NEW_MENU_THERMOSTAT_SETTINGS,
+  .onclick = MenuHistoryNextMenu,
+  .redraw_class = (1 << REDRAW_ONCE),
   .enable_show = display_enable_show,
 };
 
@@ -109,10 +109,11 @@ const Menu1 New_NastaveniMenu PROGMEM = {
   .size_y = 320,
   .atributes = (1 << MENU_ATTRIBUTES_CLEAN_DISPLAY),
   .color_background = WHITE,
-  .redraw_class = (1 << REDRAW_FORCE),
+  .redraw_class = (1 << REDRAW_ONCE),
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
+  .redraw_class_3 = returnnullfceargs,
   .preload_function = returnnullfceargs,
 };
 

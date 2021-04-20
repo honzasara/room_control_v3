@@ -173,6 +173,7 @@ const Menu1 List_RTDS_Menu PROGMEM = {
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
+  .redraw_class_3 = returnnullfceargs,
   .preload_function = returnnullfceargs,
 };
 
@@ -206,6 +207,7 @@ const Menu1 RTDS_Menu_Detail PROGMEM = {
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
+  .redraw_class_3 = returnnullfceargs,
   .preload_function = returnnullfceargs,
 };
 

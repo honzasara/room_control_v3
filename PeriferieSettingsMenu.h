@@ -74,6 +74,7 @@ const Menu1 PeriferieSettingsMenu PROGMEM = {
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
+  .redraw_class_3 = returnnullfceargs,
   .preload_function = returnnullfceargs,
 };
 #endif

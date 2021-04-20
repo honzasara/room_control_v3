@@ -10,7 +10,7 @@
 
 
 void display_element_show_network_detail(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
-void button_set_network_test_connection_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
+void button_network_test_connection_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
 
 const Element_Button_1 button_set_network_ip PROGMEM = {
   .name = new_text_set_network_ip,
@@ -98,7 +98,7 @@ const Element_Button_1 button_set_network_test_connection PROGMEM = {
   .size_y = 40,
   .font_size = 1,
   .args = 0,
-  .onclick = button_set_network_test_connection_onclick,
+  .onclick = button_network_test_connection_onclick,
   .redraw_class = REDRAW_BUTTON,
   .enable_show = display_enable_show,
 };
@@ -131,7 +131,7 @@ const Menu1 MenuNastaveniSite PROGMEM = {
   .symbol_button_1 = {NULL},
   .dyn_symbol_1 = {NULL},
   .dyn_select_box_1 = {NULL},
-  .len_button_1 = 9,
+  .len_button_1 = 8,
   .len_button_2 = 0,
   .len_function_1 = 1,
   .len_switch_1 = 0,
@@ -150,6 +150,7 @@ const Menu1 MenuNastaveniSite PROGMEM = {
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
+  .redraw_class_3 = returnnullfceargs,
   .preload_function = returnnullfceargs,
 };
 

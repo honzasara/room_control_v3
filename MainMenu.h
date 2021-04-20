@@ -9,6 +9,12 @@ uint8_t button_status_default_ring_term_has_mode(uint16_t args1, uint16_t args2,
 /// tato funkce nastavi termostat do pozadovaneho modu
 void button_click_default_term_set_mode(uint16_t args1, uint16_t args2, uint8_t args3);
 
+uint8_t menu_redraw_date(uint16_t args1, uint16_t args2, uint8_t args3);
+
+void display_element_show_time_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
+void display_element_show_time_decorate_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
+void display_element_show_temp_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
+void display_element_show_temp_decorate_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
 
 
 const Element_Function_1 f_show_temp PROGMEM = {
@@ -18,7 +24,20 @@ const Element_Function_1 f_show_temp PROGMEM = {
   .fnt_coordinate_xy = display_element_show_temp_1,
   .size_x = 0,
   .size_y = 0,
-  .redraw_class = (1 << REDRAW_FORCE | 1 << REDRAW_CLASS_2),
+  .redraw_class = (1 << REDRAW_CLASS_2 | 1 << REDRAW_FORCE),
+  .onclick = nullfce,
+  .enable_show = display_enable_show,
+  .name = char_NULL,
+};
+
+const Element_Function_1 f_show_temp_decorate PROGMEM = {
+  .x = 10,
+  .y = 130,
+  .args = 0,
+  .fnt_coordinate_xy = display_element_show_temp_decorate_1,
+  .size_x = 0,
+  .size_y = 0,
+  .redraw_class = (1 << REDRAW_ONCE ),
   .onclick = nullfce,
   .enable_show = display_enable_show,
   .name = char_NULL,
@@ -31,11 +50,25 @@ const Element_Function_1 f_show_time PROGMEM = {
   .fnt_coordinate_xy = display_element_show_time_1,
   .size_x = 0,
   .size_y = 0,
-  .redraw_class = (1 << REDRAW_FORCE | 1 << REDRAW_CLASS_0),
+  .redraw_class = (1 << REDRAW_CLASS_0 | 1 << REDRAW_FORCE),
   .onclick = nullfce,
   .enable_show = display_enable_show,
   .name = char_NULL,
 };
+
+const Element_Function_1 f_show_time_decorate PROGMEM = {
+  .x = 10,
+  .y = 30,
+  .args = 0,
+  .fnt_coordinate_xy = display_element_show_time_decorate_1,
+  .size_x = 0,
+  .size_y = 0,
+  .redraw_class = (1 << REDRAW_ONCE ),
+  .onclick = nullfce,
+  .enable_show = display_enable_show,
+  .name = char_NULL,
+};
+
 
 const Element_Button_2 button_term_state_off PROGMEM = {
   .name = text_button_term_off,
@@ -49,7 +82,7 @@ const Element_Button_2 button_term_state_off PROGMEM = {
   .args = TERM_MODE_OFF,
   .onclick = button_click_default_term_set_mode,
   .get_status_fnt = button_status_default_ring_term_has_mode,
-  .redraw_class = REDRAW_PROGRAM_BUTTON,
+  .redraw_class = (1 << REDRAW_CLASS_1 | 1 << REDRAW_ONCE ),
   .enable_show = display_enable_show,
 };
 
@@ -65,7 +98,7 @@ const Element_Button_2 button_term_state_max PROGMEM = {
   .args = TERM_MODE_MAX,
   .onclick = button_click_default_term_set_mode,
   .get_status_fnt = button_status_default_ring_term_has_mode,
-  .redraw_class = REDRAW_PROGRAM_BUTTON,
+  .redraw_class = (1 << REDRAW_CLASS_1 | 1 << REDRAW_ONCE ),
   .enable_show = display_enable_show,
 };
 
@@ -81,7 +114,7 @@ const Element_Button_2 button_term_state_min PROGMEM = {
   .args = TERM_MODE_MIN,
   .onclick = button_click_default_term_set_mode,
   .get_status_fnt = button_status_default_ring_term_has_mode,
-  .redraw_class = REDRAW_PROGRAM_BUTTON,
+  .redraw_class = (1 << REDRAW_CLASS_1  | 1 << REDRAW_ONCE ),
   .enable_show = display_enable_show,
 };
 
@@ -97,7 +130,7 @@ const Element_Button_2 button_term_state_prog PROGMEM = {
   .args = TERM_MODE_PROG,
   .onclick = button_click_default_term_set_mode,
   .get_status_fnt = button_status_default_ring_term_has_mode,
-  .redraw_class = REDRAW_PROGRAM_BUTTON,
+  .redraw_class = (1 << REDRAW_CLASS_1  | 1 << REDRAW_ONCE ),
   .enable_show = display_enable_show,
 };
 
@@ -113,54 +146,54 @@ const Element_Button_2 button_term_state_man PROGMEM = {
   .args = TERM_MODE_MAN,
   .onclick = button_click_default_term_set_mode,
   .get_status_fnt = button_status_default_ring_term_has_mode,
-  .redraw_class = REDRAW_PROGRAM_BUTTON,
+  .redraw_class = (1 << REDRAW_CLASS_1  | 1 << REDRAW_ONCE ),
   .enable_show = display_enable_show,
 };
 
-const Element_Button_1 button_global_setting PROGMEM = { 
-  .name = nastaveni_text, 
-  .x = 290, 
-  .y = 30, 
-  .size_x = 170, 
-  .size_y = 40, 
-  .font_size = 2, 
-  .args = NEW_MENU_NASTAVENI_SCREEN, 
-  .onclick = MenuHistoryNextMenu,  
-  .redraw_class = (1 << REDRAW_FORCE), 
+const Element_Button_1 button_global_setting PROGMEM = {
+  .name = nastaveni_text,
+  .x = 290,
+  .y = 30,
+  .size_x = 170,
+  .size_y = 40,
+  .font_size = 2,
+  .args = NEW_MENU_NASTAVENI_SCREEN,
+  .onclick = MenuHistoryNextMenu,
+  .redraw_class = (1 << REDRAW_FORCE | 1 << REDRAW_ONCE),
   .enable_show = display_enable_show,
-  };
+};
 
 const Element_Button_1 button_global_functions PROGMEM = {
-  .name = funkce_text, 
-  .x = 290, 
-  .y = 90, 
-  .size_x = 170, 
-  .size_y = 40, 
-  .font_size = 2, 
-  .args = MENU_FUNKCE_SCREEN, 
-  .onclick = nullfce, //MenuHistoryNextMenu,  
-  .redraw_class = (1 << REDRAW_FORCE), 
+  .name = funkce_text,
+  .x = 290,
+  .y = 90,
+  .size_x = 170,
+  .size_y = 40,
+  .font_size = 2,
+  .args = MENU_FUNKCE_SCREEN,
+  .onclick = nullfce, //MenuHistoryNextMenu,
+  .redraw_class = (1 << REDRAW_FORCE | 1 << REDRAW_ONCE),
   .enable_show = display_enable_show,
-  };
+};
 
 const Element_Button_1 button_global_regulator PROGMEM = {
-  .name = regulator_text, 
-  .x = 290, 
-  .y = 150, 
-  .size_x = 170, 
-  .size_y = 40, 
-  .font_size = 2, 
-  .args = MENU_REGULATOR, 
-  .onclick = nullfce, //MenuHistoryNextMenu,  
-  .redraw_class = (1 << REDRAW_FORCE), 
+  .name = regulator_text,
+  .x = 290,
+  .y = 150,
+  .size_x = 170,
+  .size_y = 40,
+  .font_size = 2,
+  .args = MENU_REGULATOR,
+  .onclick = nullfce, //MenuHistoryNextMenu,
+  .redraw_class = (1 << REDRAW_FORCE | 1 << REDRAW_ONCE),
   .enable_show = display_enable_show,
-  };
+};
 
 const Menu1 HlavniMenu PROGMEM = {
   .name = term_title,
   .button_1 = {button_global_regulator, button_global_functions, button_global_setting},
   .button_2 = {button_term_state_off, button_term_state_max, button_term_state_min, button_term_state_prog, button_term_state_man},
-  .function_1 = {f_show_temp, f_show_date, f_show_time},
+  .function_1 = {f_show_temp, f_show_date, f_show_time, f_show_time_decorate, f_show_temp_decorate},
   .switch_1 = {NULL},
   .dyn_button = {NULL},
   .symbol_button_1 = {NULL},
@@ -168,7 +201,7 @@ const Menu1 HlavniMenu PROGMEM = {
   .dyn_select_box_1 = {NULL},
   .len_button_1 = 3,
   .len_button_2 = 5,
-  .len_function_1 = 3,
+  .len_function_1 = 5,
   .len_switch_1 = 0,
   .len_dyn_button_1 = 0,
   .len_symbol_button_1 = 0,
@@ -181,10 +214,11 @@ const Menu1 HlavniMenu PROGMEM = {
   .size_y = 320,
   .atributes = (1 << MENU_ATTRIBUTES_CLEAN_DISPLAY),
   .color_background = WHITE,
-  .redraw_class = (1 << REDRAW_FORCE),
+  .redraw_class = (1 << REDRAW_ONCE ),
   .redraw_class_0 = menu_redraw_time05s,
   .redraw_class_1 = menu_redraw_change_term_mode,
   .redraw_class_2 = menu_redraw_update_temp,
+  .redraw_class_3 = menu_redraw_date,
   .preload_function = returnnullfceargs,
 };
 

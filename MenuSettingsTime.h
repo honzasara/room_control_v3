@@ -104,10 +104,11 @@ const Menu1 MenuNastaveniCas PROGMEM = {
   .size_y = 320,
   .atributes = (1 << MENU_ATTRIBUTES_CLEAN_DISPLAY),
   .color_background = WHITE,
-  .redraw_class = (1 << REDRAW_FORCE),
+  .redraw_class = (1 << REDRAW_ONCE),
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
+  .redraw_class_3 = returnnullfceargs,
   .preload_function = returnnullfceargs,
 };
 

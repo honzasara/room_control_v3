@@ -2,7 +2,7 @@
 #define __PROJECT_SYSTEM_SETTINGS_MENU_H
 #include "room_control_v3.h"
 
-void click_button_default_value(uint16_t args1, uint16_t args2, uint8_t args3);
+void button_nastaveni_default_value(uint16_t args1, uint16_t args2, uint8_t args3);
 void display_element_show_about_device(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
 void button_nastaveni_reload_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
 
@@ -53,7 +53,7 @@ const Element_Button_1 button_nastaveni_default PROGMEM = {
   .size_y = 40,
   .font_size = 2,
   .args = 0,
-  .onclick = click_button_default_value,
+  .onclick = button_nastaveni_default_value,
   .redraw_class = REDRAW_BUTTON,
   .enable_show = display_enable_show,
 };
@@ -140,6 +140,7 @@ const Menu1 SystemSettingsMenu PROGMEM = {
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
+  .redraw_class_3 = returnnullfceargs,
   .preload_function = returnnullfceargs,
 };
 
@@ -172,6 +173,7 @@ const Menu1 AboutDeviceMenu PROGMEM = {
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
+  .redraw_class_3 = returnnullfceargs,
   .preload_function = returnnullfceargs,
 };
 

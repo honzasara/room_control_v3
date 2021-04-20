@@ -85,6 +85,29 @@
 
 
 
+//#define REDRAW_FORCE 3
+#define REDRAW_EVERY_500MS 0
+#define REDRAW_EXTERNAL_EVENT 1
+#define REDRAW_EVERY_10SEC 2
+
+#define REDRAW_CLASS_SHOW_TIME (1<<REDRAW_FORCE | 1<<REDRAW_EVERY_500MS)
+
+#define REDRAW_PROGRAM_BUTTON (1<<REDRAW_EXTERNAL_EVENT| 1<<REDRAW_FORCE)
+#define REDRAW_CLASS_SHOW (1<<REDRAW_FORCE | 1<< REDRAW_EVERY_10SEC)
+
+
+#define REDRAW_BUTTON (1<<REDRAW_FORCE)
+
+#define REDRAW_FORCE 4
+#define REDRAW_CLASS_0 0
+#define REDRAW_CLASS_1 1
+#define REDRAW_CLASS_2 2
+#define REDRAW_CLASS_3 3
+
+#define REDRAW_ONCE 5
+
+
+
 /// null fake funkce ///
 uint8_t returnnullfceargs(uint16_t args1, uint16_t args2, uint8_t args3);
 void nullfceargs(uint16_t args1, uint16_t args2, uint8_t args3);
@@ -103,15 +126,13 @@ uint8_t menu_redraw_change_term_mode(uint16_t args1, uint16_t args2, uint8_t arg
 uint8_t menu_redraw_update_temp(uint16_t args1, uint16_t args2, uint8_t args3);
 
 
-void display_element_show_time_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
-void display_element_show_temp_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
 void display_element_show_date_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
 
 
 void display_element_dialog_show_text(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
 void display_element_dialog_set_variable(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t idx, uint8_t args2, char *text);
 void display_element_vertical_slider(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
-void display_element_dialog_default_ring(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
+
 void display_element_default_ring_set_temp(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint8_t args1, uint8_t args2, char *text);
 
 
@@ -138,7 +159,7 @@ void display_function_set_variable_minus(uint16_t idx, uint16_t args2, uint8_t a
 
 
 
-void click_thermostat_set_ring_via_dialog(uint16_t args1, uint16_t args2, uint8_t args3);
+
 
 void click_rtds_add_sensor(uint16_t args1, uint16_t idx, uint8_t args3);
 
@@ -202,50 +223,38 @@ void button_click_deassociate_default_ring_program_for_term(uint16_t args1, uint
 
 
 void button_get_default_ring_term_mode_labels(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2);
-uint8_t button_get_term_ring_is_selected(uint16_t args1, uint16_t args2, uint8_t args3);
-void button_get_default_ring_labels(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2);
 
 
-void button_change_default_ring_labels_in_dialog(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2);
-void button_click_set_new_default_ring_in_dialog(uint16_t args1, uint16_t args2, uint8_t args3);
 
 
-uint8_t button_get_show_default_ring_input_active(uint16_t args1, uint16_t args2, uint8_t args3);
-void button_click_set_show_default_ring_input(uint16_t args1, uint16_t args2, uint8_t args3);
 
-void button_click_deassociate_default_ring_input_sensor_for_term(uint16_t args1, uint16_t args2, uint8_t args3);
-void button_click_deactivate_term_ring(uint16_t args1, uint16_t args2, uint8_t args3);
+
+
+
+
+
+
 
 /* primitivni funkce nastavovani regulatoru */
-void button_click_set_term_ring_name_via_keyboard(uint16_t args1, uint16_t args2, uint8_t args3);
+
 
 
 /// pomocna funkce pro nastaveni menu, pokud je splnena podminka ze je aktivni default ring povolim menu
 void button_click_nastaveni_ring_screen(uint16_t args1, uint16_t args2, uint8_t args3);
 
 ////////////
-/* primitivni pomocne funkce pro nastavovani manualniho modu topi/chladi */
-void button_click_set_term_heat_or_cool(uint16_t args1, uint16_t args2, uint8_t args3);
-uint8_t button_get_term_heat_or_cool(uint16_t args1, uint16_t args2, uint8_t args3);
-uint8_t display_enable_show_term_mode_man(uint16_t args1, uint16_t args2, uint8_t args3);
-uint8_t display_enable_show_term_mode_prog(uint16_t args1, uint16_t args2, uint8_t args3);
+
 
 
 /* primitivni pomocne funkce */
 uint8_t display_enable_show(uint16_t args1, uint16_t args2, uint8_t args3);
 uint8_t get_function_return_args_1(uint16_t args1, uint16_t args2, uint8_t args3);
-uint8_t preload_regulator_menu(uint16_t args1, uint16_t args2, uint8_t args3);
-uint8_t preload_pid_menu(uint16_t args1, uint16_t args2, uint8_t args3);
+
 /////////////////////////////////////////////////////////////////////////////////////////
 
 
 
-/* primitivni funkce obsluha tlacitek dialogu vyberu modu regurlatoru */
-void button_click_term_set_mode_via_dialog(uint16_t args1, uint16_t args2, uint8_t args3);
-///
-uint8_t button_get_term_mode_is_selected(uint16_t args1, uint16_t args2, uint8_t args3);
-void button_click_term_set_mode(uint16_t args1, uint16_t args2, uint8_t args3);
-void button_get_term_mode_labels(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2);
+
 ////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////
@@ -265,6 +274,7 @@ const char new_text_nastaveni_periferie[] PROGMEM = "N. periferii";
 const char new_text_nastaveni_zobrazeni_full[] PROGMEM = "Nastaveni zobrazeni";
 const char new_text_nastaveni_zobrazeni[] PROGMEM = "N. zobrazeni";
 
+const char new_text_nastaveni_regulatoru_full[] PROGMEM = "Nastaveni regulatoru";
 const char new_text_nastaveni_regulatoru[] PROGMEM = "N. regulatoru";
 
 const char new_text_nastaveni_casu[] PROGMEM = "Nastaveni casu";
@@ -297,7 +307,6 @@ const char new_text_device_ip[] PROGMEM = "IP adresa";
 const char new_text_device_mask[] PROGMEM = "IP maska";
 const char new_text_device_gw[] PROGMEM = "Vychozi brana";
 const char new_text_device_dns[] PROGMEM = "DNS server";
-const char new_text_device_dhcp[] PROGMEM = "DHCP";
 const char new_text_device_mac[] PROGMEM = "MAC adresa";
 
 const char new_text_set_network_ip[] PROGMEM = "Nastaveni IP";
@@ -339,6 +348,11 @@ const char new_text_rtds_type_temp[] PROGMEM = "Typ: vzdalena teplota";
 
 const char new_text_slash_rtds_slash[] PROGMEM = "/rtds/";
 const char new_text_slash_rtds_control_list[] PROGMEM = "/rtds-control/list";
+
+
+const char new_text_set_time_program[] PROGMEM = "Casove programy";
+
+const char new_text_regulator[] PROGMEM = "Regulator: ";
 /***************************************************************/
 /*
         spolecne display funkce
@@ -354,7 +368,7 @@ const Element_Function_1 f_show_date PROGMEM = {
   .fnt_coordinate_xy = display_element_show_date_1,
   .size_x = 0,
   .size_y = 0,
-  .redraw_class = REDRAW_CLASS_SHOW,
+  .redraw_class = (1 << 3 | 1 << REDRAW_FORCE),
   .onclick = nullfce,
   .enable_show = display_enable_show,
   .name = char_NULL,
