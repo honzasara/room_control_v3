@@ -28,7 +28,7 @@
     20.
     21. po najeti rychle blika dvojtecka u casu - fixnuto - HOTOVO
     22. change_term_mode - rozdelit po bitech
-    
+    23. opravit posunuti datumu pri syncu - fixnuto
 
   zapojeni pinu z leva do prava hneda -> zluta -> oranzova -> zelena -> cervena -> cerna
 */
@@ -569,12 +569,12 @@ fptr_args dialog_yes_function;
 
 
 const MenuAll Menu_All PROGMEM = {
-  .len_menu1 = 6,
+  .len_menu1 = 7,
   .len_menu2 = 5,
   .len_menu3 = 10,
   .len_menu4 = 7,
 
-  .ListMenu1 = {HlavniMenu, MenuNastaveniSite, OneWireMenu, MenuNastaveniCas, SelectMenuDefaultTemp, MenuNastaveniMQTT},
+  .ListMenu1 = {HlavniMenu, MenuNastaveniSite, OneWireMenu, MenuNastaveniCas, SelectMenuDefaultTemp, MenuNastaveniMQTT, Menu_Show_All_temp},
   .ListMenu2 = {DialogYESNO, DialogSetVariable, DialogKyeboardAlfa, DialogKyeboardNumber , DialogOK},
   .ListMenu3 = {TDSMenu, RTDS_Menu_Detail, List_RTDS_Menu, MenuThermostat_Setting, DialogSelectRing, MenuThermostatRingSetup, DialogSelectInputSensorsForTerm, DialogSelectTermMode, DialogSelectPIDSensor, New_ThermostatTimeMenu},
   .ListMenu4 = {SystemSettingsMenu, New_NastaveniMenu, PeriferieSettingsMenu, New_DisplaySettingMenu, New_DisplaySetting_Brigthness, AboutDeviceMenu, New_DisplaySetting_Auto_Shutdown},
@@ -738,10 +738,13 @@ bool draw_menu(bool redraw, uint8_t click_type, uint16_t click_x, uint16_t click
     if (click_x > 0 && click_y > 0)
       if (button_click_touch(global_x + pgm_read_word(&function_1->x), global_y + pgm_read_word(&function_1->y), pgm_read_word(&function_1->size_x), pgm_read_word(&function_1->size_y), click_x, click_y) == true)
       {
-        //fntargs =  pgm_read_word(&function_1->onclick);
-        //((fptr_args)fntargs)(pgm_read_byte(&function_1->args), menu_args1);
-        //ret = true;
-        printf("mrdka funkce\n");
+        fntargs =  (fptr_args*)pgm_read_word(&function_1->onclick);
+        if ((fptr_args)fntargs != nullfce)
+        {
+          ((fptr_args)fntargs)(pgm_read_word(&function_1->args), menu_args1, idx);
+          ret = true;
+          printf("mrdka funkce\n");
+        }
       }
   }
   if (ret == true)  goto draw_menu_end;
@@ -764,7 +767,7 @@ bool draw_menu(bool redraw, uint8_t click_type, uint16_t click_x, uint16_t click
     if (click_x > 0 && click_y > 0)
       if (button_click_touch(global_x + pgm_read_word(&button_1->x), global_y + pgm_read_word(&button_1->y), pgm_read_word(&button_1->size_x), pgm_read_word(&button_1->size_y), click_x, click_y) == true)
       {
-        fntargs =  (fptr_args*)pgm_read_word(&button_1->onclick);
+        fntargs = (fptr_args*)pgm_read_word(&button_1->onclick);
         ((fptr_args)fntargs)(pgm_read_byte(&button_1->args), menu_args1, idx);
         ret = true;
       }
@@ -2120,7 +2123,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
     mqtt_process_message++;
     id = atoi(my_payload);
     if (tds_associate(id) == 255)
-      log_error(&mqtt_client, "tds/associate full or bad id");
+      log_error(&mqtt_client, "E");
   }
   ///
   //// /thermctl-in/XXXX/tds/set/IDcko/name - nastavi cidlu nazev
@@ -2152,7 +2155,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
       }
       else
       {
-        log_error(&mqtt_client, "tds/set bad id");
+        log_error(&mqtt_client, "E");
       }
       pch = strtok (NULL, "/");
       cnt++;
@@ -2170,7 +2173,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
     if (id < HW_ONEWIRE_MAXROMS)
       tds_set_clear(id);
     else
-      log_error(&mqtt_client, "tds/clear bad id");
+      log_error(&mqtt_client, "E");
   }
   ////////
   ////////
@@ -2330,7 +2333,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
       }
       else
       {
-        log_error(&mqtt_client, "prog/set bad id");
+        log_error(&mqtt_client, "E");
         break;
       }
       pch = strtok (NULL, "/");
@@ -2397,7 +2400,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
       }
       else
       {
-        log_error(&mqtt_client, "prog_interval/set bad id");
+        log_error(&mqtt_client, "E");
         break;
       }
       pch = strtok (NULL, "/");
@@ -2442,7 +2445,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
       }
       else
       {
-        log_error(&mqtt_client, "ring/set bad id");
+        log_error(&mqtt_client, "E");
       }
       pch = strtok (NULL, "/");
       cnt++;
@@ -2529,7 +2532,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
       }
       else
       {
-        log_error(&mqtt_client, "ring/set bad id");
+        log_error(&mqtt_client, "E");
       }
       pch = strtok (NULL, "/");
       cnt++;
@@ -2550,7 +2553,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
     }
     else
     {
-      log_error(&mqtt_client, "ring/clear bad id");
+      log_error(&mqtt_client, "E");
     }
   }
   ////////
@@ -2679,7 +2682,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   if (strcmp(str1, topic) == 0)
   {
     mqtt_process_message++;
-    log_error(&mqtt_client, "reload ..... ");
+    log_error(&mqtt_client, "reload..");
     resetFunc();
   }
 
@@ -2690,7 +2693,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   if (strcmp(str1, topic) == 0)
   {
     mqtt_process_message++;
-    log_error(&mqtt_client, "bootloader ..... ");
+    log_error(&mqtt_client, "bootloader..");
     EEPROM.write(bootloader_tag, 255);
     wdt_enable(WDTO_1S);
     while (1);
@@ -3997,7 +4000,6 @@ void loop() {
   }
 
 
-
   /// kazdych 100ms
   if ((millis() - milis_005s) >= 50 )
   {
@@ -4122,7 +4124,7 @@ void display_element_show_time_decorate_1(uint16_t x, uint16_t y, uint16_t size_
   strcpy_P(str1, current_time);
   pos = (244 - show_string_size_width(16, 1)) / 2;
   show_string(str1, x + pos + 5, y + 5, 1, BLACK, WHITE, 0);
-  my_lcd.Draw_Rectangle(x, y, x + 244, y + 84);
+  my_lcd.Draw_Rectangle(x, y, x + size_x, y + size_y);
 }
 
 /// funkce pro zobrazeni casu
@@ -4154,7 +4156,7 @@ void display_element_show_temp_decorate_1(uint16_t x, uint16_t y, uint16_t size_
   strcat(str1, str2);
   show_string(str1, x + 5, y + 5, 1, BLACK, WHITE, 0);
   my_lcd.Set_Draw_color(BLACK);
-  my_lcd.Draw_Rectangle(x, y, x + 244, y + 84);
+  my_lcd.Draw_Rectangle(x, y, x + size_x, y + size_y);
 }
 /// funkce pro zobrazeni teploty
 void display_element_show_temp_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
@@ -4164,7 +4166,7 @@ void display_element_show_temp_1(uint16_t x, uint16_t y, uint16_t size_x, uint16
   float te;
   uint8_t stat;
   stat = get_global_temp(default_show_temp, str2, &te);
-  if (stat == 1)
+  if (stat > 0)
   {
     dtostrf(te, 4, 1, str1);
     if (strlen(str1) <= 4)
@@ -4176,6 +4178,42 @@ void display_element_show_temp_1(uint16_t x, uint16_t y, uint16_t size_x, uint16
     strcpy_P(str1, text_err);
     show_string(str1, x + 4, y + 20, 8, RED, WHITE, 0);
   }
+}
+
+/// funkce pro ukazani vsech namerenych hodnot
+void display_element_show_all_temp(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
+{
+  char name[32];
+  char str1[8];
+  float te;
+  uint8_t active;
+  uint8_t cri = 0;
+
+  dtostrf(lm75_temp.readTemperatureC(), 4, 2, str1);
+  sprintf(name, "interni zarizeni: %sC", str1);
+  show_string(name, x, y + (15 * cri), 1, BLACK, WHITE, 0);
+
+  cri++;
+  for (uint8_t idx = 0; idx < button_get_show_default_temp_max_items(INPUT_SENSOR_SHOW_ACTIVE, 0, 0); idx++)
+  {
+    active = get_global_temp(idx, name, &te);
+    if (active > 0)
+    {
+      strcat(name, ": ");
+      dtostrf(te, 4, 1, str1);
+      strcat(str1, "C");
+      strcat(name, str1);
+    }
+    else
+    {
+      strcat(name, ": ");
+      strcat_P(name, text_err);
+    }
+
+    show_string(name, x, y + (15 * cri), 1, BLACK, WHITE, 0);
+    cri++;
+  }
+
 }
 ////////////////////////////////////////////////////
 void display_element_show_date_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
@@ -4800,7 +4838,7 @@ uint8_t get_global_temp(uint8_t device, char*name, float *temp)
         if (remote_tds_get_last_update(idx) < 250 && remote_tds_get_type(idx) == RTDS_REMOTE_TYPE_TEMP)
         {
           *temp = remote_tds_get_data(idx) / 1000.0;
-          ret = 1;
+          ret = 2;
           goto get_global_temp_end;
         }
       }
@@ -4894,6 +4932,7 @@ uint8_t button_get_show_default_temp_max_items(uint16_t args1, uint16_t args2, u
   if (args1 == INPUT_SENSOR_SHOW_ALL)
     return HW_ONEWIRE_MAXROMS + MAX_RTDS;
 }
+
 
 /*
    funkce pro zobrazeni defaultniho cidla zobrazeni teploty
@@ -5778,7 +5817,6 @@ void display_element_show_network_detail(uint16_t x, uint16_t y, uint16_t size_x
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*
-
    Obsluha tlacitka synchronizace NTP casu
 */
 void button_click_ntp_sync_time(uint16_t args1, uint16_t args2, uint8_t args3)
@@ -5802,7 +5840,10 @@ void button_click_ntp_sync_time(uint16_t args1, uint16_t args2, uint8_t args3)
     strcpy_P(dialog_text, new_text_error_ntp_time);
   }
 }
-///
+
+/*
+ * funkce onclick a pomocna funkce pro nastaveni ntp serveru
+ */
 void button_ntp_set_server_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   char ip_text[16];
@@ -5820,6 +5861,114 @@ void helper_dialog_ntp_set_server(uint16_t args1, uint16_t args2, uint8_t args3)
   save_setup_network();
   selftest_set_0(SELFTEST_RESTART_NEEDED);
 }
+
+/*
+ * funkce onclick a pomocna funkce pro nastaveni ip adresy zarizeni
+ */
+void button_set_network_ip_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char ip_text[16];
+  MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
+  sprintf(ip_text, "%d.%d.%d.%d", device.myIP[0], device.myIP[1], device.myIP[2], device.myIP[3]);
+  display_element_set_string(ip_text, 16, 0, &helper_dialog_network_set_ip, &valid_ipv4_address_element_string);
+}
+void helper_dialog_network_set_ip(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t ip[4];
+  char ip_text[16];
+  display_element_get_string(ip_text);
+  parseBytes(ip_text, '.', device.myIP, 4, 10);
+  save_setup_network();
+  selftest_set_0(SELFTEST_RESTART_NEEDED);
+}
+
+/*
+ * funkce onclick a pomocna funkce pro nastaveni masky
+ */
+void button_set_network_mask_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char ip_text[16];
+  MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
+  sprintf(ip_text, "%d.%d.%d.%d", device.myMASK[0], device.myMASK[1], device.myMASK[2], device.myMASK[3]);
+  display_element_set_string(ip_text, 16, 0, &helper_dialog_network_set_mask, &valid_ipv4_address_element_string);
+}
+void helper_dialog_network_set_mask(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t ip[4];
+  char ip_text[16];
+  display_element_get_string(ip_text);
+  parseBytes(ip_text, '.', device.myMASK, 4, 10);
+  save_setup_network();
+  selftest_set_0(SELFTEST_RESTART_NEEDED);
+}
+
+/*
+ * funkce onclick a pomocna funkce pro nastaveni vychozi brany
+ */
+void button_set_network_gw_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char ip_text[16];
+  MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
+  sprintf(ip_text, "%d.%d.%d.%d", device.myGW[0], device.myGW[1], device.myGW[2], device.myGW[3]);
+  display_element_set_string(ip_text, 16, 0, &helper_dialog_network_set_gw, &valid_ipv4_address_element_string);
+}
+void helper_dialog_network_set_gw(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t ip[4];
+  char ip_text[16];
+  display_element_get_string(ip_text);
+  parseBytes(ip_text, '.', device.myGW, 4, 10);
+  save_setup_network();
+  selftest_set_0(SELFTEST_RESTART_NEEDED);
+}
+
+/*
+ * funkce onclick a pomocna funkce pro nastaveni nazvu
+ */
+void button_set_network_name_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char ip_text[16];
+  MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, 0);
+  display_element_set_string(device.nazev, 10, 0, &helper_dialog_network_set_name, &valid_true);
+}
+void helper_dialog_network_set_name(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char ip_text[11];
+  display_element_get_string(ip_text);
+  strcpy(device.nazev, ip_text);
+  save_setup_network();
+  selftest_set_0(SELFTEST_RESTART_NEEDED);
+}
+
+/*
+ * funkce onclick a pomocna funkce pro nastaveni dns
+ */
+void button_set_network_dns_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char ip_text[16];
+  MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
+  sprintf(ip_text, "%d.%d.%d.%d", device.myDNS[0], device.myDNS[1], device.myDNS[2], device.myDNS[3]);
+  display_element_set_string(ip_text, 16, 0, &helper_dialog_network_set_dns, &valid_ipv4_address_element_string);
+}
+void helper_dialog_network_set_dns(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t ip[4];
+  char ip_text[16];
+  display_element_get_string(ip_text);
+  parseBytes(ip_text, '.', device.myDNS, 4, 10);
+  save_setup_network();
+  selftest_set_0(SELFTEST_RESTART_NEEDED);
+}
+/////
+/*
+ * funkce pro random mac adresy
+ */
+void button_set_network_mac_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+device.mac[0] = 2; device.mac[1] = 1; device.mac[2] = 2; device.mac[3] =  dvanact >> 1; device.mac[4] =  proud >> 1; device.mac[5] =  light_curr >> 1;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

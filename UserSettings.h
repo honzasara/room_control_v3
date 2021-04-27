@@ -19,6 +19,9 @@
 
 #define bootloader_tag 0
 #define time_offset 1
+#define bootloader_set_1 13
+#define bootloader_set_2 13
+
 #define set_default_values 90
 #define my_default_ring 92
 #define my_default_show_temp 93
@@ -114,6 +117,7 @@
 #define NEW_MENU_THERMOSTAT_SETTINGS 158
 #define NEW_MENU_DIALOG_SELECT_TERM_MODE 159
 #define NEW_MENU_THERMOSTAT_TIME_MENU 160
+#define NEW_MENU_SHOW_ALL_TEMP 161
 
 #define MENU_ATTRIBUTES_CLEAN_DISPLAY 0
 #define MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE 1

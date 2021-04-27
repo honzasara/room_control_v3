@@ -42,7 +42,7 @@ uint8_t button_select_term_mode_get_status_fnt(uint16_t args1, uint16_t args2, u
 void button_select_term_mode_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
 void button_select_term_mode_get_status_string(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2);
 
-uint8_t menu_redraw_slider(uint16_t args1, uint16_t args2, uint8_t args3);
+
 uint8_t menu_redraw_change_default_ring(uint16_t args1, uint16_t args2, uint8_t args3);
 uint8_t menu_redraw_change_variable(uint16_t args1, uint16_t args2, uint8_t args3);
 uint8_t menu_redraw_change_term_mode(uint16_t args1, uint16_t args2, uint8_t args3);
@@ -99,6 +99,19 @@ const Element_Button_1 button_nastaveni_ring_pid PROGMEM = {
   .font_size = 2,
   .args = MENU_NASTAVENI_SELECT_PID_PARAMETRS,
   .onclick = MenuHistoryNextMenu,
+  .redraw_class = (1 << REDRAW_ONCE),
+  .enable_show = display_enable_show,
+};
+
+const Element_Button_1 thermostat_button_show_statistic PROGMEM = {
+  .name = new_text_termostat_statistika,
+  .x = 10,
+  .y = 160,
+  .size_x = 190,
+  .size_y = 40,
+  .font_size = 1,
+  .args = 0,
+  .onclick = nullfce,//MenuHistoryNextMenu,
   .redraw_class = (1 << REDRAW_ONCE),
   .enable_show = display_enable_show,
 };
@@ -237,7 +250,7 @@ const Element_Function_1 f_vertical_slider_show_all_thermostat PROGMEM = {
   .fnt_coordinate_xy = display_element_vertical_slider,
   .size_x = 40,
   .size_y = 126,
-  .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_3),
+  .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_2),
   .onclick = nullfce,
   .enable_show = display_enable_show,
   .name = char_NULL,
@@ -284,7 +297,7 @@ const Element_Dyn_Button_1 dyn_button_show_all_thermostat PROGMEM = {
   .get_status_string = dyn_button_show_all_thermostat_get_status_string,
   .dyn_button_onclick =  dyn_button_show_all_thermostat_dyn_button_onclick,
   .function_for_max_items = get_function_return_args_1,
-  .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_3),
+  .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_2),
 };
 
 
@@ -313,6 +326,9 @@ const Element_Button_1 thermostat_button_set_ring_name PROGMEM = {
   .redraw_class = (1 << REDRAW_ONCE),
   .enable_show = display_enable_show,
 };
+
+
+
 
 
 const Element_Button_1 thermostat_button_deactivate_ring PROGMEM = {
@@ -528,7 +544,7 @@ const Menu1 DialogSelectInputSensorsForTerm PROGMEM = {
 
 const Menu1 MenuThermostatRingSetup PROGMEM = {
   .name = ring_text_setup,
-  .button_1 = {button_back, thermostat_button_set_ring_name, thermostat_button_deactivate_ring, thermostat_button_activate_ring, button_nastaveni_ring_input_sensor, button_nastaveni_ring_output, button_nastaveni_ring_pid, thermostat_button_set_ring_mode},
+  .button_1 = {button_back, thermostat_button_show_statistic, thermostat_button_set_ring_name, thermostat_button_deactivate_ring, thermostat_button_activate_ring, button_nastaveni_ring_input_sensor, button_nastaveni_ring_output, button_nastaveni_ring_pid, thermostat_button_set_ring_mode},
   .button_2 = {},
   .function_1 = {f_show_date, f_show_default_ring},
   .switch_1 = {NULL},
@@ -536,7 +552,7 @@ const Menu1 MenuThermostatRingSetup PROGMEM = {
   .symbol_button_1 = {NULL},
   .dyn_symbol_1 = {NULL},
   .dyn_select_box_1 = {NULL},
-  .len_button_1 = 8,
+  .len_button_1 = 9,
   .len_button_2 = 0,
   .len_function_1 = 2,
   .len_switch_1 = 0,
@@ -620,8 +636,8 @@ const Menu1 MenuThermostat_Setting PROGMEM = {
   .redraw_class = (1 << REDRAW_ONCE),
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
-  .redraw_class_2 = returnnullfceargs,
-  .redraw_class_3 = menu_redraw_slider,
+  .redraw_class_2 = menu_redraw_slider,
+  .redraw_class_3 = menu_redraw_date,
   .preload_function = returnnullfceargs,
 };
 

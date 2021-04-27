@@ -72,7 +72,7 @@ const Menu1 MenuNastaveniMQTT PROGMEM = {
   .symbol_button_1 = {NULL},
   .dyn_symbol_1 = {NULL},
   .dyn_select_box_1 = {NULL},
-  .len_button_1 = 6,
+  .len_button_1 = 5,
   .len_button_2 = 0,
   .len_function_1 = 1,
   .len_switch_1 = 0,
@@ -94,5 +94,7 @@ const Menu1 MenuNastaveniMQTT PROGMEM = {
   .redraw_class_3 = returnnullfceargs,
   .preload_function = returnnullfceargs,
 };
+
+
 
 #endif

@@ -5,9 +5,14 @@
 /***************************************************************/
 /*
     primitivni funkce
-
 */
 
+void button_set_network_ip_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
+void button_set_network_mask_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
+void button_set_network_gw_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
+void button_set_network_name_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
+void button_set_network_dns_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
+void button_set_network_mac_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
 
 void display_element_show_network_detail(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text);
 void button_network_test_connection_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
@@ -19,8 +24,8 @@ const Element_Button_1 button_set_network_ip PROGMEM = {
   .size_x = 190,
   .size_y = 30,
   .font_size = 1,
-  .args = 0, //MENU_SELECT_DEFAULT_TEMP,
-  .onclick = nullfce, //MenuHistoryNextMenu,
+  .args = 0, 
+  .onclick = button_set_network_ip_onclick,
   .redraw_class = REDRAW_BUTTON,
   .enable_show = display_enable_show,
 };
@@ -32,8 +37,8 @@ const Element_Button_1 button_set_network_mask PROGMEM = {
   .size_x = 190,
   .size_y = 30,
   .font_size = 1,
-  .args = 0, //MENU_SELECT_DEFAULT_TEMP,
-  .onclick = nullfce, //MenuHistoryNextMenu,
+  .args = 0, 
+  .onclick = button_set_network_mask_onclick,
   .redraw_class = REDRAW_BUTTON,
   .enable_show = display_enable_show,
 };
@@ -46,7 +51,7 @@ const Element_Button_1 button_set_network_gw PROGMEM = {
   .size_y = 30,
   .font_size = 1,
   .args = 0, //MENU_SELECT_DEFAULT_TEMP,
-  .onclick = nullfce, //MenuHistoryNextMenu,
+  .onclick = button_set_network_gw_onclick,
   .redraw_class = REDRAW_BUTTON,
   .enable_show = display_enable_show,
 };
@@ -58,8 +63,8 @@ const Element_Button_1 button_set_network_name PROGMEM = {
   .size_x = 190,
   .size_y = 30,
   .font_size = 1,
-  .args = 0, //MENU_SELECT_DEFAULT_TEMP,
-  .onclick = nullfce, //MenuHistoryNextMenu,
+  .args = 0,
+  .onclick = button_set_network_name_onclick,
   .redraw_class = REDRAW_BUTTON,
   .enable_show = display_enable_show,
 };
@@ -71,8 +76,8 @@ const Element_Button_1 button_set_network_dns PROGMEM = {
   .size_x = 190,
   .size_y = 30,
   .font_size = 1,
-  .args = 0, //MENU_SELECT_DEFAULT_TEMP,
-  .onclick = nullfce, //MenuHistoryNextMenu,
+  .args = 0, 
+  .onclick = button_set_network_dns_onclick,
   .redraw_class = REDRAW_BUTTON,
   .enable_show = display_enable_show,
 };
@@ -84,8 +89,8 @@ const Element_Button_1 button_set_network_mac PROGMEM = {
   .size_x = 190,
   .size_y = 30,
   .font_size = 1,
-  .args = 0, //MENU_SELECT_DEFAULT_TEMP,
-  .onclick = nullfce, //MenuHistoryNextMenu,
+  .args = 0, 
+  .onclick = button_set_network_mac_onclick,
   .redraw_class = REDRAW_BUTTON,
   .enable_show = display_enable_show,
 };

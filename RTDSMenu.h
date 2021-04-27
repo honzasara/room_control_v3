@@ -141,7 +141,7 @@ const Element_Dyn_Button_1 rtds_stat_button PROGMEM = {
   .get_status_string = get_function_rtds_text_button,
   .dyn_button_onclick =  click_rtds_setting_sensor,
   .function_for_max_items = get_function_rtds_last_index_for_menu,
-  .redraw_class = REDRAW_BUTTON,
+  .redraw_class = 1 << REDRAW_ONCE | 1 << REDRAW_CLASS_2,
 };
 
 const Menu1 List_RTDS_Menu PROGMEM = {
@@ -169,11 +169,11 @@ const Menu1 List_RTDS_Menu PROGMEM = {
   .size_y = 320,
   .atributes = (1 << MENU_ATTRIBUTES_CLEAN_DISPLAY),
   .color_background = WHITE,
-  .redraw_class = (1 << REDRAW_FORCE),
+  .redraw_class = (1 << REDRAW_ONCE),
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
-  .redraw_class_2 = returnnullfceargs,
-  .redraw_class_3 = returnnullfceargs,
+  .redraw_class_2 = menu_redraw_slider,
+  .redraw_class_3 = menu_redraw_date,
   .preload_function = returnnullfceargs,
 };
 
@@ -182,7 +182,7 @@ const Menu1 RTDS_Menu_Detail PROGMEM = {
   .name = nastaveni_rtds,
   .button_1 = {button_back, button_rtds_delete, button_rtds_name, button_rtds_subscribe},
   .button_2 = {NULL},
-  .function_1 = {f_show_rtds_info_dynamics},
+  .function_1 = {f_show_rtds_info_dynamics, f_show_date},
   .switch_1 = {NULL},
   .dyn_button = {NULL},
   .symbol_button_1 = {NULL},
@@ -190,7 +190,7 @@ const Menu1 RTDS_Menu_Detail PROGMEM = {
   .dyn_select_box_1 = {NULL},
   .len_button_1 = 4,
   .len_button_2 = 0,
-  .len_function_1 = 1,
+  .len_function_1 = 2,
   .len_switch_1 = 0,
   .len_dyn_button_1 = 0,
   .len_symbol_button_1 = 0,
@@ -203,11 +203,11 @@ const Menu1 RTDS_Menu_Detail PROGMEM = {
   .size_y = 320,
   .atributes = (1 << MENU_ATTRIBUTES_CLEAN_DISPLAY),
   .color_background = WHITE,
-  .redraw_class = (1 << REDRAW_FORCE),
+  .redraw_class = (1 << REDRAW_ONCE),
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
-  .redraw_class_3 = returnnullfceargs,
+  .redraw_class_3 = menu_redraw_date,
   .preload_function = returnnullfceargs,
 };
 

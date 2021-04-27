@@ -105,7 +105,7 @@ const Element_Function_1 f_show_about_device PROGMEM = {
   .fnt_coordinate_xy = display_element_show_about_device,
   .size_x = 0,
   .size_y = 0,
-  .redraw_class = (1 << REDRAW_FORCE),
+  .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_2 | 1 << REDRAW_CLASS_3),
   .onclick = nullfce,
   .enable_show = display_enable_show,
   .name = char_NULL,
@@ -140,7 +140,7 @@ const Menu1 SystemSettingsMenu PROGMEM = {
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
-  .redraw_class_3 = returnnullfceargs,
+  .redraw_class_3 = menu_redraw_date,
   .preload_function = returnnullfceargs,
 };
 
@@ -172,8 +172,8 @@ const Menu1 AboutDeviceMenu PROGMEM = {
   .redraw_class = (1 << REDRAW_FORCE),
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
-  .redraw_class_2 = returnnullfceargs,
-  .redraw_class_3 = returnnullfceargs,
+  .redraw_class_2 = menu_redraw_update_temp,
+  .redraw_class_3 = menu_redraw_date,
   .preload_function = returnnullfceargs,
 };
 

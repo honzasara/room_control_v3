@@ -124,6 +124,8 @@ uint8_t menu_redraw_time05s(uint16_t args1, uint16_t args2, uint8_t args3);
 
 uint8_t menu_redraw_change_term_mode(uint16_t args1, uint16_t args2, uint8_t args3);
 uint8_t menu_redraw_update_temp(uint16_t args1, uint16_t args2, uint8_t args3);
+uint8_t menu_redraw_slider(uint16_t args1, uint16_t args2, uint8_t args3);
+uint8_t menu_redraw_date(uint16_t args1, uint16_t args2, uint8_t args3);
 
 
 void display_element_show_date_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text);
@@ -261,6 +263,8 @@ uint8_t get_function_return_args_1(uint16_t args1, uint16_t args2, uint8_t args3
 ///////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+const char new_text_show_all_temp[] PROGMEM = "Zobrazeni vsech teplot";
+
 const char new_text_zapnuto[] PROGMEM = "Zapnoto";
 const char new_text_vypnuto[] PROGMEM = "Vypnuto";
 
@@ -351,9 +355,12 @@ const char new_text_slash_rtds_slash[] PROGMEM = "/rtds/";
 const char new_text_slash_rtds_control_list[] PROGMEM = "/rtds-control/list";
 
 
-const char new_text_set_time_program[] PROGMEM = "Casove programy";
+const char new_text_set_time_program[] PROGMEM = "Casove plany";
+const char new_text_novy_time_plan[] PROGMEM = "Novy plan";
 
 const char new_text_regulator[] PROGMEM = "Regulator: ";
+
+const char new_text_termostat_statistika[] PROGMEM = "Statistika regulatoru";
 /***************************************************************/
 /*
         spolecne display funkce
@@ -369,7 +376,7 @@ const Element_Function_1 f_show_date PROGMEM = {
   .fnt_coordinate_xy = display_element_show_date_1,
   .size_x = 0,
   .size_y = 0,
-  .redraw_class = (1 << 3 | 1 << REDRAW_FORCE),
+  .redraw_class = (1 << REDRAW_CLASS_3 | 1 << REDRAW_FORCE),
   .onclick = nullfce,
   .enable_show = display_enable_show,
   .name = char_NULL,
