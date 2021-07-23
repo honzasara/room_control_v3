@@ -22,6 +22,11 @@
 #define bootloader_set_1 13
 #define bootloader_set_2 13
 
+#define build_time_0 86
+#define build_time_1 87
+#define build_time_2 88
+#define build_time_3 89
+ 
 #define set_default_values 90
 #define my_default_ring 92
 #define my_default_show_temp 93
@@ -118,6 +123,7 @@
 #define NEW_MENU_DIALOG_SELECT_TERM_MODE 159
 #define NEW_MENU_THERMOSTAT_TIME_MENU 160
 #define NEW_MENU_SHOW_ALL_TEMP 161
+#define NEW_MENU_THERMOSTAT 162
 
 #define MENU_ATTRIBUTES_CLEAN_DISPLAY 0
 #define MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE 1

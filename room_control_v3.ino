@@ -2,7 +2,7 @@
    TODO
    1. Prekreslovani elementu - zrychlit obsluhu displaye
    2. Ikonka stav MQTT spojeni
-   3. Vyresit timeout na MQTT
+   3. Vyresit timeout na MQTT - vypada to dobre
    4. Dialog menu vyberu - neaktivni nedostupne sede barvou
    5. Dialog klavesnice kurzor editace
    6. Dialog klavesnice - rozvreni tlacitek jako je na klavesnici
@@ -10,11 +10,11 @@
    8. tlacitko synchronizace NTP casu -> dialog povedlo se/ nepovedlo se - HOTOVO
       - nice have ukazat time diff
    9. moznost si nastavit time offset letni/zimni - vyreseno tim, ze si muzu posunout cas +- hodiny - HOTOVO
-   10. tftp bootloader
+   10. tftp bootloader - OTESTOVAT prakticky
    11. statistika pripojeni mqtt - HOTOVO
    12. vyber vychoziho teplomeru, kdyz je mrtvy/neaktivni zobrazit jinou barvou. Stav je nenalezene cidlo na sbernici
       - vraci online i kdyz neni online
-   13. vytvorit menu seznam vsech teplomeru ukazovat hodnoty
+   13. vytvorit menu seznam vsech teplomeru ukazovat hodnoty - HOTOVO
    14. rtds pridat informaci o typu zpravy - HOTOVO
       - teplota
       - co2
@@ -29,8 +29,16 @@
     21. po najeti rychle blika dvojtecka u casu - fixnuto - HOTOVO
     22. change_term_mode - rozdelit po bitech
     23. opravit posunuti datumu pri syncu - fixnuto
+    24. reload nastaveni site
+    25. build time:
+       - do menu - OK
+       - init display - OK
+       - mqtt status - OK
+    26. intenzita okolniho osvetleni na procenta - hotovo
+       - automticka regulace jasu, pomoci tabulky
+    27. funkce automaticke vypnuti displaye. - problem se config bit brigthness_display_mode
 
-  zapojeni pinu z leva do prava hneda -> zluta -> oranzova -> zelena -> cervena -> cerna
+
 */
 
 
@@ -71,6 +79,7 @@ uint8_t display_redraw_once = 0;
 uint8_t display_update_slider = 0;
 uint8_t display_redraw_default_ring = 0;
 
+uint8_t status_send_counter = 0;
 
 EthernetClient ethClient;
 EthernetClient ethClient1;
@@ -127,9 +136,9 @@ uint8_t last_default_ring = 0;
 uint8_t default_show_temp = 0;
 uint8_t thermostat_mode_default_ring_last_state = 0;
 
-long load = 0;
-long load_max = 0;
-long load_min = 0xffffffff;
+unsigned long load = 0;
+unsigned long load_max = 0;
+unsigned long load_min = 0xffffffff;
 
 uint16_t light_min = 0xffff;
 uint16_t light_max = 0;
@@ -152,7 +161,10 @@ uint8_t menu_slider_data_max_element;
 
 float internal_temp;
 
-
+struct payload_t {
+  unsigned long ms;
+  unsigned long counter;
+};
 
 struct tt_menu_dialog_variable
 {
@@ -570,12 +582,12 @@ fptr_args dialog_yes_function;
 
 const MenuAll Menu_All PROGMEM = {
   .len_menu1 = 7,
-  .len_menu2 = 5,
+  .len_menu2 = 6,
   .len_menu3 = 10,
   .len_menu4 = 7,
 
   .ListMenu1 = {HlavniMenu, MenuNastaveniSite, OneWireMenu, MenuNastaveniCas, SelectMenuDefaultTemp, MenuNastaveniMQTT, Menu_Show_All_temp},
-  .ListMenu2 = {DialogYESNO, DialogSetVariable, DialogKyeboardAlfa, DialogKyeboardNumber , DialogOK},
+  .ListMenu2 = {DialogYESNO, DialogSetVariable, DialogKyeboardAlfa, DialogKyeboardNumber , DialogOK, MenuThermostat},
   .ListMenu3 = {TDSMenu, RTDS_Menu_Detail, List_RTDS_Menu, MenuThermostat_Setting, DialogSelectRing, MenuThermostatRingSetup, DialogSelectInputSensorsForTerm, DialogSelectTermMode, DialogSelectPIDSensor, New_ThermostatTimeMenu},
   .ListMenu4 = {SystemSettingsMenu, New_NastaveniMenu, PeriferieSettingsMenu, New_DisplaySettingMenu, New_DisplaySetting_Brigthness, AboutDeviceMenu, New_DisplaySetting_Auto_Shutdown},
 };
@@ -1644,6 +1656,17 @@ uint8_t menu_redraw_change_term_mode_cool_heat(uint16_t args1, uint16_t args2, u
   return 0;
 }
 
+uint8_t menu_redraw_change_term_input(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  if (change_term_mode == 4)
+  {
+    change_term_mode = 0;
+    return 1;
+  }
+  return 0;
+
+}
+
 uint8_t menu_redraw_update_temp(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   if (menu_redraw10s == 1)
@@ -2665,6 +2688,69 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
     }
   }
 
+  //// /thermctl-in/XXXX/rf/scan - 0|1 zapnuti/vypnuti scanovani rf site
+  strcpy_P(str1, thermctl_header_in);
+  strcat(str1, device.nazev);
+  strcat(str1, "/rf/scan");
+  if (strcmp(str1, topic) == 0)
+  {
+    mqtt_process_message++;
+    if (atoi(my_payload) == 1)
+    {
+      start_scan_rf_network(&radio);
+      selftest_set_0(SELFTEST_NRF_SCAN);
+    }
+    else
+    {
+      stop_scan_rf_network(&radio);
+      scan_rf_network_public(&mqtt_client);
+      selftest_clear_0(SELFTEST_NRF_SCAN);
+    }
+  }
+
+  ///// //thermctl-in/XXXX/rf/stat - statisticke informace
+  strcpy_P(str1, thermctl_header_in);
+  strcat(str1, device.nazev);
+  strcat(str1, "/rf/stat");
+  if (strcmp(str1, topic) == 0)
+  {
+    mqtt_process_message++;
+    scan_rf_net_enable = 2;
+  }
+
+  ///// //thermctl-in/XXXX/rf/channel - nastaveni komunikacniho kanalu
+  strcpy_P(str1, thermctl_header_in);
+  strcat(str1, device.nazev);
+  strcat(str1, "/rf/channel");
+  if (strcmp(str1, topic) == 0)
+  {
+    mqtt_process_message++;
+    nrf_save_channel(atoi(my_payload));
+    mesh.setChannel(atoi(my_payload));
+  }
+
+  ///// //thermctl-in/XXXX/rf/mesh/id - nastaveni komunikacniho kanalu
+  strcpy_P(str1, thermctl_header_in);
+  strcat(str1, device.nazev);
+  strcat(str1, "/rf/mesh/id");
+  if (strcmp(str1, topic) == 0)
+  {
+    mqtt_process_message++;
+    mesh.setNodeID(atoi(my_payload));
+  }
+
+  ///// //thermctl-in/XXXX/rf/power - nastaveni komunikacniho kanalu
+  strcpy_P(str1, thermctl_header_in);
+  strcat(str1, device.nazev);
+  strcat(str1, "/rf/power");
+  if (strcmp(str1, topic) == 0)
+  {
+    mqtt_process_message++;
+    radio.setPALevel(atoi(my_payload));
+    nrf_save_power((rf24_pa_dbm_e) atoi(my_payload));
+  }
+
+
   //// thermctl-in/XXXXX/brightness
   strcpy_P(str1, thermctl_header_in);
   strcat(str1, device.nazev);
@@ -2683,18 +2769,20 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   {
     mqtt_process_message++;
     log_error(&mqtt_client, "reload..");
-    resetFunc();
+    //resetFunc();
+    wdt_enable(WDTO_1S);
+    while (1);
   }
 
-  //// thermctl-in/XXXXX/reload
+  //// thermctl-in/XXXXX/bootloader
   strcpy_P(str1, thermctl_header_in);
   strcat(str1, device.nazev);
   strcat(str1, "/bootloader");
   if (strcmp(str1, topic) == 0)
   {
     mqtt_process_message++;
-    log_error(&mqtt_client, "bootloader..");
-    EEPROM.write(bootloader_tag, 255);
+    log_error(&mqtt_client, "bootloader");
+    EEPROM.write(bootloader_tag, atoi(my_payload));
     wdt_enable(WDTO_1S);
     while (1);
   }
@@ -2776,7 +2864,7 @@ void send_mqtt_onewire(void)
   send_mqtt_general_payload(&mqtt_client, "1wire/count", payload);
   for (uint8_t i = 0; i < Global_HWwirenum; i++)
   {
-    createString(payload, ':', w_rom[i].rom, 8, 16);
+    createString(payload, ':', w_rom[i].rom, 8, 16, 2);
     send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "1wire", i, "rom", payload);
     ///
     itoa(w_rom[i].assigned_ds2482, payload, 10);
@@ -2792,6 +2880,7 @@ void send_device_status(void)
 {
   char str_topic[64];
   char payload[64];
+  long time_now;
   if (mqtt_client.connected())
   {
     strcpy(str_topic, "status/uptime");
@@ -2851,6 +2940,13 @@ void send_device_status(void)
     ///
     dtostrf(prepocet_proudu(proud), 4, 2, payload);
     send_mqtt_general_payload(&mqtt_client, "status/current/consume", payload);
+
+    dtostrf(internal_temp, 4, 2, payload);
+    send_mqtt_general_payload(&mqtt_client, "status/internal_temp", payload);
+
+    time_now = DateTime(__DATE__, __TIME__).unixtime();
+    sprintf(payload, "%ld", time_now);
+    send_mqtt_general_payload(&mqtt_client, "status/build_time", payload);
   }
 }
 ///
@@ -2937,7 +3033,7 @@ void send_mqtt_tds(void)
         itoa(tt, payload, 10);
         send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "online", payload);
         payload[0] = 0;
-        createString(payload, ':', tds.rom, 8, 16);
+        createString(payload, ':', tds.rom, 8, 16, 2);
         send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "rom", payload);
         tt = tds.period;
         itoa(tt, payload, 10);
@@ -3110,6 +3206,36 @@ void mqtt_publis_output_pwm(uint8_t idx, uint8_t mode, uint8_t pwm)
     mqtt_client.publish(str_topic, payload);
   }
 }
+
+void send_mesh_status(void)
+{
+  char str_topic[64];
+  char payload[64];
+
+  strcpy(str_topic, "mesh/id");
+  itoa(mesh.getNodeID(), payload, 10);
+  send_mqtt_general_payload(&mqtt_client, str_topic, payload);
+
+  strcpy(str_topic, "mesh/neighbours");
+  itoa(mesh.addrListTop, payload, 10);
+  send_mqtt_general_payload(&mqtt_client, str_topic, payload);
+
+  strcpy(str_topic, "rf/channel");
+  itoa(nrf_load_channel(), payload, 10);
+  send_mqtt_general_payload(&mqtt_client, str_topic, payload);
+
+  strcpy(str_topic, "rf/power");
+  itoa(radio.getPALevel(), payload, 10);
+  send_mqtt_general_payload(&mqtt_client, str_topic, payload);
+
+  for (uint8_t idx = 0; idx < mesh.addrListTop; idx++)
+  {
+    itoa(mesh.addrList[idx].nodeID, payload, 10);
+    send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "mesh/neighbour", idx, "id", payload);
+    itoa(mesh.addrList[idx].address, payload, 10);
+    send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "mesh/neighbour", idx, "address", payload);
+  }
+}
 /*************************************************************************************************************************/
 /////  zde resim, zpracovani zmerenych dat ///////////////////////////////////////////////////
 void a2d_complete(uint8_t channel, uint16_t data)
@@ -3118,7 +3244,7 @@ void a2d_complete(uint8_t channel, uint16_t data)
   if (channel == A_TRIV ) tritri = data;
   if (channel == A_PETV) petnula = data;
   if (channel == A_DVANACTV) dvanact = data;
-  if (channel == A_LIGHT) light_curr = data;
+  if (channel == A_LIGHT) light_curr = 1023 - data;
   a2d_run_now = 1;
 }
 
@@ -3163,6 +3289,11 @@ void selftest(void)
     sbi(selftest_data, SELFTEST_ERR_RTC);
   else
     cbi(selftest_data, SELFTEST_ERR_RTC);
+
+  if (Ethernet.link() == 1)
+    cbi(selftest_data, SELFTEST_ETH_LINK);
+  else
+    sbi(selftest_data, SELFTEST_ETH_LINK);
 }
 ///
 /// funkce pro prepocet napeti z ADC prevodniku na skutecnou hodnotu
@@ -3217,9 +3348,9 @@ void setup_io_pin(void)
   pinMode(STORAGE_EEPROM_CS, OUTPUT);
   pinMode(JUMPER, INPUT_PULLUP);
 
-  digitalWrite(PIEZO, LOW);
-  delay(1000);
   digitalWrite(PIEZO, HIGH);
+  delay(1000);
+  digitalWrite(PIEZO, LOW);
 
 
 
@@ -3422,10 +3553,25 @@ void thermostat(void)
 }
 /*************************************************************************************************************************/
 
+void nrf_mesh_reinit(void)
+{
+  mesh.setNodeID(0);
+  mesh.begin(nrf_load_channel());
+}
 
+void nrf_callback(nrf_message_t *nrf_message)
+{
+nrf_message->nodeid;
+nrf_message->mode;
+nrf_message->data;
+
+}
+
+/////////////////////////////////////////////////////
 /// setup - zakladni nastaveni - vola se pouze 1x
 void setup()
 {
+  uint8_t timestamp[4];
   char str1[64];
   char str2[64];
   char str3[64];
@@ -3438,6 +3584,13 @@ void setup()
   long milis;
 
   NTPClient timeClient(udpClient);
+  DateTime time_now;
+
+  wdt_reset();
+  wdt_enable(WDTO_8S);
+
+  if (EEPROM.read(bootloader_tag) == 0xee)
+    EEPROM.write(bootloader_tag, 0);
 
   setup_io_pin();
 
@@ -3461,16 +3614,24 @@ void setup()
   strcpy_P(str1, term_title);
   show_string(str1, 30, 10, 2, BLUE, WHITE, 0);
   ///
-  for (uint8_t init = 0;  init < 16; init++)
+  for (uint8_t init = 0;  init < 17; init++)
   {
+    wdt_reset();
     show_string("X", 30 + (init * 15), 30, 1, RED, WHITE, 0);
-    /// inicalizace vnitrniho ADC prevodniku
+    /// commit version
     if (init == 0)
+    {
+      time_now = DateTime(__DATE__, __TIME__);
+      sprintf(str2, "build version %d.%02d.%02d %02d:%02d:%02d", time_now.year(), time_now.month(), time_now.day(), time_now.hour(), time_now.minute(), time_now.second());
+      show_string(str2, 30, 50 + (init * 10), 1, BLUE, WHITE, 0 );
+    }
+    ///
+    /// inicalizace vnitrniho ADC prevodniku
+    if (init == 1)
     {
       strcpy_P(str1, text_vnitrni_ochrany);
       strcat(str1, ":1");
       show_string(str1, 30, 50 + (init * 10), 1, GREEN, WHITE, 0 );
-
       tritri = 0;
       petnula = 0;
       dvanact = 0;
@@ -3517,7 +3678,7 @@ void setup()
     }
     ///
     /// inicializace vnitrniho teplomeru LM75B
-    if (init == 1)
+    if (init == 2)
     {
       strcpy_P(str1, text_vnitrni_ochrany);
       strcat(str1, ":2");
@@ -3528,7 +3689,7 @@ void setup()
     }
     ///
     //// nastaveni vychozich hodnot systemu
-    if (init == 2)
+    if (init == 3)
     {
       if (EEPROM.read(set_default_values) == 255)
       {
@@ -3597,6 +3758,9 @@ void setup()
         EEPROM.write(my_brightness_values, 50);
         EEPROM.write(my_brightness_mode, 0);
         EEPROM.write(my_display_auto_shutdown, 60);
+
+        nrf_save_channel(97);
+        nrf_save_power(RF24_PA_LOW);
       }
       else
       {
@@ -3606,7 +3770,7 @@ void setup()
     }
     ///
     /// test SRAM
-    if (init == 3)
+    if (init == 4)
     {
       SRAM.begin();
       SRAM.writeByte(0, 0xAB);
@@ -3639,7 +3803,7 @@ void setup()
     }
     ///
     /// init EEPROMKY
-    if (init == 4)
+    if (init == 5)
     {
       SROM.begin();
       SROM.writeByte(0, 0xBA);
@@ -3658,7 +3822,7 @@ void setup()
     }
     ///
     ///  nacteni provoznich parametru
-    if (init == 5)
+    if (init == 6)
     {
       strcpy_P(str1, text_nastaveni_systemu);
       show_string(str1, 30, 50 + (init * 10), 1, GREEN, WHITE, 0 );
@@ -3681,7 +3845,7 @@ void setup()
     }
     ///
     /// zobrazeni kalibracnich informaci touchscreenu
-    if (init == 6)
+    if (init == 7)
     {
       strcpy_P(str1, text_touchscreen);
       show_string(str1, 30, 50 + (init * 10), 1, GREEN, WHITE, 0 );
@@ -3703,7 +3867,7 @@ void setup()
     }
     ///
     /// inicializace ds2482
-    if (init == 7)
+    if (init == 8)
     {
       strcpy_P(str1, text_onewire_rozhrani);
       show_string(str1, 30, 50 + (init * 10), 1, GREEN, WHITE, 0 );
@@ -3731,7 +3895,7 @@ void setup()
     }
     ///
     /// hledani zarizeni na 1wire sbernici
-    if (init == 8)
+    if (init == 9)
     {
       strcpy_P(str1, text_onewire_hledam);
       show_string(str1, 30, 50 + (init * 10), 1, GREEN, WHITE, 0 );
@@ -3745,7 +3909,7 @@ void setup()
     }
     ///
     /// inicializace wiznet w5500
-    if (init == 9)
+    if (init == 10)
     {
       digitalWrite(ETH_RST, HIGH);
       delay(10);
@@ -3764,7 +3928,7 @@ void setup()
     }
     ///
     ///inicializace mqtt rozhrani
-    if (init == 10)
+    if (init == 11)
     {
       strcpy_P(str1, text_mqtt_rozhrani);
       show_string(str1, 30, 50 + (init * 10), 1, GREEN, WHITE, 0 );
@@ -3799,23 +3963,25 @@ void setup()
     }
     ///
     /// inicializace rest api rozhrani
-    if (init == 11)
+    if (init == 12)
     {
       strcpy_P(str1, text_rest_rozhrani);
       show_string(str1, 30, 50 + (init * 10), 1, GREEN, WHITE, 0 );
     }
     ///
     /// inicializace nrf
-    if (init == 12)
+    if (init == 13)
     {
       strcpy_P(str1, text_nrf_rozhrani);
       show_string(str1, 30, 50 + (init * 10), 1, GREEN, WHITE, 0 );
       scan_rf_net_enable = 2;
       radio.begin();
+      radio.setPALevel(nrf_load_power());
+      nrf_mesh_reinit();
     }
     ///
     /// inicializace termostatu
-    if (init == 13)
+    if (init == 14)
     {
       strcpy_P(str1, text_pid_regulator);
       show_string(str1, 30, 50 + (init * 10), 1, GREEN, WHITE, 0 );
@@ -3836,11 +4002,11 @@ void setup()
     }
     ///
     /// kontrola NTP serveru
-    if (init == 14)
+    if (init == 15)
     {
       strcpy_P(str1, text_ntp_cas);
       show_string(str1, 30, 50 + (init * 10), 1, GREEN, WHITE, 0 );
-      if (ntp_check(&timeClient) == 0)
+      if (ntp_update(&timeClient, &rtc, time_get_offset(), &time_now) == 0)
       {
         strcpy_P(str1, text_err);
         show_string(str1, 160, 50 + (init * 10), 1, RED, WHITE, 0 );
@@ -3855,12 +4021,13 @@ void setup()
     }
     ///
     /// inicializace RTC casu
-    if (init == 15)
+    if (init == 16)
     {
       strcpy_P(str1, text_rtc_cas);
       show_string(str1, 30, 50 + (init * 10), 1, GREEN, WHITE, 0 );
       if (rtc.isrunning())
       {
+        now = rtc.now();
         strcpy_P(str1, text_ok);
         show_string(str1, 160, 50 + (init * 10), 1, GREEN, WHITE, 0 );
         selftest_clear_0(SELFTEST_ERR_RTC);
@@ -3894,36 +4061,94 @@ void setup()
 void loop() {
   // put your main code here, to run repeatedly:
   char str1[16];
+  
   unsigned long load_now;
   long mil;
   uint16_t click_x, click_y;
+  
+  nrf_message_t nrf_message;
+  uint8_t nrf_data[NRF_MESSAGE_TOTAL_LEN];
 
 
+  wdt_reset();
 
   load_now = millis();
-  if (mqtt_reconnect() == 0)
-    selftest_clear_0(SELFTEST_MQTT_LINK);
-  else
-    selftest_set_0(SELFTEST_MQTT_LINK);
-
-  mqtt_client.loop();
-
-
-  if (ethClient1.connected())
-    ethClient1.stop();
-
-
-  EthernetClient http_client = http_server.available();
-  if (http_client.connected())
+  if  (Ethernet.link() == 1)
   {
-    while (http_client.available())
-      http_client.read();
-    http_client.write("ahoj");
+    if (mqtt_reconnect() == 0)
+      selftest_clear_0(SELFTEST_MQTT_LINK);
+    else
+      selftest_set_0(SELFTEST_MQTT_LINK);
+
+    mqtt_client.loop();
+
+
+    if (ethClient1.connected())
+      ethClient1.stop();
+
+
+    EthernetClient http_client = http_server.available();
+    if (http_client.connected())
+    {
+      while (http_client.available())
+        http_client.read();
+      http_client.write("ahoj");
+    }
+  }
+
+  else
+  {
+    mqtt_client.disconnect();
   }
 
 
+  if (scan_rf_net_enable == 0)
+  {
+    mesh.update();
+    mesh.DHCP();
+
+    // Check for incoming data from the sensors
+    if (network.available()) {
+      RF24NetworkHeader header;
+      network.peek(header);
+
+      
+      switch (header.type) {
+        case 'M': 
+          {
+            network.read(header, &nrf_data, NRF_MESSAGE_TOTAL_LEN);
+            nrf_message_received_total++;
+            convert_data_to_nrf_message(&nrf_message, nrf_data);
+            nrf_callback(&nrf_message);
+            
+            //printf("%d %d %d\n", nrf_message.nodeid, nrf_message.mode, nrf_message.data[0]);
+            break; 
+          }
+        default: network.read(header, 0, 0); break;
+      }
+    }
 
 
+  }
+
+  if (scan_rf_net_enable == 1)
+  {
+    scan_rf_network(&radio, scan_rf_net_channel);
+    /// kazdy kanal proskenuji 128x
+    nrf_scan_check_cnt ++;
+    if (nrf_scan_check_cnt > 127)
+    {
+      scan_rf_net_channel++;
+      nrf_scan_check_cnt = 0;
+    }
+    if (scan_rf_net_channel > 127)
+    {
+      selftest_clear_0(SELFTEST_NRF_SCAN);
+      stop_scan_rf_network(&radio);
+      scan_rf_network_public(&mqtt_client);
+      nrf_mesh_reinit();
+    }
+  }
 
 
   if (scan_rf_net_enable == 2)
@@ -3933,6 +4158,7 @@ void loop() {
   }
 
 
+
   ////////////////////
   /// kazdych 10sec
   if ((millis() - milis_10s) >= 10000)
@@ -3940,32 +4166,53 @@ void loop() {
     milis_10s += 10000;
     menu_redraw10s = 1;
     //device_get_name(str1);
-    send_mqtt_onewire();
-    send_mqtt_status(&mqtt_client);
-    send_device_status();
-    send_mqtt_ring();
-    send_mqtt_tds();
-    send_mqtt_program();
-    thermostat();
-    for (uint8_t idx = 0; idx < MAX_THERMOSTAT; idx++)
-      if (thermostat_ring_get_active(idx) != RING_FREE)
-        mqtt_send_pid_variable(idx);
-    send_mqtt_remote_tds_status();
-    //send_network_config(&mqtt_client);
-    //send_light_controler();
-    //send_know_device();
-    //send_mesh_status();
-    ///
     internal_temp = lm75_temp.readTemperatureC();
+    brigthness_display_auto_values = (float) (light_curr - light_min) / (light_max - light_min) * 100;
+
+    if (status_send_counter == 0)
+    {
+      send_mqtt_onewire();
+      send_mqtt_tds();
+    }
     ///
+    if (status_send_counter == 1)
+    {
+      send_mqtt_status(&mqtt_client);
+      send_device_status();
+    }
+    ///
+    if (status_send_counter == 2)
+    {
+      send_mqtt_ring();
+      send_mqtt_program();
+      thermostat();
+      for (uint8_t idx = 0; idx < MAX_THERMOSTAT; idx++)
+        if (thermostat_ring_get_active(idx) != RING_FREE)
+          mqtt_send_pid_variable(idx);
+    }
+    ///
+    if (status_send_counter == 3)
+    {
+      send_mqtt_remote_tds_status();
+      //send_network_config(&mqtt_client);
+      //send_light_controler();
+      //send_know_device();
+      send_mesh_status();
+    }
+    ///
+
+    status_send_counter++;
+    if (status_send_counter == 4)
+      status_send_counter = 0;
+
+
     if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) != 0) // Automatika
     {
-      brigthness_display_auto_values = (float) (light_curr - light_max) / (light_max - light_min) * 200;
-      if (brigthness_display_auto_values > 200)
-        brigthness_display_auto_values = 200;
+      if (brigthness_display_auto_values > 100)
+        brigthness_display_auto_values = 100;
       if (brigthness_display_auto_values < 5)
         brigthness_display_auto_values = 5;
-      my_touch.TP_SetBacklight(brigthness_display_auto_values);
+      my_touch.TP_SetBacklight(brigthness_display_auto_values * 2);
     }
 
   }
@@ -3985,7 +4232,23 @@ void loop() {
     mereni_hwwire(uptime);
     tds_extended_memory_store();
     remote_tds_update_last_update();
+
+    /*
+      for (int i = 0; i < mesh.addrListTop; i++)
+      {
+      payload_t payload = {millis(),uptime};
+      if (mesh.addrList[i].nodeID == 1) {  //Searching for node one from address list
+        payload = {uptime%3,uptime};
+      }
+      RF24NetworkHeader header(mesh.addrList[i].address, OCT); //Constructing a header
+      if (network.write(header, &payload, sizeof(payload)) == 1)
+        printf("mesh send ok\n");
+      else
+        printf("mesh send errr\n");
+      }
+    */
   }
+
 
   //digitalWrite(LED, LOW);
   if ((millis() - milis_05s) >= 500)
@@ -4079,6 +4342,7 @@ void loop() {
 //-----------------------------------------------------------------------------------------------------------------------------------
 void display_element_rectangle(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
+  my_lcd.Set_Draw_color(args1);
   my_lcd.Draw_Rectangle(x, y, x + size_x, y + size_y);
 }
 
@@ -4189,9 +4453,9 @@ void display_element_show_all_temp(uint16_t x, uint16_t y, uint16_t size_x, uint
   uint8_t active;
   uint8_t cri = 0;
 
-  dtostrf(lm75_temp.readTemperatureC(), 4, 2, str1);
+  dtostrf(internal_temp, 4, 2, str1);
   sprintf(name, "interni zarizeni: %sC", str1);
-  show_string(name, x, y + (15 * cri), 1, BLACK, WHITE, 0);
+  show_string(name, x, y + (25 * cri), 2, BLACK, WHITE, 0);
 
   cri++;
   for (uint8_t idx = 0; idx < button_get_show_default_temp_max_items(INPUT_SENSOR_SHOW_ACTIVE, 0, 0); idx++)
@@ -4210,7 +4474,7 @@ void display_element_show_all_temp(uint16_t x, uint16_t y, uint16_t size_x, uint
       strcat_P(name, text_err);
     }
 
-    show_string(name, x, y + (15 * cri), 1, BLACK, WHITE, 0);
+    show_string(name, x, y + (25 * cri), 2, BLACK, WHITE, 0);
     cri++;
   }
 
@@ -4263,7 +4527,7 @@ void display_element_show_tds_info_static(uint16_t x, uint16_t y, uint16_t size_
   my_lcd.Draw_Rectangle(x, y, x + size_x , y + size_y);
   if (get_tds18s20(args2, &tds) == 1)
   {
-    createString(str2, ':', tds.rom, 8, 16);
+    createString(str2, ':', tds.rom, 8, 16, 2);
     sprintf(str1, "rom: %s", str2);
     show_string(str1, x + 10, y + 85, 1, BLACK, WHITE, 0);
     ///
@@ -4661,7 +4925,7 @@ void get_function_one_wire_associate_or_setting_text_button(uint8_t args1, uint8
   strcpy(line2, "-");
   if (w_rom[args1].used == 1)
   {
-    createString(str2, ':', w_rom[args1].rom, 8, 16);
+    createString(str2, ':', w_rom[args1].rom, 8, 16, 2);
     sprintf(line1, "%d: %s", args1, str2);
 
     if (w_rom[args1].tds_idx != 255)
@@ -4961,6 +5225,7 @@ uint8_t button_select_term_ring_input_in_dialog_status_fnt(uint16_t args1, uint1
 void button_select_term_ring_input_in_dialog_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   thermostat_ring_set_asociate_tds(args2, args3);
+  change_term_mode = 4;
 }
 
 
@@ -4971,6 +5236,7 @@ void button_select_term_ring_input_in_dialog_onclick(uint16_t args1, uint16_t ar
 void button_deassociate_input_sensor_for_term_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   thermostat_ring_set_asociate_tds(args2, RING_NO_INPUT);
+  change_term_mode = 4;
 }
 
 
@@ -5091,6 +5357,7 @@ void button_click_set_new_default_ring_in_dialog(uint16_t args1, uint16_t args2,
   {
     last_default_ring = default_ring;
     default_ring = args3;
+    set_default_ring(default_ring);
     MenuHistoryUpdateArgs1(args3);
   }
   else
@@ -5103,7 +5370,13 @@ void button_click_set_new_default_ring_in_dialog(uint16_t args1, uint16_t args2,
   display_redraw_default_ring = 1;
 }
 
-
+void button_no_default_ring_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  last_default_ring = default_ring;
+  default_ring = RING_FREE;
+  set_default_ring(default_ring);
+  display_redraw_default_ring = 1;
+}
 
 /*
    funkce zobrazi zakladni informace v dialogu vyberu defaultniho ringu
@@ -5566,15 +5839,19 @@ void button_change_brightness_display_get_status_string(uint8_t args1, uint8_t a
   if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) != 0 )
   {
     strcpy_P(line2, new_text_jas_display_automat);
-    itoa(brigthness_display_auto_values / 2, str2, 10);
+    itoa(brigthness_display_auto_values , str2, 10);
+    strcat(line2, " ");
     strcat(line2, str2);
+    strcat(line2, " ");
     strcat(line2, "%");
   }
   if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) == 0 )
   {
     strcpy_P(line2, new_text_jas_display_manual);
     itoa(brigthness_display_values, str2, 10);
+    strcat(line2, " ");
     strcat(line2, str2);
+    strcat(line2, " ");
     strcat(line2, "%");
   }
 }
@@ -5600,8 +5877,10 @@ void switch_brightness_automode_get_status_string(uint8_t args1, uint8_t args2, 
   if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) != 0 )
   {
     strcpy_P(line1, new_text_jas_display_automat);
-    itoa(brigthness_display_auto_values / 2, str2, 10);
+    itoa(brigthness_display_auto_values , str2, 10);
+    strcat(line1, " ");
     strcat(line1, str2);
+    strcat(line1, " ");
     strcat(line1, "%");
   }
   if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) == 0 )
@@ -5781,7 +6060,7 @@ void display_element_show_network_detail(uint16_t x, uint16_t y, uint16_t size_x
   /// mac adresa
   strcpy_P(str1, new_text_device_mac);
   strcat(str1, ": ");
-  createString(str2, '.', device.mac, 6, 16);
+  createString(str2, '.', device.mac, 6, 16, 2);
   strcat(str1, str2);
   show_string(str1, x + 5 , y + 10 , 1, BLACK, WHITE, 0);
   /// nazev
@@ -5842,8 +6121,8 @@ void button_click_ntp_sync_time(uint16_t args1, uint16_t args2, uint8_t args3)
 }
 
 /*
- * funkce onclick a pomocna funkce pro nastaveni ntp serveru
- */
+   funkce onclick a pomocna funkce pro nastaveni ntp serveru
+*/
 void button_ntp_set_server_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   char ip_text[16];
@@ -5863,8 +6142,8 @@ void helper_dialog_ntp_set_server(uint16_t args1, uint16_t args2, uint8_t args3)
 }
 
 /*
- * funkce onclick a pomocna funkce pro nastaveni ip adresy zarizeni
- */
+   funkce onclick a pomocna funkce pro nastaveni ip adresy zarizeni
+*/
 void button_set_network_ip_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   char ip_text[16];
@@ -5883,8 +6162,8 @@ void helper_dialog_network_set_ip(uint16_t args1, uint16_t args2, uint8_t args3)
 }
 
 /*
- * funkce onclick a pomocna funkce pro nastaveni masky
- */
+   funkce onclick a pomocna funkce pro nastaveni masky
+*/
 void button_set_network_mask_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   char ip_text[16];
@@ -5903,8 +6182,8 @@ void helper_dialog_network_set_mask(uint16_t args1, uint16_t args2, uint8_t args
 }
 
 /*
- * funkce onclick a pomocna funkce pro nastaveni vychozi brany
- */
+   funkce onclick a pomocna funkce pro nastaveni vychozi brany
+*/
 void button_set_network_gw_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   char ip_text[16];
@@ -5923,8 +6202,8 @@ void helper_dialog_network_set_gw(uint16_t args1, uint16_t args2, uint8_t args3)
 }
 
 /*
- * funkce onclick a pomocna funkce pro nastaveni nazvu
- */
+   funkce onclick a pomocna funkce pro nastaveni nazvu
+*/
 void button_set_network_name_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   char ip_text[16];
@@ -5941,8 +6220,8 @@ void helper_dialog_network_set_name(uint16_t args1, uint16_t args2, uint8_t args
 }
 
 /*
- * funkce onclick a pomocna funkce pro nastaveni dns
- */
+   funkce onclick a pomocna funkce pro nastaveni dns
+*/
 void button_set_network_dns_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   char ip_text[16];
@@ -5961,11 +6240,11 @@ void helper_dialog_network_set_dns(uint16_t args1, uint16_t args2, uint8_t args3
 }
 /////
 /*
- * funkce pro random mac adresy
- */
+   funkce pro random mac adresy
+*/
 void button_set_network_mac_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-device.mac[0] = 2; device.mac[1] = 1; device.mac[2] = 2; device.mac[3] =  dvanact >> 1; device.mac[4] =  proud >> 1; device.mac[5] =  light_curr >> 1;
+  device.mac[0] = 2; device.mac[1] = 1; device.mac[2] = 2; device.mac[3] =  dvanact >> 1; device.mac[4] =  proud >> 1; device.mac[5] =  light_curr >> 1;
 }
 
 
@@ -6155,6 +6434,7 @@ void display_element_show_about_device(uint16_t x, uint16_t y, uint16_t size_x, 
 {
   char str1[32];
   char str2[8];
+  DateTime time_now;
   strcpy_P(str1, new_text_input_volt);
   dtostrf(prepocet_napeti(dvanact, CONST_PREVOD_DVANACTV), 4, 2, str2);
   strcat(str1, str2);
@@ -6210,6 +6490,10 @@ void display_element_show_about_device(uint16_t x, uint16_t y, uint16_t size_x, 
   itoa(mqtt_error, str2, 10);
   strcat(str1, str2);
   show_string(str1, x + 5 , y + 145 , 1, BLACK, WHITE, 0);
+
+  time_now = DateTime(__DATE__, __TIME__).unixtime();
+  sprintf(str1, "build version: %d.%02d.%02d %02d:%02d:%02d", time_now.year(), time_now.month(), time_now.day(), time_now.hour(), time_now.minute(), time_now.second());
+  show_string(str1, x + 5 , y + 160 , 1, BLUE, WHITE, 0);
 }
 ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -361,6 +361,8 @@ const char new_text_novy_time_plan[] PROGMEM = "Novy plan";
 const char new_text_regulator[] PROGMEM = "Regulator: ";
 
 const char new_text_termostat_statistika[] PROGMEM = "Statistika regulatoru";
+const char new_text_regulator_menu[] PROGMEM = "Menu regulatoru";
+const char new_text_no_default_ring[] PROGMEM = "Zadny vychozi regulator";
 /***************************************************************/
 /*
         spolecne display funkce

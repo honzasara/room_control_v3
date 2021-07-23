@@ -6,8 +6,10 @@
 void button_get_default_ring_labels(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2);
 void button_change_default_ring_via_dialog_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
 
+
 void button_change_default_ring_labels_in_dialog(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2);
 void button_click_set_new_default_ring_in_dialog(uint16_t args1, uint16_t args2, uint8_t args3);
+void button_no_default_ring_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
 
 uint8_t button_get_term_ring_is_selected(uint16_t args1, uint16_t args2, uint8_t args3);
 
@@ -47,6 +49,7 @@ uint8_t menu_redraw_change_default_ring(uint16_t args1, uint16_t args2, uint8_t 
 uint8_t menu_redraw_change_variable(uint16_t args1, uint16_t args2, uint8_t args3);
 uint8_t menu_redraw_change_term_mode(uint16_t args1, uint16_t args2, uint8_t args3);
 uint8_t menu_redraw_change_term_mode_cool_heat(uint16_t args1, uint16_t args2, uint8_t args3);
+uint8_t menu_redraw_change_term_input(uint16_t args1, uint16_t args2, uint8_t args3);
 
 uint8_t preload_regulator_menu(uint16_t args1, uint16_t args2, uint8_t args3);
 
@@ -197,6 +200,19 @@ const Element_Button_1 button_set_time_program PROGMEM = {
   .font_size = 1,
   .args = NEW_MENU_THERMOSTAT_TIME_MENU,
   .onclick = MenuHistoryNextMenu,
+  .redraw_class = (1 << REDRAW_ONCE),
+  .enable_show = display_enable_show,
+};
+
+const Element_Button_1 button_no_default_ring PROGMEM = {
+  .name = new_text_no_default_ring,
+  .x = 220,
+  .y = 220,
+  .size_x = 190,
+  .size_y = 40,
+  .font_size = 1,
+  .args = 0,
+  .onclick = button_no_default_ring_onclick,
   .redraw_class = (1 << REDRAW_ONCE),
   .enable_show = display_enable_show,
 };
@@ -396,7 +412,7 @@ const Element_Function_1 f_vertical_slider_term_ring_input_temp PROGMEM = {
   .fnt_coordinate_xy = display_element_vertical_slider,
   .size_x = 40,
   .size_y = 86,
-  .redraw_class = (1 << REDRAW_ONCE),
+  .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_1),
   .onclick = nullfce,
   .enable_show = display_enable_show,
   .name = char_NULL,
@@ -448,7 +464,7 @@ const Element_Dyn_Select_1 button_select_term_ring_input_in_dialog PROGMEM = {
   .dyn_symbol_onclick =  button_select_term_ring_input_in_dialog_onclick,
   .function_for_max_items =  button_get_show_default_temp_max_items,
   .get_status_fnt = button_select_term_ring_input_in_dialog_status_fnt,
-  .redraw_class = (1 << REDRAW_ONCE),
+  .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_1 | 1 << REDRAW_CLASS_2),
 };
 
 const Element_Dyn_Select_1 button_select_term_mode PROGMEM = {
@@ -535,8 +551,8 @@ const Menu1 DialogSelectInputSensorsForTerm PROGMEM = {
   .color_background = YELLOW,
   .redraw_class = (1 << REDRAW_ONCE),
   .redraw_class_0 = returnnullfceargs,
-  .redraw_class_1 = returnnullfceargs,
-  .redraw_class_2 = returnnullfceargs,
+  .redraw_class_1 = menu_redraw_slider,
+  .redraw_class_2 = menu_redraw_change_term_input,
   .redraw_class_3 = returnnullfceargs,
   .preload_function = returnnullfceargs,
 };
@@ -577,7 +593,7 @@ const Menu1 MenuThermostatRingSetup PROGMEM = {
 
 const Menu1 DialogSelectRing PROGMEM = {
   .name = text_select_term_default_ring,
-  .button_1 = {button_back},
+  .button_1 = {button_back, button_no_default_ring},
   .button_2 = {NULL},
   .function_1 = {NULL},
   .switch_1 = {NULL},
@@ -585,7 +601,7 @@ const Menu1 DialogSelectRing PROGMEM = {
   .symbol_button_1 = {NULL},
   .dyn_symbol_1 = {NULL},
   .dyn_select_box_1 = {button_change_default_ring_in_dialog},
-  .len_button_1 = 1,
+  .len_button_1 = 2,
   .len_button_2 = 0,
   .len_function_1 = 0,
   .len_switch_1 = 0,
@@ -641,6 +657,39 @@ const Menu1 MenuThermostat_Setting PROGMEM = {
   .preload_function = returnnullfceargs,
 };
 
+
+const Menu1 MenuThermostat PROGMEM = {
+  .name = new_text_regulator_menu,
+  .button_1 = {button_back},
+  .button_2 = {NULL},
+  .function_1 = {NULL},
+  .switch_1 = {NULL},
+  .dyn_button = {NULL},
+  .symbol_button_1 = {NULL},
+  .dyn_symbol_1 = {NULL},
+  .dyn_select_box_1 = {NULL},
+  .len_button_1 = 1,
+  .len_button_2 = 0,
+  .len_function_1 = 0,
+  .len_switch_1 = 0,
+  .len_dyn_button_1 = 0,
+  .len_symbol_button_1 = 0,
+  .len_dyn_symbol_1 = 0,
+  .len_dyn_select_box_1 = 0,
+  .idx = NEW_MENU_THERMOSTAT,
+  .x = 0,
+  .y = 0,
+  .size_x = 480,
+  .size_y = 320,
+  .atributes = (1 << MENU_ATTRIBUTES_CLEAN_DISPLAY),
+  .color_background = WHITE,
+  .redraw_class = (1 << REDRAW_ONCE),
+  .redraw_class_0 = returnnullfceargs,
+  .redraw_class_1 = returnnullfceargs,
+  .redraw_class_2 = menu_redraw_slider,
+  .redraw_class_3 = menu_redraw_date,
+  .preload_function = returnnullfceargs,
+};
 
 
 

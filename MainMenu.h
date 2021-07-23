@@ -36,7 +36,7 @@ const Element_Function_1 f_show_all_temp PROGMEM = {
 const Element_Function_1 f_show_all_temp_decorate PROGMEM = {
   .x = 10,
   .y = 40,
-  .args = 0,
+  .args = BLACK,
   .fnt_coordinate_xy = display_element_rectangle,
   .size_x = 440,
   .size_y = 170,
@@ -189,7 +189,7 @@ const Element_Button_1 button_global_setting PROGMEM = {
   .font_size = 2,
   .args = NEW_MENU_NASTAVENI_SCREEN,
   .onclick = MenuHistoryNextMenu,
-  .redraw_class = (1 << REDRAW_FORCE | 1 << REDRAW_ONCE),
+  .redraw_class = ( 1 << REDRAW_ONCE),
   .enable_show = display_enable_show,
 };
 
@@ -202,7 +202,7 @@ const Element_Button_1 button_global_functions PROGMEM = {
   .font_size = 2,
   .args = MENU_FUNKCE_SCREEN,
   .onclick = nullfce, //MenuHistoryNextMenu,
-  .redraw_class = (1 << REDRAW_FORCE | 1 << REDRAW_ONCE),
+  .redraw_class = (1 << REDRAW_ONCE),
   .enable_show = display_enable_show,
 };
 
@@ -213,9 +213,9 @@ const Element_Button_1 button_global_regulator PROGMEM = {
   .size_x = 170,
   .size_y = 40,
   .font_size = 2,
-  .args = MENU_REGULATOR,
-  .onclick = nullfce, //MenuHistoryNextMenu,
-  .redraw_class = (1 << REDRAW_FORCE | 1 << REDRAW_ONCE),
+  .args = NEW_MENU_THERMOSTAT,
+  .onclick = MenuHistoryNextMenu,
+  .redraw_class = ( 1 << REDRAW_ONCE),
   .enable_show = display_enable_show,
 };
 
