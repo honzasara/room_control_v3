@@ -49,7 +49,7 @@
 #define PIEZO 12
 
 #define NRF_CS 2
-#define NRF_CE 3 
+#define NRF_CE 3
 #define NRF_INT 5
 
 #define LED 8
@@ -65,11 +65,11 @@
 
 #define CONST_PREVOD_PETV 8
 #define CONST_PREVOD_TRIV 5
-#define CONST_PREVOD_DVANACTV 57
+#define CONST_PREVOD_DVANACTV 59
 #define CONST_PREVOD_PROUD 1
 
 
-
+#define MAX_TEMP_BUFFER 16
 
 
 #define SELFTEST_ERR_RTC 0
@@ -363,6 +363,34 @@ const char new_text_regulator[] PROGMEM = "Regulator: ";
 const char new_text_termostat_statistika[] PROGMEM = "Statistika regulatoru";
 const char new_text_regulator_menu[] PROGMEM = "Menu regulatoru";
 const char new_text_no_default_ring[] PROGMEM = "Zadny vychozi regulator";
+
+
+const char text_rf_mesh_send_total[] PROGMEM = "status/mesh/send";
+const char text_rf_mesh_receive_total[] PROGMEM = "status/mesh/receive";
+const char text_rf_mesh_process_total[] PROGMEM = "status/mesh/process";
+const char text_mesh_id[] PROGMEM = "mesh/id";
+const char text_mesh_neighbours[] PROGMEM = "mesh/neighbours";
+const char text_mesh_neighbour[] PROGMEM = "mesh/neighbour";
+const char text_rf_channel[] PROGMEM = "rf/channel";
+const char text_rf_power[] PROGMEM = "rf/power";
+
+
+const char text_mesh_nrf_store[] PROGMEM = "nrf/store";
+
+const char mesh_device_nrf_uptime[] PROGMEM = "NRF_UPTIME";
+const char mesh_device_nrf_send[] PROGMEM = "NRF_SEND";
+const char mesh_device_nrf_recv[] PROGMEM = "NRF_RECV";
+const char mesh_device_nrf_err[] PROGMEM = "NRF_ERR";
+const char mesh_device_nrf_renew[] PROGMEM = "NRF_RENEW";
+const char mesh_device_nrf_name[] PROGMEM = "NRF_NAME";
+
+const char mesh_device_nrf_uptime_x[] PROGMEM = "uptime";
+const char mesh_device_nrf_send_x[] PROGMEM = "send";
+const char mesh_device_nrf_recv_x[] PROGMEM = "recv";
+const char mesh_device_nrf_err_x[] PROGMEM = "send_err";
+const char mesh_device_nrf_renew_x[] PROGMEM = "mesh_renew";
+const char mesh_device_nrf_name_x[] PROGMEM = "name";
+const char mesh_device_nrf_last_seen_x[] PROGMEM = "last_seen";
 /***************************************************************/
 /*
         spolecne display funkce

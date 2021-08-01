@@ -2007,6 +2007,305 @@ void remote_tds_update_last_update(void)
     }
   }
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void new_parse_at(char *input, char *out1, char *out2, char delim)
+{
+  uint8_t count = 0;
+  uint8_t q = 0;
+  out1[0] = 0;
+  out2[0] = 0;
+
+  while ( (count < strlen(input)) && (input[count] != delim) && (q < MAX_TEMP_BUFFER - 1))
+  {
+    out1[q] = input[count];
+    out1[q + 1] = 0;
+    q++;
+    count++;
+  }
+
+  count++;
+  q = 0;
+  while ((count < strlen(input)) && (q < MAX_TEMP_BUFFER - 1) )
+  {
+    out2[q] = input[count];
+    out2[q + 1] = 0;
+    q++;
+    count++;
+  }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+
+
+          NRF REMOTE DEVICE
+
+          #define ram_nrf_device_start 150
+          #define ram_nrf_name_length 10
+  #define ram_nrf_devices 20
+  #define ram_nrf_device_store_size 13
+  #define ram_nrf_device_index 0
+  #define ram_nrf_device_used 1
+  #define ram_nrf_last_update 2
+  #define ram_nrf_device_name 3
+
+  #define ram_nrf_device_info_start 410
+  #define ram_nrf_device_len 4
+  #define ram_nrf_device_info_uptime 0
+
+*/
+
+
+void nrf_init_nei_store(void)
+{
+  for (uint8_t idx = 0; idx < ram_nrf_devices; idx++)
+  {
+    nrf_set_nei_name(idx, "FREE");
+    nrf_set_nei_last_update(idx, 255);
+    nrf_set_nei_device_index(idx, 255);
+    nrf_set_nei_device_used(idx, 0);
+  }
+}
+
+uint8_t nrf_list_nei_store(uint8_t idx, char *name, uint8_t *device_index, uint8_t *last_seen)
+{
+  uint8_t ret = 0;
+  if (nrf_get_nei_device_used(idx) == 1)
+  {
+    nrf_get_nei_name(idx, name);
+    *device_index = nrf_get_nei_device_index(idx);
+    *last_seen = nrf_get_nei_last_update(idx);
+    ret = 1;
+  }
+  return ret;
+}
+
+uint8_t nrf_add_nei_store(uint8_t id, char *name)
+{
+  uint8_t ret = 0;
+  uint8_t know = 0;
+  for (uint8_t idx = 0; idx < ram_nrf_devices; idx++)
+  {
+    if (nrf_get_nei_device_used(idx) == 1 && nrf_get_nei_device_index(idx) == id)
+    {
+      know = 1;
+      break;
+    }
+  }
+
+  if (know == 0)
+    for (uint8_t idx = 0; idx < ram_nrf_devices; idx++)
+    {
+      if (nrf_get_nei_device_used(idx) == 0)
+      {
+        nrf_set_nei_device_used(idx, 1);
+        nrf_set_nei_name(idx, name);
+        nrf_set_nei_last_update(idx, 0);
+        nrf_set_nei_device_index(idx, id);
+        ret = 1;
+        break;
+      }
+    }
+  return ret;
+}
+
+void nrf_set_nei_name(uint8_t idx, char *name)
+{
+  for (uint8_t i = 0; i < ram_nrf_name_length; i++)
+  {
+    SRAM.writeByte(ram_nrf_device_start + (idx * ram_nrf_device_store_size) + ram_nrf_device_name + i, name[i]);
+    if (name[i] == 0) break;
+  }
+}
+
+void nrf_get_nei_name(uint8_t idx, char *name)
+{
+  char c;
+  for (uint8_t i = 0; i < ram_nrf_name_length; i++)
+  {
+    c = SRAM.readByte(ram_nrf_device_start + (idx * ram_nrf_device_store_size) + ram_nrf_device_name + i);
+    name[i] = c;
+    if (c == 0) break;
+  }
+}
+
+void nrf_set_nei_last_update(uint8_t idx, uint8_t last_seen)
+{
+  SRAM.writeByte(ram_nrf_device_start + (idx * ram_nrf_device_store_size) + ram_nrf_last_update, last_seen);
+}
+
+uint8_t nrf_get_nei_last_update(uint8_t idx)
+{
+  return SRAM.readByte(ram_nrf_device_start + (idx * ram_nrf_device_store_size) + ram_nrf_last_update);
+}
+
+void nrf_inc_nei_last_update(void)
+{
+  uint8_t cnt = 0;
+  for (uint8_t idx = 0; idx < ram_nrf_name_length; idx++)
+    if (nrf_get_nei_device_used(idx) == 1)
+    {
+      cnt = nrf_get_nei_last_update(idx);
+      if (cnt < 250)
+      {
+        cnt++;
+        nrf_set_nei_last_update(idx, cnt);
+      }
+    }
+}
+
+void nrf_reset_nei_last_update(uint8_t idx)
+{
+  uint8_t store_index;
+  if (nrf_find_store_index(idx, &store_index) == 1 )
+  {
+    nrf_set_nei_last_update(store_index, 0);
+  }
+}
+
+void nrf_set_nei_device_index(uint8_t idx, uint8_t device_index)
+{
+  SRAM.writeByte(ram_nrf_device_start + (idx * ram_nrf_device_store_size) + ram_nrf_device_index, device_index);
+}
+uint8_t nrf_get_nei_device_index(uint8_t idx)
+{
+  SRAM.readByte(ram_nrf_device_start + (idx * ram_nrf_device_store_size) + ram_nrf_device_index);
+}
+
+
+
+uint8_t nrf_find_store_index(uint8_t device_index, uint8_t *store_index)
+{
+  uint8_t ret = 0;
+  for (uint8_t idx = 0; idx < ram_nrf_name_length; idx++)
+  {
+    if (nrf_get_nei_device_index(idx) == device_index)
+    {
+      *store_index = idx;
+      ret = 1;
+      break;
+    }
+  }
+  return ret;
+}
+
+
+void nrf_set_nei_device_used(uint8_t idx, uint8_t used)
+{
+  SRAM.writeByte(ram_nrf_device_start + (idx * ram_nrf_device_store_size) + ram_nrf_device_used, used);
+}
+
+uint8_t nrf_get_nei_device_used(uint8_t idx)
+{
+  return SRAM.readByte(ram_nrf_device_start + (idx * ram_nrf_device_store_size) + ram_nrf_device_used);
+}
+
+
+
+
+
+
+
+
+void nrf_add_nei_store_service_info_uptime(uint8_t device_index, long uptime)
+{
+  uint8_t idx;
+  if (nrf_find_store_index(device_index, &idx) == 1)
+  {
+    SRAM.writeByte(ram_nrf_device_info_start + (idx * ram_nrf_device_len) + ram_nrf_device_info_uptime, uptime >> 24);
+    SRAM.writeByte(ram_nrf_device_info_start + (idx * ram_nrf_device_len) + ram_nrf_device_info_uptime + 1, uptime >> 16);
+    SRAM.writeByte(ram_nrf_device_info_start + (idx * ram_nrf_device_len) + ram_nrf_device_info_uptime + 2, uptime >> 8);
+    SRAM.writeByte(ram_nrf_device_info_start + (idx * ram_nrf_device_len) + ram_nrf_device_info_uptime + 3, uptime);
+  }
+}
+
+long nrf_get_nei_store_service_info_uptime(uint8_t idx)
+{
+  long uptime = 0;
+  uptime = SRAM.readByte(ram_nrf_device_info_start + (idx * ram_nrf_device_len) + ram_nrf_device_info_uptime + 0) << 24;
+  uptime = uptime + SRAM.readByte(ram_nrf_device_info_start + (idx * ram_nrf_device_len) + ram_nrf_device_info_uptime + 1) << 16;
+  uptime = uptime + SRAM.readByte(ram_nrf_device_info_start + (idx * ram_nrf_device_len) + ram_nrf_device_info_uptime + 2) << 8;
+  uptime = uptime + SRAM.readByte(ram_nrf_device_info_start + (idx * ram_nrf_device_len) + ram_nrf_device_info_uptime + 3);
+  return uptime;
+}
+
+
+
+
+void nrf_add_nei_store_service_info_send(uint8_t device_index, uint16_t value)
+{
+  uint8_t idx;
+  if (nrf_find_store_index(device_index, &idx) == 1)
+  {
+    SRAMWrite16b(ram_nrf_device_info_start + (idx * ram_nrf_device_len) + ram_nrf_device_info_send, value);
+  }
+}
+
+uint16_t nrf_get_nei_store_service_info_send(uint8_t idx)
+{
+  return SRAMRead16b(ram_nrf_device_info_start + (idx * ram_nrf_device_len) + ram_nrf_device_info_send);
+}
+
+
+
+void nrf_add_nei_store_service_info_recv(uint8_t device_index, uint16_t value)
+{
+  uint8_t idx;
+  if (nrf_find_store_index(device_index, &idx) == 1)
+  {
+    SRAMWrite16b(ram_nrf_device_info_start + (idx * ram_nrf_device_len) + ram_nrf_device_info_recv, value);
+  }
+}
+
+uint16_t nrf_get_nei_store_service_info_recv(uint8_t idx)
+{
+  return SRAMRead16b(ram_nrf_device_info_start + (idx * ram_nrf_device_len) + ram_nrf_device_info_recv);
+}
+
+
+void nrf_add_nei_store_service_info_err(uint8_t device_index, uint16_t value)
+{
+  uint8_t idx;
+  if (nrf_find_store_index(device_index, &idx) == 1)
+  {
+    SRAMWrite16b(ram_nrf_device_info_start + (idx * ram_nrf_device_len) + ram_nrf_device_info_err, value);
+  }
+}
+
+uint16_t nrf_get_nei_store_service_info_err(uint8_t idx)
+{
+  return SRAMRead16b(ram_nrf_device_info_start + (idx * ram_nrf_device_len) + ram_nrf_device_info_err);
+}
+
+void nrf_add_nei_store_service_info_renew(uint8_t device_index, uint16_t value)
+{
+  uint8_t idx;
+  if (nrf_find_store_index(device_index, &idx) == 1)
+  {
+    SRAMWrite16b(ram_nrf_device_info_start + (idx * ram_nrf_device_len) + ram_nrf_device_info_renew, value);
+  }
+}
+
+uint16_t nrf_get_nei_store_service_info_renew(uint8_t idx)
+{
+  return SRAMRead16b(ram_nrf_device_info_start + (idx * ram_nrf_device_len) + ram_nrf_device_info_renew);
+}
+
+
+uint16_t SRAMRead16b(uint32_t addr)
+{
+  uint16_t value;
+  value = SRAM.readByte(addr) << 8;
+  value = value + SRAM.readByte(addr + 1);
+  return value;
+}
+
+void SRAMWrite16b(uint32_t addr, uint16_t value)
+{
+  SRAM.writeByte(addr , value >> 8);
+  SRAM.writeByte(addr + 1, value);
+}
 /*************************************************************************************************************************/
 /// funkce pro nastaveni vychoziho ringu
 /*
@@ -3210,30 +3509,87 @@ void mqtt_publis_output_pwm(uint8_t idx, uint8_t mode, uint8_t pwm)
 void send_mesh_status(void)
 {
   char str_topic[64];
+  char str_space[16];
   char payload[64];
+  uint8_t tmp1, tmp2;
 
-  strcpy(str_topic, "mesh/id");
+
+  strcpy_P(str_topic, text_mesh_id);
   itoa(mesh.getNodeID(), payload, 10);
   send_mqtt_general_payload(&mqtt_client, str_topic, payload);
 
-  strcpy(str_topic, "mesh/neighbours");
+
+  strcpy_P(str_topic, text_mesh_neighbours);
   itoa(mesh.addrListTop, payload, 10);
   send_mqtt_general_payload(&mqtt_client, str_topic, payload);
 
-  strcpy(str_topic, "rf/channel");
+
+  strcpy_P(str_topic, text_rf_channel);
   itoa(nrf_load_channel(), payload, 10);
   send_mqtt_general_payload(&mqtt_client, str_topic, payload);
 
-  strcpy(str_topic, "rf/power");
+
+  strcpy_P(str_topic, text_rf_power);
   itoa(radio.getPALevel(), payload, 10);
   send_mqtt_general_payload(&mqtt_client, str_topic, payload);
 
+
+  strcpy_P(str_topic, text_mesh_neighbour);
   for (uint8_t idx = 0; idx < mesh.addrListTop; idx++)
   {
     itoa(mesh.addrList[idx].nodeID, payload, 10);
-    send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "mesh/neighbour", idx, "id", payload);
+    send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, "id", payload);
     itoa(mesh.addrList[idx].address, payload, 10);
-    send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "mesh/neighbour", idx, "address", payload);
+    send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, "address", payload);
+  }
+
+  strcpy_P(str_topic, text_rf_mesh_send_total);
+  itoa(nrf_message_send_total, payload, 10);
+  send_mqtt_general_payload(&mqtt_client, str_topic, payload);
+
+  strcpy_P(str_topic, text_rf_mesh_receive_total);
+  itoa(nrf_message_receive_total, payload, 10);
+  send_mqtt_general_payload(&mqtt_client, str_topic, payload);
+
+  strcpy_P(str_topic, text_rf_mesh_process_total);
+  itoa(nrf_message_process_total, payload, 10);
+  send_mqtt_general_payload(&mqtt_client, str_topic, payload);
+
+  strcpy_P(str_topic, text_mesh_nrf_store);
+  for (uint8_t idx = 0; idx < ram_nrf_devices; idx++)
+  {
+    if (nrf_list_nei_store(idx, payload, &tmp1, &tmp2) == 1)
+    {
+      strcpy_P(str_space, mesh_device_nrf_name_x);
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, str_space, payload);
+      ///
+      itoa(tmp1, payload, 10);
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, "id", payload);
+      ///
+      itoa(tmp2, payload, 10);
+      strcpy_P(str_space, mesh_device_nrf_last_seen_x);
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, str_space, payload);
+
+      sprintf(payload, "%ld", nrf_get_nei_store_service_info_uptime(idx));
+      strcpy_P(str_space, mesh_device_nrf_uptime_x);
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, str_space, payload);
+
+      itoa(nrf_get_nei_store_service_info_send(idx), payload, 10);
+      strcpy_P(str_space, mesh_device_nrf_send_x);
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, str_space, payload);
+
+      itoa(nrf_get_nei_store_service_info_recv(idx), payload, 10);
+      strcpy_P(str_space, mesh_device_nrf_recv_x);
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, str_space, payload);
+
+      itoa(nrf_get_nei_store_service_info_err(idx), payload, 10);
+      strcpy_P(str_space, mesh_device_nrf_err_x);
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, str_space, payload);
+
+      itoa(nrf_get_nei_store_service_info_renew(idx), payload, 10);
+      strcpy_P(str_space, mesh_device_nrf_renew_x);
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, str_space, payload);
+    }
   }
 }
 /*************************************************************************************************************************/
@@ -3319,9 +3675,11 @@ float prepocet_napeti(uint16_t vstup, uint8_t prevodni_pomer)
 */
 float prepocet_proudu(uint16_t vstup)
 {
-#define proud_constanta  470
-  float proud = (vstup - proud_constanta) * 5 / 185;
-  return vstup;
+#define proud_constanta  499
+  float proud = (vstup - proud_constanta) * 14;
+
+
+  return proud;
 }
 ///
 /////////////// Casove funkce ///////////////////////////////////////////////////////////////////
@@ -3362,7 +3720,7 @@ uint8_t convert_text_mode(char *str2)
 {
   uint8_t mode = 0;
   if (strcmp(str2, "off") == 0) mode = TERM_MODE_OFF;
-  if (strcmp(str2, "heat") == 0) mode = TERM_MODE_MAX;
+  if (strcmp(str2, "heat") == 0) mode = TERM_MODE_HEAT_MAX;
   if (strcmp(str2, "manual") == 0) mode = TERM_MODE_MAN_HEAT;
   if (strcmp(str2, "auto") == 0) mode = TERM_MODE_PROG;
   if (strcmp(str2, "cool") == 0) mode = TERM_MODE_CLIMATE_MAX;
@@ -3373,7 +3731,7 @@ uint8_t convert_text_mode(char *str2)
 void convert_mode_text(uint8_t mode, char *str)
 {
   if (mode == TERM_MODE_OFF)   strcpy(str, "off");
-  if (mode == TERM_MODE_MAX)   strcpy(str, "heat");
+  if (mode == TERM_MODE_HEAT_MAX)   strcpy(str, "heat");
   if (mode == TERM_MODE_MAN_HEAT)   strcpy(str, "manual");
   if (mode == TERM_MODE_PROG)   strcpy(str, "auto");
   if (mode == TERM_MODE_CLIMATE_MAX)   strcpy(str, "cool");
@@ -3386,7 +3744,7 @@ void convert_mode_text(uint8_t mode, char *str)
 void convert_mode_text_1(uint8_t mode, char *str)
 {
   if (mode == TERM_MODE_OFF)   strcpy_P(str, text_button_term_off);
-  if (mode == TERM_MODE_MAX)   strcpy_P(str, text_button_term_max);
+  if (mode == TERM_MODE_HEAT_MAX)   strcpy_P(str, text_button_term_max);
   if (mode == TERM_MODE_MAN_HEAT)   strcpy_P(str, text_button_term_man);
   if (mode == TERM_MODE_PROG)   strcpy_P(str, text_button_term_prog);
   if (mode == TERM_MODE_CLIMATE_MAX)   strcpy_P(str, text_button_term_man);
@@ -3535,7 +3893,7 @@ void thermostat(void)
       mqtt_publis_output(tout, POWER_OUTPUT_OFF);
       thermostat_ring_set_power(tix, 0);
     }
-    if (tmode == TERM_MODE_MAX)
+    if (tmode == TERM_MODE_HEAT_MAX)
     {
       mqtt_publis_output(tout, POWER_OUTPUT_HEAT_MAX);
       thermostat_ring_set_power(tix, 255);
@@ -3559,13 +3917,63 @@ void nrf_mesh_reinit(void)
   mesh.begin(nrf_load_channel());
 }
 
+
+
 void nrf_callback(nrf_message_t *nrf_message)
 {
-nrf_message->nodeid;
-nrf_message->mode;
-nrf_message->data;
+  char str1[16];
+  char str2[16];
+  nrf_message_process_total++;
+  nrf_message->nodeid;
+  nrf_message->mode;
+  nrf_message->data;
 
+  if (nrf_message->mode == 'G')
+  {
+    new_parse_at((char*)nrf_message->data, str1, str2, ':');
+    if (strcmp_P(str1, mesh_device_nrf_name) == 0)
+    {
+      nrf_add_nei_store(nrf_message->nodeid, str2);
+      nrf_reset_nei_last_update(nrf_message->nodeid);
+    }
+  }
+
+  if (nrf_message->mode == 'S')
+  {
+    new_parse_at((char*)nrf_message->data, str1, str2, ':');
+    if (strcmp_P(str1, mesh_device_nrf_uptime) == 0)
+    {
+      nrf_add_nei_store_service_info_uptime(nrf_message->nodeid, atoi(str2));
+    }
+    if (strcmp_P(str1, mesh_device_nrf_send) == 0)
+    {
+      nrf_add_nei_store_service_info_send(nrf_message->nodeid, atoi(str2));
+    }
+    if (strcmp_P(str1, mesh_device_nrf_recv) == 0)
+    {
+      nrf_add_nei_store_service_info_recv(nrf_message->nodeid, atoi(str2));
+    }
+    if (strcmp_P(str1, mesh_device_nrf_err) == 0)
+    {
+      nrf_add_nei_store_service_info_err(nrf_message->nodeid, atoi(str2));
+    }
+    if (strcmp_P(str1, mesh_device_nrf_renew) == 0)
+    {
+      nrf_add_nei_store_service_info_renew(nrf_message->nodeid, atoi(str2));
+    }
+  }
+
+  if (nrf_message->mode == 'D')
+  {
+    new_parse_at((char*)nrf_message->data, str1, str2, ':');
+  }
 }
+
+
+
+
+
+
 
 /////////////////////////////////////////////////////
 /// setup - zakladni nastaveni - vola se pouze 1x
@@ -3638,34 +4046,37 @@ void setup()
       dvanact = 0;
       light_curr = 0;
       /// inicializace prevodniku
-      init_a2d((1 << A_PROUD | 1 << A_TRIV | 1 << A_PETV | 1 << A_DVANACTV | 1 << A_LIGHT), 6, 3);
+      init_a2d((1 << A_PROUD | 1 << A_TRIV | 1 << A_PETV | 1 << A_DVANACTV | 1 << A_LIGHT), 7, 3);
       a2d_handler(a2d_complete);
       ///
-      /// spotreba proudu
-      a2d_run_now = 0;
-      a2d_start_first(A_PROUD);
-      milis = millis();
-      while (a2d_run_now == 0 && millis() - milis < 10);
-      /// regulator 3.3V
-      a2d_run_now = 0;
-      a2d_start_first(A_TRIV);
-      milis = millis();
-      while (a2d_run_now == 0 && millis() - milis < 10);
-      /// regulator 5.0V
-      a2d_run_now = 0;
-      a2d_start_first(A_PETV);
-      milis = millis();
-      while (a2d_run_now == 0 && millis() - milis < 10);
-      /// vstupni napeti 12V
-      a2d_run_now = 0;
-      a2d_start_first(A_DVANACTV);
-      milis = millis();
-      while (a2d_run_now == 0 && millis() - milis < 10);
-      /// aktualni intenzita svetla
-      a2d_run_now = 0;
-      a2d_start_first(A_LIGHT);
-      milis = millis();
-      while (a2d_run_now == 0 && millis() - milis < 10);
+      for (uint8_t cnt = 0; cnt < 5; cnt++)
+      {
+        /// aktualni intenzita svetla
+        a2d_run_now = 0;
+        a2d_start_first(A_LIGHT);
+        milis = millis();
+        while (a2d_run_now == 0 && millis() - milis < 20);
+        /// spotreba proudu
+        a2d_run_now = 0;
+        a2d_start_first(A_PROUD);
+        milis = millis();
+        while (a2d_run_now == 0 && millis() - milis < 20);
+        /// regulator 3.3V
+        a2d_run_now = 0;
+        a2d_start_first(A_TRIV);
+        milis = millis();
+        while (a2d_run_now == 0 && millis() - milis < 20);
+        /// regulator 5.0V
+        a2d_run_now = 0;
+        a2d_start_first(A_PETV);
+        milis = millis();
+        while (a2d_run_now == 0 && millis() - milis < 20);
+        /// vstupni napeti 12V
+        a2d_run_now = 0;
+        a2d_start_first(A_DVANACTV);
+        milis = millis();
+        while (a2d_run_now == 0 && millis() - milis < 20);
+      }
       /// zatim nepotrebuji automaticke mereni
       a2d_run_now = 0;
       /// prevedu float na string
@@ -3675,6 +4086,7 @@ void setup()
       dtostrf(prepocet_proudu(proud), 4, 2, s_current);
       sprintf(str2, "3.3V=%s; 5.0V=%s; IN=%s; I=%s", s_tritri, s_petnula, s_dvanact, s_current);
       show_string(str2, 160, 50 + (init * 10), 1, GREEN, WHITE, 0 );
+      delay(1000);
     }
     ///
     /// inicializace vnitrniho teplomeru LM75B
@@ -3974,7 +4386,8 @@ void setup()
     {
       strcpy_P(str1, text_nrf_rozhrani);
       show_string(str1, 30, 50 + (init * 10), 1, GREEN, WHITE, 0 );
-      scan_rf_net_enable = 2;
+      nrf_init_nei_store();
+      scan_rf_net_enable = 0;
       radio.begin();
       radio.setPALevel(nrf_load_power());
       nrf_mesh_reinit();
@@ -4061,11 +4474,11 @@ void setup()
 void loop() {
   // put your main code here, to run repeatedly:
   char str1[16];
-  
+
   unsigned long load_now;
   long mil;
   uint16_t click_x, click_y;
-  
+
   nrf_message_t nrf_message;
   uint8_t nrf_data[NRF_MESSAGE_TOTAL_LEN];
 
@@ -4112,17 +4525,17 @@ void loop() {
       RF24NetworkHeader header;
       network.peek(header);
 
-      
+
       switch (header.type) {
-        case 'M': 
+        case 'M':
           {
             network.read(header, &nrf_data, NRF_MESSAGE_TOTAL_LEN);
-            nrf_message_received_total++;
+            nrf_message_receive_total++;
             convert_data_to_nrf_message(&nrf_message, nrf_data);
             nrf_callback(&nrf_message);
-            
+
             //printf("%d %d %d\n", nrf_message.nodeid, nrf_message.mode, nrf_message.data[0]);
-            break; 
+            break;
           }
         default: network.read(header, 0, 0); break;
       }
@@ -4232,6 +4645,7 @@ void loop() {
     mereni_hwwire(uptime);
     tds_extended_memory_store();
     remote_tds_update_last_update();
+    nrf_inc_nei_last_update();
 
     /*
       for (int i = 0; i < mesh.addrListTop; i++)
@@ -5659,7 +6073,7 @@ uint8_t button_select_term_mode_get_status_fnt(uint16_t args1, uint16_t args2, u
     ret = 0;
     mode = thermostat_ring_get_mode(args2);
     if (args3 == 0 && mode == TERM_MODE_OFF) ret = 1;
-    if (args3 == 1 && mode == TERM_MODE_MAX) ret = 1;
+    if (args3 == 1 && mode == TERM_MODE_HEAT_MAX) ret = 1;
     if (args3 == 2 && mode == TERM_MODE_MIN) ret = 1;
     if (args3 == 3 && mode == TERM_MODE_PROG) ret = 1;
     if (args3 == 4 && (mode == TERM_MODE_MAN || mode == TERM_MODE_MAN_HEAT || mode == TERM_MODE_MAN_COOL)) ret = 1;
@@ -5677,7 +6091,7 @@ uint8_t button_select_term_mode_get_status_fnt(uint16_t args1, uint16_t args2, u
 void button_select_term_mode_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   if (args3 == 0) thermostat_ring_set_mode(args2, TERM_MODE_OFF);
-  if (args3 == 1) thermostat_ring_set_mode(args2, TERM_MODE_MAX);
+  if (args3 == 1) thermostat_ring_set_mode(args2, TERM_MODE_HEAT_MAX);
   if (args3 == 2) thermostat_ring_set_mode(args2, TERM_MODE_MIN);
   if (args3 == 3) thermostat_ring_set_mode(args2, TERM_MODE_PROG);
   if (args3 == 4) thermostat_ring_set_mode(args2, TERM_MODE_MAN);

@@ -26,7 +26,7 @@
 #define build_time_1 87
 #define build_time_2 88
 #define build_time_3 89
- 
+
 #define set_default_values 90
 #define my_default_ring 92
 #define my_default_show_temp 93
@@ -60,11 +60,48 @@
 #define ram_remote_tds_store_last_update 102
 #define ram_remote_tds_store_type 103
 
+
 #define ram_remote_tds_store_last (ram_remote_tds_store_data_low+(ram_remote_tds_store_size*MAX_RTDS))
+///#define ram_remote_tds_store_last 140
+
+
+
+#define ram_nrf_device_start 150
+#define ram_nrf_name_length 10
+#define ram_nrf_devices 20
+#define ram_nrf_device_store_size 14
+#define ram_nrf_device_index 0
+#define ram_nrf_device_used 1
+#define ram_nrf_last_update 2
+#define ram_nrf_device_name 3
+///ram_nrf_device_last 430
+
+#define ram_nrf_device_info_start 430
+#define ram_nrf_device_len 12
+#define ram_nrf_device_info_uptime 0
+#define ram_nrf_device_info_send 4
+#define ram_nrf_device_info_recv 6
+#define ram_nrf_device_info_err 8
+#define ram_nrf_device_info_renew 10
+///#define ram_nrf_device_info_last 670
+
+#define ram_nrf_mess_store_start 670
+#define ram_nrf_mess_store_size 17
+#define ram_nrf_mess_store_count 20
+#define ram_nrf_mess_name_length 10
+#define ram_nrf_mess_store_associate_device 0
+#define ram_nrf_mess_store_last_update 1
+#define ram_nrf_mess_store_name 2
+#define ram_nrf_mess_store_value 12
+#define ram_nrf_mess_store_value_type 16
+
+
 
 
 #define tds_extend_temp_history_first_pos 1
 #define tds_extend_temp_count 60
+
+
 
 #define MENU_MAX_HISTORY 10
 
