@@ -6,7 +6,7 @@
 void click_rtds_setting_sensor(uint16_t args1, uint16_t args2, uint8_t loop_idx);
 
 
-void click_rtds_deassociate_onewire(uint16_t args1, uint16_t idx, uint8_t args3);
+void click_rtds_deassociate(uint16_t args1, uint16_t idx, uint8_t args3);
 void click_rtds_subscribe(uint16_t args1, uint16_t idx, uint8_t args3);
 
 uint8_t get_function_rtds_active_items(uint16_t args1, uint16_t idx, uint8_t args3);
@@ -52,7 +52,7 @@ const Element_Button_1 button_rtds_delete PROGMEM = {
   .size_y = 40,
   .font_size = 2,
   .args = 0,
-  .onclick = click_rtds_deassociate_onewire,
+  .onclick = click_rtds_deassociate,
   .redraw_class = REDRAW_BUTTON,
   .enable_show = display_enable_show,
 };

@@ -45,9 +45,24 @@ const Element_Button_1 button_nastaveni_nrf_input PROGMEM = {
 };
 
 
+const Element_Button_1 button_nastaveni_virtual_output PROGMEM = {
+  .name = new_nastaveni_virtual_output,
+  .x = 280,
+  .y = 40,
+  .size_x = 190,
+  .size_y = 40,
+  .font_size = 2,
+  .args = NEW_MENU_VIRTUAL_OUTPUT_SETTING,
+  .onclick = MenuHistoryNextMenu,
+  .redraw_class = REDRAW_BUTTON,
+  .enable_show = display_enable_show,
+};
+
+
+
 const Menu1 PeriferieSettingsMenu PROGMEM = {
   .name = new_text_nastaveni_periferii_full,
-  .button_1 = {button_back, button_nastaveni_onewire, button_nastaveni_mqtt_topic, button_nastaveni_nrf_input},
+  .button_1 = {button_back, button_nastaveni_onewire, button_nastaveni_mqtt_topic, button_nastaveni_nrf_input,button_nastaveni_virtual_output},
   .button_2 = {NULL},
   .function_1 = {f_show_date},
   .switch_1 = {NULL},
@@ -55,7 +70,7 @@ const Menu1 PeriferieSettingsMenu PROGMEM = {
   .symbol_button_1 = {NULL},
   .dyn_symbol_1 = {NULL},
   .dyn_select_box_1 = {NULL},
-  .len_button_1 = 4,
+  .len_button_1 = 5,
   .len_button_2 = 0,
   .len_function_1 = 1,
   .len_switch_1 = 0,
@@ -77,4 +92,7 @@ const Menu1 PeriferieSettingsMenu PROGMEM = {
   .redraw_class_3 = returnnullfceargs,
   .preload_function = returnnullfceargs,
 };
+
+
+
 #endif

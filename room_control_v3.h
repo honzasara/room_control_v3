@@ -282,6 +282,8 @@ const char new_text_nastaveni_zobrazeni[] PROGMEM = "N. zobrazeni";
 const char new_text_nastaveni_regulatoru_full[] PROGMEM = "Nastaveni regulatoru";
 const char new_text_nastaveni_regulatoru[] PROGMEM = "N. regulatoru";
 
+const char new_nastaveni_virtual_output[] PROGMEM = "Vystupni cleny";
+
 const char new_text_nastaveni_casu[] PROGMEM = "Nastaveni casu";
 const char new_text_o_zarizeni[] PROGMEM = "O zarizeni";
 
@@ -365,9 +367,9 @@ const char new_text_regulator_menu[] PROGMEM = "Menu regulatoru";
 const char new_text_no_default_ring[] PROGMEM = "Zadny vychozi regulator";
 
 
-const char text_rf_mesh_send_total[] PROGMEM = "status/mesh/send";
-const char text_rf_mesh_receive_total[] PROGMEM = "status/mesh/receive";
-const char text_rf_mesh_process_total[] PROGMEM = "status/mesh/process";
+const char text_rf_mesh_send_total[] PROGMEM = "mesh/send";
+const char text_rf_mesh_receive_total[] PROGMEM = "mesh/receive";
+const char text_rf_mesh_process_total[] PROGMEM = "mesh/process";
 const char text_mesh_id[] PROGMEM = "mesh/id";
 const char text_mesh_neighbours[] PROGMEM = "mesh/neighbours";
 const char text_mesh_neighbour[] PROGMEM = "mesh/neighbour";
@@ -375,7 +377,9 @@ const char text_rf_channel[] PROGMEM = "rf/channel";
 const char text_rf_power[] PROGMEM = "rf/power";
 
 
-const char text_mesh_nrf_store[] PROGMEM = "nrf/store";
+const char text_mesh_nrf_store[] PROGMEM = "nrf/device/status";
+const char text_mesh_nrf_meas_store[] PROGMEM = "nrf/measurement";
+
 
 const char mesh_device_nrf_uptime[] PROGMEM = "NRF_UPTIME";
 const char mesh_device_nrf_send[] PROGMEM = "NRF_SEND";
@@ -389,8 +393,16 @@ const char mesh_device_nrf_send_x[] PROGMEM = "send";
 const char mesh_device_nrf_recv_x[] PROGMEM = "recv";
 const char mesh_device_nrf_err_x[] PROGMEM = "send_err";
 const char mesh_device_nrf_renew_x[] PROGMEM = "mesh_renew";
-const char mesh_device_nrf_name_x[] PROGMEM = "name";
+const char text_name[] PROGMEM = "name";
 const char mesh_device_nrf_last_seen_x[] PROGMEM = "last_seen";
+
+const char text_value[] PROGMEM = "value";
+const char text_type[] PROGMEM = "type";
+const char text_device[] PROGMEM = "device";
+
+
+const char termbig_virtual_output[] PROGMEM = "/termbig-out/virtual-output/";
+
 /***************************************************************/
 /*
         spolecne display funkce

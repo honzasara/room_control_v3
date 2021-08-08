@@ -85,16 +85,19 @@
 #define ram_nrf_device_info_renew 10
 ///#define ram_nrf_device_info_last 670
 
-#define ram_nrf_mess_store_start 670
-#define ram_nrf_mess_store_size 17
-#define ram_nrf_mess_store_count 20
-#define ram_nrf_mess_name_length 10
-#define ram_nrf_mess_store_associate_device 0
-#define ram_nrf_mess_store_last_update 1
-#define ram_nrf_mess_store_name 2
-#define ram_nrf_mess_store_value 12
-#define ram_nrf_mess_store_value_type 16
 
+
+#define ram_nrf_meas_store_start 670
+#define ram_nrf_meas_store_size 18
+#define ram_nrf_meas_store_count 20
+#define ram_nrf_meas_name_length 10
+
+#define ram_nrf_meas_store_associate_device 0
+#define ram_nrf_meas_store_last_update 1
+#define ram_nrf_meas_store_name 2
+#define ram_nrf_meas_store_value 12
+#define ram_nrf_meas_store_value_type 16
+#define ram_nrf_meas_store_used 17
 
 
 
@@ -134,7 +137,8 @@
 #define MENU_NASTAVENI_SETUP_PROGRAM_TERM 14
 #define MENU_NASTAVENI_PROGRAMATOR 15
 #define MENU_NASTAVENI_SITE 16
-
+#define NEW_MENU_NRF_SETTING 17
+#define NEW_MENU_VIRTUAL_OUTPUT_SETTING 18
 
 
 #define MENU_DIALOG_YES_NO  100
@@ -161,6 +165,7 @@
 #define NEW_MENU_THERMOSTAT_TIME_MENU 160
 #define NEW_MENU_SHOW_ALL_TEMP 161
 #define NEW_MENU_THERMOSTAT 162
+
 
 #define MENU_ATTRIBUTES_CLEAN_DISPLAY 0
 #define MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE 1
@@ -324,6 +329,7 @@ const char char_P[] PROGMEM = "P";
 const char char_I[] PROGMEM = "I";
 const char char_D[] PROGMEM = "D";
 const char char_T[] PROGMEM = "T";
+const char char_K[] PROGMEM = "K";
 const char char_NULL[] PROGMEM = "";
 
 

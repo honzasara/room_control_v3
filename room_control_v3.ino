@@ -20,7 +20,7 @@
       - co2
       - humadity
       - vitr
-    15. umet nastavit promeou seznam_server pro ucel testovani konektivity, port
+    15. umet nastavit promenou seznam_server pro ucel testovani konektivity, port
     16. po upgrade casu udelat hned aktualizci obrazovky
     17. validace zadanych hodnot pro cas a datum, nedovolit ulozit!
     18. funkce pro validaci IP adres
@@ -37,7 +37,13 @@
     26. intenzita okolniho osvetleni na procenta - hotovo
        - automticka regulace jasu, pomoci tabulky
     27. funkce automaticke vypnuti displaye. - problem se config bit brigthness_display_mode
+        - automaticke vypnuti displaye vyresen prvni klik na zhasnuty display, pouze rozsviti, neni zadny event menu
 
+    28. posilat metriky jako json - nepouzitelne, pomale, narocne na misto
+    29. vyresit globalni problem tds start_at nesmi byt zaporne - opraveno, potreba sledovat
+    30. dialog s vysledkem scanovani NRF okoli
+    31. obcas se ukaze zaporna teplota, nejspise problem ds18s20
+    32. nefunguje odhlaseni mqtt rtds - OPRAVENO
 
 */
 
@@ -63,6 +69,7 @@
 #include "ThermostatMenu.h"
 #include "pidDialogMenu.h"
 #include "ThermostatTimeMenu.h"
+#include "VirtualOutputMenu.h"
 
 SoftSPIB swSPI(STORAGE_MOSI, STORAGE_MISO, STORAGE_CLK);
 
@@ -100,6 +107,7 @@ LCDWIKI_TOUCH my_touch(28, 27, 29, 30, 7, 31); //tcs,tclk,tdout,tdin,tirq, sdcd
 
 StaticJsonDocument<256> doc;
 
+
 SRAM_23LC SRAM(&swSPI, STORAGE_RAM_CS, SRAM_23LC1024);
 EEPROM_CAT25 SROM(&swSPI, STORAGE_EEPROM_CS , CAT25M02);
 
@@ -128,6 +136,10 @@ long milis_1ms = 0;
 uint8_t display_touch_click = 0;
 uint8_t click_on_display = 0;
 uint8_t click_on_display_last = 0;
+uint8_t click_on_display_hold = 0;
+uint8_t click_delay_display = 0;
+uint8_t click_delay_enable_display = 0;
+
 long click_time = 0;
 
 
@@ -153,6 +165,8 @@ uint8_t display_auto_shutdown_now = 0;
 
 uint8_t use_rtds = 0;
 uint8_t use_tds = 0;
+uint8_t use_nrf_temp = 0;
+
 
 uint8_t menu_slider_data_current[6];
 uint8_t menu_slider_data_max;
@@ -584,12 +598,12 @@ const MenuAll Menu_All PROGMEM = {
   .len_menu1 = 7,
   .len_menu2 = 6,
   .len_menu3 = 10,
-  .len_menu4 = 7,
+  .len_menu4 = 9,
 
   .ListMenu1 = {HlavniMenu, MenuNastaveniSite, OneWireMenu, MenuNastaveniCas, SelectMenuDefaultTemp, MenuNastaveniMQTT, Menu_Show_All_temp},
   .ListMenu2 = {DialogYESNO, DialogSetVariable, DialogKyeboardAlfa, DialogKyeboardNumber , DialogOK, MenuThermostat},
   .ListMenu3 = {TDSMenu, RTDS_Menu_Detail, List_RTDS_Menu, MenuThermostat_Setting, DialogSelectRing, MenuThermostatRingSetup, DialogSelectInputSensorsForTerm, DialogSelectTermMode, DialogSelectPIDSensor, New_ThermostatTimeMenu},
-  .ListMenu4 = {SystemSettingsMenu, New_NastaveniMenu, PeriferieSettingsMenu, New_DisplaySettingMenu, New_DisplaySetting_Brigthness, AboutDeviceMenu, New_DisplaySetting_Auto_Shutdown},
+  .ListMenu4 = {SystemSettingsMenu, New_NastaveniMenu, PeriferieSettingsMenu, New_DisplaySettingMenu, New_DisplaySetting_Brigthness, AboutDeviceMenu, New_DisplaySetting_Auto_Shutdown, SetNRFMenu, VirtualOutputSettingsMenu},
 };
 
 
@@ -1990,8 +2004,10 @@ uint8_t remote_tds_inc_last_update(uint8_t idx)
   {
     last = SRAM.readByte(ram_remote_tds_store_last_update + (ram_remote_tds_store_size * idx));
     if (last < 250)
+    {
       last++;
-    SRAM.writeByte(ram_remote_tds_store_last_update + (ram_remote_tds_store_size * idx), last);
+      SRAM.writeByte(ram_remote_tds_store_last_update + (ram_remote_tds_store_size * idx), last);
+    }
   }
 }
 
@@ -2041,33 +2057,36 @@ void new_parse_at(char *input, char *out1, char *out2, char delim)
 
           NRF REMOTE DEVICE
 
-          #define ram_nrf_device_start 150
-          #define ram_nrf_name_length 10
-  #define ram_nrf_devices 20
-  #define ram_nrf_device_store_size 13
-  #define ram_nrf_device_index 0
-  #define ram_nrf_device_used 1
-  #define ram_nrf_last_update 2
-  #define ram_nrf_device_name 3
-
-  #define ram_nrf_device_info_start 410
-  #define ram_nrf_device_len 4
-  #define ram_nrf_device_info_uptime 0
-
 */
 
-
+/*
+   inicializace vychozich promenych v RAM
+*/
 void nrf_init_nei_store(void)
 {
   for (uint8_t idx = 0; idx < ram_nrf_devices; idx++)
   {
-    nrf_set_nei_name(idx, "FREE");
-    nrf_set_nei_last_update(idx, 255);
-    nrf_set_nei_device_index(idx, 255);
-    nrf_set_nei_device_used(idx, 0);
+    nrf_set_default_device(idx);
   }
 }
 
+uint8_t nrf_set_default_device(uint8_t idx)
+{
+  uint8_t ret = 0;
+  if (idx < ram_nrf_devices)
+  {
+    nrf_set_nei_name(idx, "FREE");
+    nrf_set_nei_last_update(idx, 250);
+    nrf_set_nei_device_index(idx, 255);
+    nrf_set_nei_device_used(idx, 0);
+    ret = 1;
+  }
+  return ret;
+}
+
+/*
+   zobrazeni ulozenych NRF pripojenych zarizeni
+*/
 uint8_t nrf_list_nei_store(uint8_t idx, char *name, uint8_t *device_index, uint8_t *last_seen)
 {
   uint8_t ret = 0;
@@ -2112,22 +2131,12 @@ uint8_t nrf_add_nei_store(uint8_t id, char *name)
 
 void nrf_set_nei_name(uint8_t idx, char *name)
 {
-  for (uint8_t i = 0; i < ram_nrf_name_length; i++)
-  {
-    SRAM.writeByte(ram_nrf_device_start + (idx * ram_nrf_device_store_size) + ram_nrf_device_name + i, name[i]);
-    if (name[i] == 0) break;
-  }
+  sram_set_name(ram_nrf_device_start + (idx * ram_nrf_device_store_size) + ram_nrf_device_name, name, ram_nrf_name_length);
 }
 
 void nrf_get_nei_name(uint8_t idx, char *name)
 {
-  char c;
-  for (uint8_t i = 0; i < ram_nrf_name_length; i++)
-  {
-    c = SRAM.readByte(ram_nrf_device_start + (idx * ram_nrf_device_store_size) + ram_nrf_device_name + i);
-    name[i] = c;
-    if (c == 0) break;
-  }
+  sram_get_name(ram_nrf_device_start + (idx * ram_nrf_device_store_size) + ram_nrf_device_name, name, ram_nrf_name_length);
 }
 
 void nrf_set_nei_last_update(uint8_t idx, uint8_t last_seen)
@@ -2293,19 +2302,221 @@ uint16_t nrf_get_nei_store_service_info_renew(uint8_t idx)
 }
 
 
-uint16_t SRAMRead16b(uint32_t addr)
+
+
+
+
+/*
+   inicializace pametoveho mista pro vzdalene NRF cidla
+*/
+void nrf_init_meas_store(void)
 {
-  uint16_t value;
-  value = SRAM.readByte(addr) << 8;
-  value = value + SRAM.readByte(addr + 1);
+  for (uint8_t idx = 0; idx < ram_nrf_meas_store_count; idx++)
+  {
+    nrf_set_default_value(idx);
+  }
+}
+
+uint8_t nrf_set_default_value(uint8_t idx)
+{
+  uint8_t ret = 0;
+  if (idx < ram_nrf_meas_store_count)
+  {
+    nrf_set_meas_store_name(idx, "SENSOR");
+    nrf_set_meas_store_associate(idx, 255);
+    nrf_set_meas_store_used(idx, 0);
+    nrf_set_meas_store_last_update(idx, 250);
+    ret = 1;
+  }
+  return ret;
+}
+
+uint8_t nrf_delete_meas_store_by_device_id(uint8_t device_id)
+{
+  uint8_t cnt = 0;
+  for (uint8_t idx = 0; idx < ram_nrf_meas_store_count; idx++)
+  {
+    if (nrf_get_meas_store_associate(idx) == device_id)
+    {
+      nrf_set_default_value(idx);
+      cnt++;
+    }
+  }
+  return cnt;
+}
+
+uint8_t nrf_add_update_meas_store(uint8_t device_id, uint8_t type, char *name, float value)
+{
+  uint8_t ret = 0;
+  uint8_t know = 0;
+  char tmp_name[10];
+  uint8_t found_idx;
+  uint8_t first_free_idx = 0;
+
+  for (uint8_t idx = 0; idx < ram_nrf_meas_store_count; idx++)
+  {
+    if (nrf_get_meas_store_used(idx) == 1)
+      if (nrf_get_meas_store_associate(idx) == device_id)
+        if (nrf_get_meas_store_type(idx) == type)
+        {
+          nrf_get_meas_store_name(idx, tmp_name);
+          //printf("%s == %s\n", name, tmp_name);
+          if (strcmp(name, tmp_name) == 0)
+          {
+            //printf("znam %d %s\n", idx, tmp_name);
+            know = 1;
+            found_idx = idx;
+            ret = 1;
+            break;
+          }
+        }
+  }
+
+  if (know == 1)
+  {
+    nrf_set_meas_store_last_update(found_idx, 0);
+    nrf_set_meas_store_value(found_idx, value);
+  }
+
+  if (know == 0)
+  {
+    for (uint8_t first_free_idx = 0; first_free_idx < ram_nrf_meas_store_count; first_free_idx++)
+      if (nrf_get_meas_store_used(first_free_idx) == 0)
+      {
+        //printf("novy %d %s %d %d\n",first_free_idx, name, device_id,type );
+        nrf_set_meas_store_associate(first_free_idx, device_id);
+        nrf_set_meas_store_used(first_free_idx, 1);
+        nrf_set_meas_store_name(first_free_idx, name);
+        nrf_set_meas_store_last_update(first_free_idx, 0);
+        nrf_set_meas_store_type(first_free_idx, type);
+        nrf_set_meas_store_value(first_free_idx, value);
+        ret = 1;
+        break;
+      }
+  }
+  return ret;
+}
+
+uint8_t nrf_list_meas_store(uint8_t idx, uint8_t *device_id, uint8_t *type, uint8_t *last_seen, float *value, char *name)
+{
+  uint8_t ret = 0;
+  if (nrf_get_meas_store_used(idx) == 1 )
+  {
+    *device_id = nrf_get_meas_store_associate(idx);
+    *type = nrf_get_meas_store_type(idx);
+    *value = nrf_get_meas_store_value(idx);
+    *last_seen = nrf_get_meas_store_last_update(idx);
+    nrf_get_meas_store_name(idx, name);
+    ret = 1;
+  }
+  return ret;
+}
+
+
+/*
+   nastav/ziskej nazev NRF cidla
+*/
+void nrf_set_meas_store_name(uint8_t idx, char *name)
+{
+  sram_set_name(ram_nrf_meas_store_start + (idx * ram_nrf_meas_store_size) + ram_nrf_meas_store_name, name, ram_nrf_meas_name_length);
+}
+void nrf_get_meas_store_name(uint8_t idx, char *name)
+{
+  sram_get_name(ram_nrf_meas_store_start + (idx * ram_nrf_meas_store_size) + ram_nrf_meas_store_name, name, ram_nrf_meas_name_length);
+}
+/*
+   zde si ulozime/ziskame informaci, ke kteremu vzdalenemu NRF dame cidlo patri
+*/
+void nrf_set_meas_store_associate(uint8_t idx, uint8_t device_id)
+{
+  SRAM.writeByte(ram_nrf_meas_store_start + (idx * ram_nrf_meas_store_size) + ram_nrf_meas_store_associate_device, device_id);
+}
+
+uint8_t nrf_get_meas_store_associate(uint8_t idx)
+{
+  return SRAM.readByte(ram_nrf_meas_store_start + (idx * ram_nrf_meas_store_size) + ram_nrf_meas_store_associate_device);
+}
+/*
+   zde si ulozime/ziskame informaci, ze dany pametovy prostor je vyhrazen pro cidlo
+*/
+void nrf_set_meas_store_used(uint8_t idx, uint8_t used)
+{
+  SRAM.writeByte(ram_nrf_meas_store_start + (idx * ram_nrf_meas_store_size) + ram_nrf_meas_store_used, used);
+}
+uint8_t nrf_get_meas_store_used(uint8_t idx)
+{
+  return SRAM.readByte(ram_nrf_meas_store_start + (idx * ram_nrf_meas_store_size) + ram_nrf_meas_store_used);
+}
+/*
+   informace o posledni aktualizaci hodnoty
+*/
+void nrf_set_meas_store_last_update(uint8_t idx, uint8_t last_seen)
+{
+  SRAM.writeByte(ram_nrf_meas_store_start + (idx * ram_nrf_meas_store_size) + ram_nrf_meas_store_last_update, last_seen);
+}
+uint8_t nrf_get_meas_store_last_update(uint8_t idx)
+{
+  return SRAM.readByte(ram_nrf_meas_store_start + (idx * ram_nrf_meas_store_size) + ram_nrf_meas_store_last_update);
+}
+
+void nrf_inc_meas_store_last_update(void)
+{
+  uint8_t last;
+  for (uint8_t idx = 0; idx < ram_nrf_meas_store_count; idx++)
+  {
+    last = nrf_get_meas_store_last_update(idx);
+    if (last < 250)
+    {
+      last++;
+      nrf_set_meas_store_last_update(idx, last);
+    }
+  }
+}
+
+/*
+   informaco o typu cidla teplota/vlhkost/tlak/byte/
+*/
+void nrf_set_meas_store_type(uint8_t idx, uint8_t last_seen)
+{
+  SRAM.writeByte(ram_nrf_meas_store_start + (idx * ram_nrf_meas_store_size) + ram_nrf_meas_store_value_type, last_seen);
+}
+uint8_t nrf_get_meas_store_type(uint8_t idx)
+{
+  return SRAM.readByte(ram_nrf_meas_store_start + (idx * ram_nrf_meas_store_size) + ram_nrf_meas_store_value_type);
+}
+
+/*
+   ulozeni/ziskani hodnoty z pameti
+*/
+void nrf_set_meas_store_value(uint8_t idx, float value)
+{
+  uint8_t tmp[4];
+  getInt(tmp, value);
+  for (uint8_t i = 0; i < 4; i++)
+    SRAM.writeByte(ram_nrf_meas_store_start + (idx * ram_nrf_meas_store_size) + ram_nrf_meas_store_value + i, tmp[i]);
+}
+float nrf_get_meas_store_value(uint8_t idx)
+{
+  float value;
+  uint8_t tmp[4];
+  for (uint8_t i = 0; i < 4; i++)
+    tmp[i] = SRAM.readByte(ram_nrf_meas_store_start + (idx * ram_nrf_meas_store_size) + ram_nrf_meas_store_value + i);
+  getFloat(tmp, &value);
   return value;
 }
 
-void SRAMWrite16b(uint32_t addr, uint16_t value)
+
+
+uint8_t count_use_nrf_temp(void)
 {
-  SRAM.writeByte(addr , value >> 8);
-  SRAM.writeByte(addr + 1, value);
+  uint8_t count = 0;
+  for (uint8_t idx = 0; idx < ram_nrf_meas_store_count; idx++)
+    if (nrf_get_meas_store_used(idx) == 1 && nrf_get_meas_store_type(idx) == NRF_MEAS_TYPE_TEMP)
+      count++;
+  return count;
 }
+
+
 /*************************************************************************************************************************/
 /// funkce pro nastaveni vychoziho ringu
 /*
@@ -2356,13 +2567,215 @@ void tds_extended_memory_store(void)
       if (tds.used == 1) if (status_tds18s20[id].online == True)
         {
           tt = status_tds18s20[id].temp;
-
           //pos = SRAM.write();
         }
 }
 
+#define ram_output_virtual_count 50
+#define ram_output_virtual_start_pos  3000
+#define ram_output_virtual_size  17
+#define ram_output_virtual_name_len 10
+#define ram_output_virtual_used 0
+#define ram_output_virtual_id 1
+#define ram_output_virtual_type 2
+#define ram_output_virtual_enable_mode 3
+#define ram_output_virtual_state 4
+#define ram_output_virtual_last_update 5
+#define ram_output_virtual_name 6
+
+
+void output_virtual_init_store(void)
+{
+  for (uint8_t idx = 0; idx < ram_output_virtual_count; idx++)
+  {
+    output_virtual_set_used(idx, 0);
+    output_virtual_set_id(idx, 255);
+    output_virtual_set_type(idx, OUTPUT_REAL_MODE_NONE);
+    output_virtaul_update_name(idx, "FREE");
+    output_virtual_set_state(idx, POWER_OUTPUT_ERR);
+  }
+}
+
+uint8_t output_virtual_crate_update_store_id(uint8_t virtual_id)
+{
+  uint8_t ret_id = 255;
+  uint8_t found = 0;
+  for (uint8_t idx = 0; idx < ram_output_virtual_count; idx++)
+  {
+    if (output_virtual_get_used(idx) == 1)
+      if (output_virtual_get_id(idx) == virtual_id)
+      {
+        ret_id = idx;
+        found = 1;
+        break;
+      }
+  }
+
+  if (found == 0)
+  {
+    for (uint8_t idx = 0; idx < ram_output_virtual_count; idx++)
+    {
+      if (output_virtual_get_used(idx) == 0)
+      {
+        output_virtual_set_used(idx, 1);
+        output_virtual_set_id(idx, virtual_id);
+        output_virtual_set_last_update(idx, 0);
+        ret_id = idx;
+        break;
+      }
+    }
+  }
+  return ret_id;
+}
+
+uint8_t output_virtual_list_store(uint8_t idx, char *name, uint8_t *state,  uint8_t *id, uint8_t *type, uint8_t *last_update)
+{
+  uint8_t ret = 0;
+  if (output_virtual_get_used(idx) == 1)
+  {
+    *state = output_virtual_get_state(idx);
+    *type = output_virtual_get_type(idx);
+    *id = output_virtual_get_id(idx);
+    *last_update = output_virtual_get_last_update(idx);
+    output_virtaul_get_name(idx, name);
+    ret = 1;
+  }
+  return ret;
+}
+
+
+
+
+void output_virtaul_update_name(uint8_t idx, char *name)
+{
+  sram_set_name(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_name, name, ram_output_virtual_name_len);
+}
+
+void output_virtaul_get_name(uint8_t idx, char *name)
+{
+  sram_get_name(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_name, name, ram_output_virtual_name_len);
+}
+
+uint8_t output_virtual_get_used(uint8_t idx)
+{
+  return SRAM.readByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_used);
+}
+void output_virtual_set_used(uint8_t idx, uint8_t used)
+{
+  SRAM.writeByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_used, used);
+}
+
+uint8_t output_virtual_get_id(uint8_t idx)
+{
+  return SRAM.readByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_id);
+}
+void output_virtual_set_id(uint8_t idx, uint8_t id)
+{
+  SRAM.writeByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_id, id);
+}
+
+uint8_t output_virtual_get_type(uint8_t idx)
+{
+  return SRAM.readByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_type);
+}
+void output_virtual_set_type(uint8_t idx, uint8_t type)
+{
+  SRAM.writeByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_type, type);
+}
+
+uint8_t output_virtual_get_state(uint8_t idx)
+{
+  return SRAM.readByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_state);
+}
+void output_virtual_set_state(uint8_t idx, uint8_t state)
+{
+  SRAM.writeByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_state, state);
+}
+
+uint8_t output_virtual_get_last_update(uint8_t idx)
+{
+  return SRAM.readByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_last_update);
+}
+void output_virtual_set_last_update(uint8_t idx, uint8_t last_update)
+{
+  SRAM.writeByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_last_update, last_update);
+}
+
+void output_virtual_inc_last_update(void)
+{
+  uint8_t last = 0;
+  for (uint8_t idx = 0; idx < ram_output_virtual_count; idx++)
+    if (output_virtual_get_used(idx) == 1)
+    {
+      last = output_virtual_get_last_update(idx);
+      if (last < 250)
+      {
+        last++;
+        output_virtual_set_last_update(idx, last);
+      }
+    }
+}
+
+
+
+/*
+   genericke funkce pro ulozeni nazvu a int cisla
+*/
+void sram_set_name(uint32_t addr, char *name, uint8_t len)
+{
+  for (uint8_t i = 0; i < len - 1; i++)
+  {
+    SRAM.writeByte(addr + i, name[i]);
+    SRAM.writeByte(addr + i + 1, 0);
+    if (name[i] == 0)
+      break;
+  }
+}
+void sram_get_name(uint32_t addr, char *name, uint8_t len)
+{
+  char c;
+  for (uint8_t i = 0; i < len - 1; i++)
+  {
+    c = SRAM.readByte(addr + i);
+    name[i] = c;
+    name[i + 1] = 0;
+    if (c == 0)
+      break;
+  }
+}
+
+uint16_t SRAMRead16b(uint32_t addr)
+{
+  uint16_t value;
+  value = SRAM.readByte(addr) << 8;
+  value = value + SRAM.readByte(addr + 1);
+  return value;
+}
+
+void SRAMWrite16b(uint32_t addr, uint16_t value)
+{
+  SRAM.writeByte(addr , value >> 8);
+  SRAM.writeByte(addr + 1, value);
+}
+
+
+
+
 /*************************************************************************************************************************/
 ///SEKCE MQTT ///
+
+void mqtt_callback_prepare_topic_array(char *out_str, char *in_topic)
+{
+  uint8_t cnt = 0;
+  for (uint8_t f = strlen(out_str); f < strlen(in_topic); f++)
+  {
+    out_str[cnt] = in_topic[f];
+    out_str[cnt + 1] = 0;
+    cnt++;
+  }
+}
+
+
 /// mqtt_callback - zpracovani prichozich MQTT zprav
 /*
    topic - ukazatel na nazev topicu
@@ -2390,18 +2803,46 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   mqtt_receive_message++; /// inkrementuji promenou celkovy pocet prijatych zprav
   strncpy(my_payload, (char*) payload, length);
   ///
-  /// kamarad discovery
+
+  /// pridam mqqt kamarada typ termbig
   strcpy_P(str1, termbig_subscribe);
   if (strcmp(str1, topic) == 0)
   {
-    mqtt_process_message++; /// inkrementuji promenou celkovy pocet zpracovanych zprav
-    know_mqtt_create_or_update(my_payload, TYPE_TERMBIG);
+    if (strcmp(device.nazev, my_payload) != 0) /// sam sebe ignoruj
+    {
+      mqtt_process_message++; /// inkrementuji promenou celkovy pocet zpracovanych zprav
+      know_mqtt_create_or_update(my_payload, TYPE_TERMBIG);
+    }
   }
+  ///
+  //// pridam mqtt kamarada typ room controler
   strcpy_P(str1, thermctl_subscribe);
   if (strcmp(str1, topic) == 0)
   {
+    if (strcmp(device.nazev, my_payload) != 0) /// sam sebe ignoruj
+    {
+      mqtt_process_message++;
+      know_mqtt_create_or_update(my_payload, TYPE_THERMCTL);
+    }
+  }
+  ///
+  //// zpracovani udalosti virtualniho vystupu
+  strcpy_P(str1, termbig_virtual_output);
+  if (strncmp(str1, topic, strlen(str1)) == 0)
+  {
     mqtt_process_message++;
-    know_mqtt_create_or_update(my_payload, TYPE_THERMCTL);
+    mqtt_callback_prepare_topic_array(str1, topic);
+    cnt = 0;
+    pch = strtok (str1, "/");
+    while (pch != NULL)
+    {
+      if (cnt == 0) id = output_virtual_crate_update_store_id(atoi(pch));
+      if ((cnt == 1) && (strcmp(pch, "name") == 0)) output_virtaul_update_name(id, my_payload);
+      if ((cnt == 1) && (strcmp(pch, "type") == 0)) output_virtual_set_type(id, atoi(my_payload));
+      if ((cnt == 1) && (strcmp(pch, "state") == 0)) output_virtual_set_state(id, atoi(my_payload));
+      pch = strtok (NULL, "/");
+      cnt++;
+    }
   }
   ///
   /// nastavovani casu
@@ -2457,13 +2898,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   if (strncmp(str1, topic, strlen(str1)) == 0)
   {
     mqtt_process_message++;
-    cnt = 0;
-    for (uint8_t f = strlen(str1); f < strlen(topic); f++)
-    {
-      str1[cnt] = topic[f];
-      str1[cnt + 1] = 0;
-      cnt++;
-    }
+    mqtt_callback_prepare_topic_array(str1, topic);
     cnt = 0;
     pch = strtok (str1, "/");
     while (pch != NULL)
@@ -2524,13 +2959,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   if (strncmp(str1, topic, strlen(str1)) == 0)
   {
     mqtt_process_message++;
-    cnt = 0;
-    for (uint8_t f = strlen(str1); f < strlen(topic); f++)
-    {
-      str1[cnt] = topic[f];
-      str1[cnt + 1] = 0;
-      cnt++;
-    }
+    mqtt_callback_prepare_topic_array(str1, topic);
     cnt = 0;
     pch = strtok (str1, "/");
     while (pch != NULL)
@@ -2581,13 +3010,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   if (strncmp(str1, topic, strlen(str1)) == 0)
   {
     mqtt_process_message++;
-    cnt = 0;
-    for (uint8_t f = strlen(str1); f < strlen(topic); f++)
-    {
-      str1[cnt] = topic[f];
-      str1[cnt + 1] = 0;
-      cnt++;
-    }
+    mqtt_callback_prepare_topic_array(str1, topic);
     cnt = 0;
     pch = strtok (str1, "/");
     while (pch != NULL)
@@ -2636,13 +3059,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   if (strncmp(str1, topic, strlen(str1)) == 0)
   {
     mqtt_process_message++;
-    cnt = 0;
-    for (uint8_t f = strlen(str1); f < strlen(topic); f++)
-    {
-      str1[cnt] = topic[f];
-      str1[cnt + 1] = 0;
-      cnt++;
-    }
+    mqtt_callback_prepare_topic_array(str1, topic);
     cnt = 0;
     pch = strtok (str1, "/");
     while (pch != NULL)
@@ -2701,13 +3118,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   if (strncmp(str1, topic, strlen(str1)) == 0)
   {
     mqtt_process_message++;
-    cnt = 0;
-    for (uint8_t f = strlen(str1); f < strlen(topic); f++)
-    {
-      str1[cnt] = topic[f];
-      str1[cnt + 1] = 0;
-      cnt++;
-    }
+    mqtt_callback_prepare_topic_array(str1, topic);
     cnt = 0;
     pch = strtok (str1, "/");
     while (pch != NULL)
@@ -2729,6 +3140,29 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
       cnt++;
     }
   }
+
+  /// vymaze ulozena data z nrf vzdaleneho zarizeni
+  strcpy_P(str1, thermctl_header_in);
+  strcat(str1, device.nazev);
+  strcat(str1, "/nrf/measurement/clear");
+  if (strncmp(str1, topic, strlen(str1)) == 0)
+  {
+    mqtt_process_message++;
+    nrf_set_default_value(atoi(my_payload));
+  }
+
+  strcpy_P(str1, thermctl_header_in);
+  strcat(str1, device.nazev);
+  strcat(str1, "/nrf/device/clear");
+  if (strncmp(str1, topic, strlen(str1)) == 0)
+  {
+    mqtt_process_message++;
+    id_interval = atoi(my_payload);
+    id = nrf_get_nei_device_index(id_interval);
+    nrf_set_default_device(id_interval);
+    nrf_delete_meas_store_by_device_id(id);
+  }
+
   ///
   //// thermctl-in/XXXXX/ring/default, nastavi vychozi ring na displaji
   strcpy_P(str1, thermctl_header_in);
@@ -2749,13 +3183,8 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   strcat(str1, "/ring/get/");
   if (strncmp(str1, topic, strlen(str1)) == 0)
   {
-    cnt = 0;
-    for (uint8_t f = strlen(str1); f < strlen(topic); f++)
-    {
-      str1[cnt] = topic[f];
-      str1[cnt + 1] = 0;
-      cnt++;
-    }
+    mqtt_process_message++;
+    mqtt_callback_prepare_topic_array(str1, topic);
     cnt = 0;
     pch = strtok (str1, "/");
     while (pch != NULL)
@@ -2794,13 +3223,8 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   strcat(str1, "/ring/set/");
   if (strncmp(str1, topic, strlen(str1)) == 0)
   {
-    cnt = 0;
-    for (uint8_t f = strlen(str1); f < strlen(topic); f++)
-    {
-      str1[cnt] = topic[f];
-      str1[cnt + 1] = 0;
-      cnt++;
-    }
+    mqtt_process_message++;
+    mqtt_callback_prepare_topic_array(str1, topic);
     cnt = 0;
     pch = strtok (str1, "/");
     while (pch != NULL)
@@ -2908,13 +3332,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   if (strncmp(str1, topic, strlen(str1)) == 0)
   {
     mqtt_process_message++;
-    cnt = 0;
-    for (uint8_t f = strlen(str1); f < strlen(topic); f++)
-    {
-      str1[cnt] = topic[f];
-      str1[cnt + 1] = 0;
-      cnt++;
-    }
+    mqtt_callback_prepare_topic_array(str1, topic);
     cnt = setting_network(str1, my_payload);
     if (cnt == 1)
     {
@@ -2934,14 +3352,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   if (strncmp(str1, topic, strlen(str1)) == 0)
   {
     mqtt_process_message++;
-    //strncpy(str2, payload, length);
-    cnt = 0;
-    for (uint8_t f = strlen(str1); f < strlen(topic); f++)
-    {
-      str1[cnt] = topic[f];
-      str1[cnt + 1] = 0;
-      cnt++;
-    }
+    mqtt_callback_prepare_topic_array(str1, topic);
     cnt = 0;
     pch = strtok (str1, "/");
     while (pch != NULL)
@@ -2960,13 +3371,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   if (strncmp(str1, topic, strlen(str1)) == 0)
   {
     mqtt_process_message++;
-    cnt = 0;
-    for (uint8_t f = strlen(str1); f < strlen(topic); f++)
-    {
-      str1[cnt] = topic[f];
-      str1[cnt + 1] = 0;
-      cnt++;
-    }
+    mqtt_callback_prepare_topic_array(str1, topic);
     cnt = 0;
     pch = strtok (str1, "/");
     while (pch != NULL)
@@ -3140,6 +3545,9 @@ byte mqtt_reconnect(void)
         /// zpetna vazba od vystupu
         strcpy_P(topic, termbig_header_out);
         mqtt_client.subscribe(topic);
+        strcpy_P(topic, termbig_virtual_output);
+        strcat(topic, "#");
+        mqtt_client.subscribe(topic);
       }
     }
   }
@@ -3220,13 +3628,17 @@ void send_device_status(void)
     strcpy(str_topic, "status/rtds/count");
     itoa(use_rtds, payload, 10);
     send_mqtt_general_payload(&mqtt_client, str_topic, payload);
+
+    strcpy(str_topic, "status/nrf/temp/count");
+    itoa(use_nrf_temp, payload, 10);
+    send_mqtt_general_payload(&mqtt_client, str_topic, payload);
     /*
       strcpy(str_topic, "status/light/count");
       itoa(use_light_curr, payload, 10);
       send_mqtt_general_payload(&mqtt_client, str_topic, payload);
     */
     itoa(time_get_offset(), payload, 10);
-    send_mqtt_general_payload(&mqtt_client, "time/ntp_offset", payload);
+    send_mqtt_general_payload(&mqtt_client, "status/time/ntp_offset", payload);
     ///
     dtostrf(prepocet_napeti(tritri, CONST_PREVOD_TRIV), 4, 2, payload);
     send_mqtt_general_payload(&mqtt_client, "status/voltage/33V", payload);
@@ -3339,7 +3751,7 @@ void send_mqtt_tds(void)
         send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "period", payload);
 
         tt = (uptime & 0xff) - status_tds18s20[id].period_now;
-        itoa(tt, payload, 10);
+        utoa(tt, payload, 10);
         send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "start_at", payload);
       }
 }
@@ -3418,12 +3830,12 @@ void mqtt_send_pid_variable(uint8_t idx)
 }
 ///
 ///
-/*
-  void send_know_device(void)
-  {
+
+void send_know_device(void)
+{
   char str_topic[64];
   char payload[64];
-  for (uint8_t idx = 0; idx < MAX_KNOW_MQTT; idx++)
+  for (uint8_t idx = 0; idx < MAX_KNOW_MQTT_INTERNAL_RAM; idx++)
   {
     if (know_mqtt[idx].type != TYPE_FREE)
     {
@@ -3435,8 +3847,8 @@ void mqtt_send_pid_variable(uint8_t idx)
       send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "know_mqtt_device", idx, "device", payload);
     }
   }
-  }
-*/
+}
+
 ///
 ///
 void send_mqtt_remote_tds_status(void)
@@ -3479,6 +3891,25 @@ void mqtt_publis_output(uint8_t idx, uint8_t state)
     mqtt_client.publish(str_topic, payload);
   }
 }
+
+void send_virtual_output(void)
+{
+  char str1[10];
+  uint8_t id, state, type, last_update;
+  for (uint8_t idx = 0; idx < ram_output_virtual_count; idx++)
+    if (output_virtual_list_store(idx, str1, &state, &id, &type, &last_update) == 1)
+    {
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "virtual-output", idx, "name", str1);
+      itoa(id, str1, 10);
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "virtual-output", idx, "id", str1);
+      itoa(type, str1, 10);
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "virtual-output", idx, "type", str1);
+      itoa(state, str1, 10);
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "virtual-output", idx, "state", str1);
+      itoa(last_update, str1, 10);
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "virtual-output", idx, "last_update", str1);
+    }
+}
 ///
 ///
 void mqtt_publis_output_pwm(uint8_t idx, uint8_t mode, uint8_t pwm)
@@ -3510,9 +3941,9 @@ void send_mesh_status(void)
 {
   char str_topic[64];
   char str_space[16];
-  char payload[64];
-  uint8_t tmp1, tmp2;
-
+  char payload[128];
+  uint8_t tmp1, tmp2, tmp3;
+  float value;
 
   strcpy_P(str_topic, text_mesh_id);
   itoa(mesh.getNodeID(), payload, 10);
@@ -3544,15 +3975,15 @@ void send_mesh_status(void)
   }
 
   strcpy_P(str_topic, text_rf_mesh_send_total);
-  itoa(nrf_message_send_total, payload, 10);
+  utoa(nrf_message_send_total, payload, 10);
   send_mqtt_general_payload(&mqtt_client, str_topic, payload);
 
   strcpy_P(str_topic, text_rf_mesh_receive_total);
-  itoa(nrf_message_receive_total, payload, 10);
+  utoa(nrf_message_receive_total, payload, 10);
   send_mqtt_general_payload(&mqtt_client, str_topic, payload);
 
   strcpy_P(str_topic, text_rf_mesh_process_total);
-  itoa(nrf_message_process_total, payload, 10);
+  utoa(nrf_message_process_total, payload, 10);
   send_mqtt_general_payload(&mqtt_client, str_topic, payload);
 
   strcpy_P(str_topic, text_mesh_nrf_store);
@@ -3560,7 +3991,7 @@ void send_mesh_status(void)
   {
     if (nrf_list_nei_store(idx, payload, &tmp1, &tmp2) == 1)
     {
-      strcpy_P(str_space, mesh_device_nrf_name_x);
+      strcpy_P(str_space, text_name);
       send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, str_space, payload);
       ///
       itoa(tmp1, payload, 10);
@@ -3574,20 +4005,47 @@ void send_mesh_status(void)
       strcpy_P(str_space, mesh_device_nrf_uptime_x);
       send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, str_space, payload);
 
-      itoa(nrf_get_nei_store_service_info_send(idx), payload, 10);
+      utoa(nrf_get_nei_store_service_info_send(idx), payload, 10);
       strcpy_P(str_space, mesh_device_nrf_send_x);
       send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, str_space, payload);
 
-      itoa(nrf_get_nei_store_service_info_recv(idx), payload, 10);
+      utoa(nrf_get_nei_store_service_info_recv(idx), payload, 10);
       strcpy_P(str_space, mesh_device_nrf_recv_x);
       send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, str_space, payload);
 
-      itoa(nrf_get_nei_store_service_info_err(idx), payload, 10);
+      utoa(nrf_get_nei_store_service_info_err(idx), payload, 10);
       strcpy_P(str_space, mesh_device_nrf_err_x);
       send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, str_space, payload);
 
-      itoa(nrf_get_nei_store_service_info_renew(idx), payload, 10);
+      utoa(nrf_get_nei_store_service_info_renew(idx), payload, 10);
       strcpy_P(str_space, mesh_device_nrf_renew_x);
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, str_space, payload);
+    }
+  }
+
+  ///uint8_t nrf_list_meas_store(uint8_t idx, uint8_t *device_id, uint8_t *type, uint8_t *last_seen, float *value, char *name)
+  strcpy_P(str_topic, text_mesh_nrf_meas_store);
+  for (uint8_t idx = 0; idx < ram_nrf_meas_store_count; idx++)
+  {
+    if (nrf_list_meas_store(idx, &tmp1, &tmp2, &tmp3, &value, payload) == 1)
+    {
+      strcpy_P(str_space, text_name);
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, str_space, payload);
+      ///
+      strcpy_P(str_space, text_device);
+      itoa(tmp1, payload, 10);
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, str_space, payload);
+      ///
+      strcpy_P(str_space, text_type);
+      itoa(tmp2, payload, 10);
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, str_space, payload);
+      ///
+      strcpy_P(str_space, mesh_device_nrf_last_seen_x);
+      itoa(tmp3, payload, 10);
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, str_space, payload);
+      ///
+      strcpy_P(str_space, text_value);
+      dtostrf(value, 4, 2, payload);
       send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, str_space, payload);
     }
   }
@@ -3921,8 +4379,9 @@ void nrf_mesh_reinit(void)
 
 void nrf_callback(nrf_message_t *nrf_message)
 {
-  char str1[16];
-  char str2[16];
+  char str1[20];
+  char str2[20];
+  char str3[20];
   nrf_message_process_total++;
   nrf_message->nodeid;
   nrf_message->mode;
@@ -3966,6 +4425,32 @@ void nrf_callback(nrf_message_t *nrf_message)
   if (nrf_message->mode == 'D')
   {
     new_parse_at((char*)nrf_message->data, str1, str2, ':');
+    if (strcmp(str1, "TEP") == 0)
+    {
+
+      new_parse_at(str2, str1, str3, ':');
+      nrf_add_update_meas_store(nrf_message->nodeid, NRF_MEAS_TYPE_TEMP, str1, atof(str3));
+    }
+    if (strcmp(str1, "HUM") == 0)
+    {
+      new_parse_at(str2, str1, str3, ':');
+      nrf_add_update_meas_store(nrf_message->nodeid, NRF_MEAS_TYPE_HUMID, str1, atof(str3));
+    }
+    if (strcmp(str1, "TL") == 0)
+    {
+      new_parse_at(str2, str1, str3, ':');
+      nrf_add_update_meas_store(nrf_message->nodeid, NRF_MEAS_TYPE_PRESS, str1, atof(str3));
+    }
+    if (strcmp(str1, "IN") == 0)
+    {
+      new_parse_at(str2, str1, str3, ':');
+      nrf_add_update_meas_store(nrf_message->nodeid, NRF_MEAS_TYPE_BYTE, str1, atof(str3));
+    }
+    if (strcmp(str1, "VOLT") == 0)
+    {
+      new_parse_at(str2, str1, str3, ':');
+      nrf_add_update_meas_store(nrf_message->nodeid, NRF_MEAS_TYPE_VOLT, str1, atof(str3));
+    }
   }
 }
 
@@ -3990,6 +4475,7 @@ void setup()
   char s_current[8];
   struct_DDS18s20 tds;
   long milis;
+  uint8_t ok = 0;
 
   NTPClient timeClient(udpClient);
   DateTime time_now;
@@ -4116,7 +4602,7 @@ void setup()
         ///
         for (uint8_t idx = 0; idx < MAX_RTDS; idx++)
         {
-          strcpy(tmp1, "");
+          //strcpy(tmp1, "");
           remote_tds_clear(idx);
         }
         ///
@@ -4246,7 +4732,7 @@ void setup()
           status_tds18s20[idx].average_temp[cnt] = 20000;
       ///
       for (uint8_t idx = 0; idx < MAX_THERMOSTAT; idx++)
-        last_output_update[idx] = 0;
+        last_output_update[idx] = 255;
 
       for (uint8_t idx = 0; idx < MAX_RTDS; idx++)
       {
@@ -4254,6 +4740,7 @@ void setup()
         remote_tds_set_type(idx, RTDS_REMOTE_TYPE_FREE);
         remote_tds_set_last_update(idx, 255);
       }
+      output_virtual_init_store();
     }
     ///
     /// zobrazeni kalibracnich informaci touchscreenu
@@ -4387,10 +4874,20 @@ void setup()
       strcpy_P(str1, text_nrf_rozhrani);
       show_string(str1, 30, 50 + (init * 10), 1, GREEN, WHITE, 0 );
       nrf_init_nei_store();
+      nrf_init_meas_store();
       scan_rf_net_enable = 0;
       radio.begin();
+      ok = 1;
+      for (uint8_t iidx = 0; iidx < 3; iidx++)
+      {
+        radio.setPALevel(iidx);
+        if (radio.getPALevel() != iidx) ok = 0;
+      }
+      /// TODO vysledek ulozit do selftest
+      ///
       radio.setPALevel(nrf_load_power());
       nrf_mesh_reinit();
+
     }
     ///
     /// inicializace termostatu
@@ -4474,6 +4971,7 @@ void setup()
 void loop() {
   // put your main code here, to run repeatedly:
   char str1[16];
+  char str2[32];
 
   unsigned long load_now;
   long mil;
@@ -4519,12 +5017,10 @@ void loop() {
   {
     mesh.update();
     mesh.DHCP();
-
     // Check for incoming data from the sensors
     if (network.available()) {
       RF24NetworkHeader header;
       network.peek(header);
-
 
       switch (header.type) {
         case 'M':
@@ -4533,15 +5029,11 @@ void loop() {
             nrf_message_receive_total++;
             convert_data_to_nrf_message(&nrf_message, nrf_data);
             nrf_callback(&nrf_message);
-
-            //printf("%d %d %d\n", nrf_message.nodeid, nrf_message.mode, nrf_message.data[0]);
             break;
           }
         default: network.read(header, 0, 0); break;
       }
     }
-
-
   }
 
   if (scan_rf_net_enable == 1)
@@ -4567,7 +5059,7 @@ void loop() {
   if (scan_rf_net_enable == 2)
   {
     scan_rf_net_enable = 0;
-    radio.printDetails();
+    //radio.printDetails();
   }
 
 
@@ -4609,8 +5101,9 @@ void loop() {
       send_mqtt_remote_tds_status();
       //send_network_config(&mqtt_client);
       //send_light_controler();
-      //send_know_device();
+      send_know_device();
       send_mesh_status();
+      send_virtual_output();
     }
     ///
 
@@ -4646,6 +5139,14 @@ void loop() {
     tds_extended_memory_store();
     remote_tds_update_last_update();
     nrf_inc_nei_last_update();
+    nrf_inc_meas_store_last_update();
+
+    strcpy_P(str2, thermctl_subscribe);
+    device_get_name(str1);
+    send_mqtt_payload(&mqtt_client, str2, str1);
+
+    update_know_mqtt_device();
+    output_virtual_inc_last_update();
 
     /*
       for (int i = 0; i < mesh.addrListTop; i++)
@@ -4671,9 +5172,15 @@ void loop() {
     now = rtc.now();
     selftest();
     menu_redraw05s = 1;
+    if (click_delay_display < 250)
+      click_delay_display++;
+
+    if (click_delay_enable_display < 250)
+      click_delay_enable_display++;
 
     use_rtds = count_use_rtds();
     use_tds = count_use_tds();
+    use_nrf_temp = count_use_nrf_temp();
   }
 
 
@@ -4709,26 +5216,37 @@ void loop() {
 
   if (click_on_display == 1 && click_on_display_last == 0)
   {
-    click_time = millis();
+    click_delay_display = 0;
     display_auto_shutdown_now = 0;
     if (((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY)) != 0) && my_touch.TP_GetOnOff() == 0)
     {
       my_touch.TP_SetOnOff(LED_ON);
+      //printf("zapinam display\n");
+      click_delay_enable_display = 0;
     }
   }
 
-  if (click_on_display == 1 && click_on_display_last == 1)
+  if (click_on_display == 1 && click_on_display_last == 1 && click_on_display_hold == 0 && click_delay_display > 4)
   {
+    click_on_display_hold = 1;
+  }
 
+  if (click_on_display == 0 && click_on_display_last == 1 && click_on_display_hold == 1)
+  {
+    click_on_display_hold = 0;
+  }
+
+  if (click_on_display == 0 && click_on_display_last == 0)
+  {
   }
 
   click_on_display_last = click_on_display;
 
-
-  if (draw_menu(false, 0, click_x, click_y) == true)
-  {
-    draw_menu(true, 0, 0, 0);
-  }
+  if (click_delay_enable_display > 2)
+    if (draw_menu(false, 0, click_x, click_y) == true)
+    {
+      draw_menu(true, 0, 0, 0);
+    }
   /*
     {
     click_x = my_touch.x;
@@ -5309,8 +5827,9 @@ void get_function_rtds_text_button(uint8_t args1, uint8_t args2, uint8_t args3, 
    args1 --- atributy z nastaveni tlacitka
    args2 --- index polozky z menu
 */
-void click_rtds_deassociate_onewire(uint16_t args1, uint16_t args2, uint8_t args3)
+void click_rtds_deassociate(uint16_t args1, uint16_t args2, uint8_t args3)
 {
+  remote_tds_unsubscibe_topic(args2);
   remote_tds_clear(args2);
   MenuHistoryPrevMenu(0, 0, 0);
 }
@@ -6459,6 +6978,27 @@ uint8_t button_set_brightness_auto_shutdown_select_time_get_status_fnt(uint16_t 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+uint8_t preload_display_setting_nrf(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  display_function_set_variable(nrf_load_channel(), 1, 100, 1, 0, NUMBER_TYPE_INT,  H_TRUE, 0, &helper_display_set_nrf_channel);
+  display_function_set_variable(nrf_load_power(), 1, 3, 1, 0, NUMBER_TYPE_INT,  H_TRUE, 1, &helper_display_set_nrf_power);
+}
+
+
+
+void helper_display_set_nrf_channel(uint16_t args1, float args2, uint8_t args3)
+{
+  nrf_save_channel(display_function_get_variable_int(0));
+  mesh.setChannel(display_function_get_variable_int(0));
+}
+
+void helper_display_set_nrf_power(uint16_t args1, float args2, uint8_t args3)
+{
+  nrf_save_power((rf24_pa_dbm_e)display_function_get_variable_int(1));
+  radio.setPALevel(display_function_get_variable_int(1));
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*
 
