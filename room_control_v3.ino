@@ -49,7 +49,7 @@
 
 
 #include "room_control_v3.h"
-
+#include "store_define.h"
 
 #include "MainMenu.h"
 #include "SettingsMenu.h"
@@ -2570,29 +2570,172 @@ void tds_extended_memory_store(void)
           //pos = SRAM.write();
         }
 }
-
-#define ram_output_virtual_count 50
-#define ram_output_virtual_start_pos  3000
-#define ram_output_virtual_size  17
-#define ram_output_virtual_name_len 10
-#define ram_output_virtual_used 0
-#define ram_output_virtual_id 1
-#define ram_output_virtual_type 2
-#define ram_output_virtual_enable_mode 3
-#define ram_output_virtual_state 4
-#define ram_output_virtual_last_update 5
-#define ram_output_virtual_name 6
+/*
+ **********************************************************************************************************************8
+    SKUPINA FUNKCI pro obsluhu virtualnich vystupu
+*/
 
 
-void output_virtual_init_store(void)
+/*
+   inicializovani dat v eeprom, vola se pouze pri volbe set_default
+*/
+void output_virtual_persistent_store_init(void)
+{
+  for (uint8_t idx = 0; idx < eeprom_know_output_virtual_count; idx++)
+    output_virtual_persistent_store_clear(idx);
+}
+
+/*
+   nastaveni do vychozich hodnot
+*/
+void output_virtual_persistent_store_clear(uint8_t idx)
+{
+  output_virtual_persistent_store_set_name(idx, "FREE");
+  output_virtual_persistent_store_set_id(idx, POWER_OUTPUT_ERR);;
+  output_virtual_persistent_store_set_used(idx, 0);
+}
+
+
+
+
+/*
+   funkce vraci seznam aktivnich/registrovanych virtualnich vystupu
+   navratove hodnoty
+   0 ... v pametovem prostoru neni nic
+   1 ... v pametovem prostoru se nachazi informace o aktivni/registrovanem virtualnim vystupu
+
+   uklada se do EEPROM store
+*/
+uint8_t output_virtual_persistent_store_list(uint8_t idx, uint8_t *virtual_id, char *name)
+{
+  uint8_t ret = 0;
+  if (output_virtual_persistent_store_get_used(idx) == 1)
+  {
+    output_virtual_persistent_store_get_name(idx, name);
+    *virtual_id = output_virtual_persistent_store_get_id(idx);
+    ret = 1;
+  }
+  return ret;
+}
+
+/*
+   funkce pro associovani noveho virtual vystupu.
+   kdyz je uplne novy vystup, podle virtual_id, najde prvni neobsazene pametove misto, tak ulozi informaci, nazev, index virtual_id
+   kdyz je jiz registrovany, vrati pouze index, kde se informace o virtualnim vystupu nachazi
+
+   uklada se do EEPROM store
+*/
+uint8_t output_virtual_persistent_store_associate(uint8_t virtual_id, char *name)
+{
+  uint8_t ret_id = 255;
+  uint8_t found = 0;
+  char str1[10];
+  for (uint8_t idx = 0; idx < eeprom_know_output_virtual_count; idx++)
+  {
+    if (output_virtual_persistent_store_get_used(idx) == 1)
+      if (output_virtual_persistent_store_get_id(idx) == virtual_id)
+      {
+        found = 1;
+        ret_id = idx;
+        break;
+      }
+  }
+  if (found == 0)
+    for (uint8_t idx = 0; idx < eeprom_know_output_virtual_count; idx++)
+      if (output_virtual_persistent_store_get_used(idx) == 0)
+      {
+        output_virtual_persistent_store_set_id(idx, virtual_id);
+        output_virtual_persistent_store_set_name(idx, name);
+        output_virtual_persistent_store_set_used(idx, 1);
+        ret_id = idx;
+        break;
+      }
+  return ret_id;
+}
+
+/*
+   funkce, ktera zkopiruje informace o virtualnich vystupech z RAM store do EEPROM store
+   vystup
+   0 ... nepovedlo se
+   1 ... povedlo se
+*/
+uint8_t output_virtual_persistent_store_associate_from_ram_store(uint8_t ram_store_id)
+{
+  uint8_t virtual_id;
+  char name[10];
+  uint8_t ret = 0;
+  if (output_virtual_ram_store_get_used(ram_store_id) == 1)
+  {
+    output_virtaul_ram_store_get_name(ram_store_id, name);
+    virtual_id = output_virtual_ram_store_get_id(ram_store_id);
+    if (output_virtual_persistent_store_associate(virtual_id, name) != 255)
+      ret = 1;
+  }
+  return ret;
+}
+
+
+
+
+void output_virtual_persistent_store_set_name(uint8_t idx, char *name)
+{
+  char c;
+  for (uint8_t i = 0; i < eeprom_know_output_virtual_name_len - 1; i++)
+  {
+    c = name[i];
+    EEPROM.write(eeprom_know_output_virtual_start + (idx * eeprom_know_output_virtual_size) + eeprom_know_output_virtual_name + i , c);
+    if (c == 0) break;
+  }
+}
+void output_virtual_persistent_store_get_name(uint8_t idx, char *name)
+{
+  char c;
+  for (uint8_t i = 0; i < eeprom_know_output_virtual_name_len - 1; i++)
+  {
+    c = EEPROM.read(eeprom_know_output_virtual_start + (idx * eeprom_know_output_virtual_size) + eeprom_know_output_virtual_name + i);
+    name[i] = c;
+    name[i + 1] = 0;
+    if (c == 0) break;
+  }
+}
+
+
+void output_virtual_persistent_store_set_id(uint8_t idx, uint8_t virtual_id)
+{
+  EEPROM.write(eeprom_know_output_virtual_start + (idx * eeprom_know_output_virtual_size) + eeprom_know_output_virtual_id, virtual_id);
+}
+
+uint8_t output_virtual_persistent_store_get_id(uint8_t idx)
+{
+  return EEPROM.read(eeprom_know_output_virtual_start + (idx * eeprom_know_output_virtual_size) + eeprom_know_output_virtual_id);
+}
+
+void output_virtual_persistent_store_set_used(uint8_t idx, uint8_t used)
+{
+  EEPROM.write(eeprom_know_output_virtual_start + (idx * eeprom_know_output_virtual_size) + eeprom_know_output_virtual_used, used);
+}
+
+uint8_t output_virtual_persistent_store_get_used(uint8_t idx)
+{
+  return EEPROM.read(eeprom_know_output_virtual_start + (idx * eeprom_know_output_virtual_size) + eeprom_know_output_virtual_used);
+}
+
+/////////////////////////////////////
+
+
+
+
+
+////
+void output_virtual_ram_store_init(void)
 {
   for (uint8_t idx = 0; idx < ram_output_virtual_count; idx++)
   {
-    output_virtual_set_used(idx, 0);
-    output_virtual_set_id(idx, 255);
-    output_virtual_set_type(idx, OUTPUT_REAL_MODE_NONE);
-    output_virtaul_update_name(idx, "FREE");
-    output_virtual_set_state(idx, POWER_OUTPUT_ERR);
+    output_virtual_ram_store_set_used(idx, 0);
+    output_virtual_ram_store_set_id(idx, 255);
+    output_virtual_ram_store_set_type(idx, OUTPUT_REAL_MODE_NONE);
+    output_virtaul_ram_store_update_name(idx, "FREE");
+    output_virtual_ram_store_set_state(idx, POWER_OUTPUT_ERR);
   }
 }
 
@@ -2602,8 +2745,8 @@ uint8_t output_virtual_crate_update_store_id(uint8_t virtual_id)
   uint8_t found = 0;
   for (uint8_t idx = 0; idx < ram_output_virtual_count; idx++)
   {
-    if (output_virtual_get_used(idx) == 1)
-      if (output_virtual_get_id(idx) == virtual_id)
+    if (output_virtual_ram_store_get_used(idx) == 1)
+      if (output_virtual_ram_store_get_id(idx) == virtual_id)
       {
         ret_id = idx;
         found = 1;
@@ -2615,11 +2758,11 @@ uint8_t output_virtual_crate_update_store_id(uint8_t virtual_id)
   {
     for (uint8_t idx = 0; idx < ram_output_virtual_count; idx++)
     {
-      if (output_virtual_get_used(idx) == 0)
+      if (output_virtual_ram_store_get_used(idx) == 0)
       {
-        output_virtual_set_used(idx, 1);
-        output_virtual_set_id(idx, virtual_id);
-        output_virtual_set_last_update(idx, 0);
+        output_virtual_ram_store_set_used(idx, 1);
+        output_virtual_ram_store_set_id(idx, virtual_id);
+        output_virtual_ram_store_set_last_update(idx, 0);
         ret_id = idx;
         break;
       }
@@ -2628,16 +2771,16 @@ uint8_t output_virtual_crate_update_store_id(uint8_t virtual_id)
   return ret_id;
 }
 
-uint8_t output_virtual_list_store(uint8_t idx, char *name, uint8_t *state,  uint8_t *id, uint8_t *type, uint8_t *last_update)
+uint8_t output_virtual_ram_store_list_store(uint8_t idx, char *name, uint8_t *state,  uint8_t *id, uint8_t *type, uint8_t *last_update)
 {
   uint8_t ret = 0;
-  if (output_virtual_get_used(idx) == 1)
+  if (output_virtual_ram_store_get_used(idx) == 1)
   {
-    *state = output_virtual_get_state(idx);
-    *type = output_virtual_get_type(idx);
-    *id = output_virtual_get_id(idx);
-    *last_update = output_virtual_get_last_update(idx);
-    output_virtaul_get_name(idx, name);
+    *state = output_virtual_ram_store_get_state(idx);
+    *type = output_virtual_ram_store_get_type(idx);
+    *id = output_virtual_ram_store_get_id(idx);
+    *last_update = output_virtual_ram_store_get_last_update(idx);
+    output_virtaul_ram_store_get_name(idx, name);
     ret = 1;
   }
   return ret;
@@ -2646,57 +2789,57 @@ uint8_t output_virtual_list_store(uint8_t idx, char *name, uint8_t *state,  uint
 
 
 
-void output_virtaul_update_name(uint8_t idx, char *name)
+void output_virtaul_ram_store_update_name(uint8_t idx, char *name)
 {
   sram_set_name(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_name, name, ram_output_virtual_name_len);
 }
 
-void output_virtaul_get_name(uint8_t idx, char *name)
+void output_virtaul_ram_store_get_name(uint8_t idx, char *name)
 {
   sram_get_name(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_name, name, ram_output_virtual_name_len);
 }
 
-uint8_t output_virtual_get_used(uint8_t idx)
+uint8_t output_virtual_ram_store_get_used(uint8_t idx)
 {
   return SRAM.readByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_used);
 }
-void output_virtual_set_used(uint8_t idx, uint8_t used)
+void output_virtual_ram_store_set_used(uint8_t idx, uint8_t used)
 {
   SRAM.writeByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_used, used);
 }
 
-uint8_t output_virtual_get_id(uint8_t idx)
+uint8_t output_virtual_ram_store_get_id(uint8_t idx)
 {
   return SRAM.readByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_id);
 }
-void output_virtual_set_id(uint8_t idx, uint8_t id)
+void output_virtual_ram_store_set_id(uint8_t idx, uint8_t id)
 {
   SRAM.writeByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_id, id);
 }
 
-uint8_t output_virtual_get_type(uint8_t idx)
+uint8_t output_virtual_ram_store_get_type(uint8_t idx)
 {
   return SRAM.readByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_type);
 }
-void output_virtual_set_type(uint8_t idx, uint8_t type)
+void output_virtual_ram_store_set_type(uint8_t idx, uint8_t type)
 {
   SRAM.writeByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_type, type);
 }
 
-uint8_t output_virtual_get_state(uint8_t idx)
+uint8_t output_virtual_ram_store_get_state(uint8_t idx)
 {
   return SRAM.readByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_state);
 }
-void output_virtual_set_state(uint8_t idx, uint8_t state)
+void output_virtual_ram_store_set_state(uint8_t idx, uint8_t state)
 {
   SRAM.writeByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_state, state);
 }
 
-uint8_t output_virtual_get_last_update(uint8_t idx)
+uint8_t output_virtual_ram_store_get_last_update(uint8_t idx)
 {
   return SRAM.readByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_last_update);
 }
-void output_virtual_set_last_update(uint8_t idx, uint8_t last_update)
+void output_virtual_ram_store_set_last_update(uint8_t idx, uint8_t last_update)
 {
   SRAM.writeByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_last_update, last_update);
 }
@@ -2705,13 +2848,13 @@ void output_virtual_inc_last_update(void)
 {
   uint8_t last = 0;
   for (uint8_t idx = 0; idx < ram_output_virtual_count; idx++)
-    if (output_virtual_get_used(idx) == 1)
+    if (output_virtual_ram_store_get_used(idx) == 1)
     {
-      last = output_virtual_get_last_update(idx);
+      last = output_virtual_ram_store_get_last_update(idx);
       if (last < 250)
       {
         last++;
-        output_virtual_set_last_update(idx, last);
+        output_virtual_ram_store_set_last_update(idx, last);
       }
     }
 }
@@ -2723,12 +2866,12 @@ void output_virtual_inc_last_update(void)
 */
 void sram_set_name(uint32_t addr, char *name, uint8_t len)
 {
+  char c ;
   for (uint8_t i = 0; i < len - 1; i++)
   {
-    SRAM.writeByte(addr + i, name[i]);
-    SRAM.writeByte(addr + i + 1, 0);
-    if (name[i] == 0)
-      break;
+    c = name[i];
+    SRAM.writeByte(addr + i, c);
+    if (c == 0) break;
   }
 }
 void sram_get_name(uint32_t addr, char *name, uint8_t len)
@@ -2837,9 +2980,9 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
     while (pch != NULL)
     {
       if (cnt == 0) id = output_virtual_crate_update_store_id(atoi(pch));
-      if ((cnt == 1) && (strcmp(pch, "name") == 0)) output_virtaul_update_name(id, my_payload);
-      if ((cnt == 1) && (strcmp(pch, "type") == 0)) output_virtual_set_type(id, atoi(my_payload));
-      if ((cnt == 1) && (strcmp(pch, "state") == 0)) output_virtual_set_state(id, atoi(my_payload));
+      if ((cnt == 1) && (strcmp(pch, "name") == 0)) output_virtaul_ram_store_update_name(id, my_payload);
+      if ((cnt == 1) && (strcmp(pch, "type") == 0)) output_virtual_ram_store_set_type(id, atoi(my_payload));
+      if ((cnt == 1) && (strcmp(pch, "state") == 0)) output_virtual_ram_store_set_state(id, atoi(my_payload));
       pch = strtok (NULL, "/");
       cnt++;
     }
@@ -2876,6 +3019,55 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
     mqtt_process_message++;
     time_set_offset(atoi(my_payload));
   }
+  ///
+  /// nastavovani virtualnich vystupu - associovani znameho virtualniho vystupu z ram do eeprom
+  //// /thermctl-in/XXXX/virtual-output/associate
+  strcpy_P(str1, thermctl_header_in);
+  strcat(str1, device.nazev);
+  strcat(str1, "/virtual-output/associate");
+  if (strcmp(str1, topic) == 0)
+  {
+    mqtt_process_message++;
+    id = atoi(my_payload);
+    if (output_virtual_persistent_store_associate_from_ram_store(id) == 0)
+      log_error(&mqtt_client, "E");
+  }
+  /// nastavovani virtualnich vystupu - vymazani virtualniho vystupu z persistent store
+  //// /thermctl-in/XXXX/virtual-output/clear
+  strcpy_P(str1, thermctl_header_in);
+  strcat(str1, device.nazev);
+  strcat(str1, "/virtual-output/clear");
+  if (strcmp(str1, topic) == 0)
+  {
+    mqtt_process_message++;
+    id = atoi(my_payload);
+    output_virtual_persistent_store_clear(id);
+  }
+  ///
+  //// /thermctl-in/XXXX/virtual-output/set/IDX/name
+  //// /thermctl-in/XXXX/virtual-output/set/IDX/virtual_output_id
+  //// /thermctl-in/XXXX/virtual-output/set/IDX/used
+  strcpy_P(str1, thermctl_header_in);
+  strcat(str1, device.nazev);
+  strcat(str1, "/virtual-output/set");
+  if (strcmp(str1, topic) == 0)
+  {
+    mqtt_process_message++;
+    mqtt_callback_prepare_topic_array(str1, topic);
+    cnt = 0;
+    pch = strtok (str1, "/");
+    while (pch != NULL)
+    {
+      if (cnt == 0) id = atoi(pch);
+      if ((cnt == 1) && (strcmp(pch, "name") == 0)) output_virtual_persistent_store_set_used(id, atoi(my_payload));
+      if ((cnt == 1) && (strcmp(pch, "name") == 0)) output_virtual_persistent_store_set_name(id, my_payload);
+      if ((cnt == 1) && (strcmp(pch, "virtual_output_id") == 0)) output_virtual_persistent_store_set_id(id, atoi(my_payload));
+      pch = strtok (NULL, "/");
+      cnt++;
+    }
+  }
+
+  ///
   /// nastavovani vlastnosti TDS
   //// /thermctl-in/XXXX/tds/associate - asociace do tds si pridam mac 1wire - odpoved je pod jakem ID to mam ulozeno
   strcpy_P(str1, thermctl_header_in);
@@ -3897,7 +4089,7 @@ void send_virtual_output(void)
   char str1[10];
   uint8_t id, state, type, last_update;
   for (uint8_t idx = 0; idx < ram_output_virtual_count; idx++)
-    if (output_virtual_list_store(idx, str1, &state, &id, &type, &last_update) == 1)
+    if (output_virtual_ram_store_list_store(idx, str1, &state, &id, &type, &last_update) == 1)
     {
       send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "virtual-output", idx, "name", str1);
       itoa(id, str1, 10);
@@ -3908,6 +4100,14 @@ void send_virtual_output(void)
       send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "virtual-output", idx, "state", str1);
       itoa(last_update, str1, 10);
       send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "virtual-output", idx, "last_update", str1);
+    }
+
+  for (uint8_t idx = 0; idx < eeprom_know_output_virtual_count; idx++)
+    if (output_virtual_persistent_store_list(idx, &id, str1) == 1)
+    {
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "know-virtual-output", idx, "name", str1);
+      itoa(id, str1, 10);
+      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "know-virtual-output", idx, "id", str1);
     }
 }
 ///
@@ -4659,6 +4859,8 @@ void setup()
 
         nrf_save_channel(97);
         nrf_save_power(RF24_PA_LOW);
+
+        output_virtual_persistent_store_init();
       }
       else
       {
@@ -4740,7 +4942,7 @@ void setup()
         remote_tds_set_type(idx, RTDS_REMOTE_TYPE_FREE);
         remote_tds_set_last_update(idx, 255);
       }
-      output_virtual_init_store();
+      output_virtual_ram_store_init();
     }
     ///
     /// zobrazeni kalibracnich informaci touchscreenu
@@ -5998,7 +6200,7 @@ void click_rtds_setting_sensor(uint16_t args1, uint16_t args2, uint8_t loop_idx)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// funkce ktera vraci hodnoty pro zobrazeni, vrazi nazev, teplotu, navratova hodnota, zda jsou cisla aktualne platna
-uint8_t get_global_temp(uint8_t device, char*name, float *temp)
+uint8_t get_global_temp(uint8_t device, char*name, float * temp)
 {
   struct_DDS18s20 tds;
   uint8_t cri = 0;

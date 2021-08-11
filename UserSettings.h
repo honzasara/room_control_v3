@@ -333,20 +333,7 @@ const char char_K[] PROGMEM = "K";
 const char char_NULL[] PROGMEM = "";
 
 
-const char global_time_set[] PROGMEM = "global/time/set";
-const char global_time_ntp[] PROGMEM = "global/time/ntp";
-const char global_time_offset[] PROGMEM = "global/time/ntp_offset";
-const char thermctl_header_in[] PROGMEM  = "/thermctl-in/";
-const char thermctl_header_out[] PROGMEM  = "/thermctl-out/";
 
-const char termbig_header_in[] PROGMEM  = "/termbig-in/";
-const char termbig_header_out[] PROGMEM  = "/termbig-out/";
-
-const char lightctl_header_in[] PROGMEM  = "/lightctl-in/";
-const char lightctl_header_out[] PROGMEM  = "/lightctl-out/";
-
-const char thermctl_subscribe[] PROGMEM = "/ctl/thermctl/subscribe";
-const char termbig_subscribe[] PROGMEM = "/ctl/termbig/subscribe";
 
 
 #define DIALOG_SET_VARIABLE_GENERAL 0
