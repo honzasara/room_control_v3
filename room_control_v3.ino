@@ -168,7 +168,7 @@ uint8_t use_tds = 0;
 uint8_t use_nrf_temp = 0;
 
 
-uint8_t menu_slider_data_current[6];
+uint8_t menu_slider_data_current[MAX_SLIDERS];
 uint8_t menu_slider_data_max;
 uint8_t menu_slider_data_min;
 uint8_t menu_slider_data_max_element;
@@ -210,6 +210,7 @@ ret_fptr_no_args dialog_save_valid_function;
 uint8_t menu_redraw05s = 0;
 uint8_t menu_redraw10s = 0;
 uint8_t change_term_mode = 0;
+uint8_t change_virtual_output = 0;
 
 uint8_t MenuHistory[MENU_MAX_HISTORY];
 uint8_t Global_menu_args1[MENU_MAX_HISTORY];
@@ -596,12 +597,12 @@ fptr_args dialog_yes_function;
 
 const MenuAll Menu_All PROGMEM = {
   .len_menu1 = 7,
-  .len_menu2 = 6,
+  .len_menu2 = 7,
   .len_menu3 = 10,
   .len_menu4 = 9,
 
   .ListMenu1 = {HlavniMenu, MenuNastaveniSite, OneWireMenu, MenuNastaveniCas, SelectMenuDefaultTemp, MenuNastaveniMQTT, Menu_Show_All_temp},
-  .ListMenu2 = {DialogYESNO, DialogSetVariable, DialogKyeboardAlfa, DialogKyeboardNumber , DialogOK, MenuThermostat},
+  .ListMenu2 = {DialogYESNO, DialogSetVariable, DialogKyeboardAlfa, DialogKyeboardNumber , DialogOK, MenuThermostat,DialogSelectVirtualOutputForTerm},
   .ListMenu3 = {TDSMenu, RTDS_Menu_Detail, List_RTDS_Menu, MenuThermostat_Setting, DialogSelectRing, MenuThermostatRingSetup, DialogSelectInputSensorsForTerm, DialogSelectTermMode, DialogSelectPIDSensor, New_ThermostatTimeMenu},
   .ListMenu4 = {SystemSettingsMenu, New_NastaveniMenu, PeriferieSettingsMenu, New_DisplaySettingMenu, New_DisplaySetting_Brigthness, AboutDeviceMenu, New_DisplaySetting_Auto_Shutdown, SetNRFMenu, VirtualOutputSettingsMenu},
 };
@@ -1678,7 +1679,6 @@ uint8_t menu_redraw_change_term_input(uint16_t args1, uint16_t args2, uint8_t ar
     return 1;
   }
   return 0;
-
 }
 
 uint8_t menu_redraw_update_temp(uint16_t args1, uint16_t args2, uint8_t args3)
@@ -1737,7 +1737,15 @@ uint8_t menu_redraw_change_variable(uint16_t args1, uint16_t args2, uint8_t args
   return 0;
 }
 
-
+uint8_t menu_redraw_change_virtual_output(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  if (change_virtual_output == 4)
+  {
+    change_virtual_output = 0;
+    return 1;
+  }
+  return 0;
+}
 
 uint8_t get_function_return_args_1(uint16_t args1, uint16_t args2, uint8_t args3)
 {
@@ -2642,6 +2650,8 @@ uint8_t output_virtual_persistent_store_associate(uint8_t virtual_id, char *name
   }
   if (found == 0)
     for (uint8_t idx = 0; idx < eeprom_know_output_virtual_count; idx++)
+    {
+      //printf("idx: %d used: %d\n", idx, output_virtual_persistent_store_get_used(idx));
       if (output_virtual_persistent_store_get_used(idx) == 0)
       {
         output_virtual_persistent_store_set_id(idx, virtual_id);
@@ -2650,6 +2660,8 @@ uint8_t output_virtual_persistent_store_associate(uint8_t virtual_id, char *name
         ret_id = idx;
         break;
       }
+    }
+  //printf("ret_id %d, found %d", ret_id, found);
   return ret_id;
 }
 
@@ -2666,7 +2678,7 @@ uint8_t output_virtual_persistent_store_associate_from_ram_store(uint8_t ram_sto
   uint8_t ret = 0;
   if (output_virtual_ram_store_get_used(ram_store_id) == 1)
   {
-    output_virtaul_ram_store_get_name(ram_store_id, name);
+    output_virtual_ram_store_get_name(ram_store_id, name);
     virtual_id = output_virtual_ram_store_get_id(ram_store_id);
     if (output_virtual_persistent_store_associate(virtual_id, name) != 255)
       ret = 1;
@@ -2674,6 +2686,26 @@ uint8_t output_virtual_persistent_store_associate_from_ram_store(uint8_t ram_sto
   return ret;
 }
 
+
+/*
+   funkce, ktera na startu nacte do ram storu informace o znamych asociovanych v persistent store virtual vystupu
+*/
+void output_virtual_ram_store_load_from_persistent_store(void)
+{
+  uint8_t virtual_id;
+  char name[10];
+  for (uint8_t idx = 0; idx < eeprom_know_output_virtual_count; idx++)
+  {
+    if (output_virtual_persistent_store_get_used(idx) == 1)
+    {
+      output_virtual_persistent_store_get_name(idx, name);
+      virtual_id = output_virtual_persistent_store_get_id(idx);
+      virtual_id = output_virtual_ram_store_new(virtual_id);
+      if (virtual_id != 255)
+        output_virtual_ram_store_update_name(virtual_id, name);
+    }
+  }
+}
 
 
 
@@ -2727,19 +2759,32 @@ uint8_t output_virtual_persistent_store_get_used(uint8_t idx)
 
 
 ////
+/*
+   inicializovani vychozich parametru v ram store pro virtual-output
+*/
 void output_virtual_ram_store_init(void)
 {
   for (uint8_t idx = 0; idx < ram_output_virtual_count; idx++)
-  {
-    output_virtual_ram_store_set_used(idx, 0);
-    output_virtual_ram_store_set_id(idx, 255);
-    output_virtual_ram_store_set_type(idx, OUTPUT_REAL_MODE_NONE);
-    output_virtaul_ram_store_update_name(idx, "FREE");
-    output_virtual_ram_store_set_state(idx, POWER_OUTPUT_ERR);
-  }
+    output_virtual_ram_store_clear(idx);
 }
 
-uint8_t output_virtual_crate_update_store_id(uint8_t virtual_id)
+/*
+   nastav idx pametove misto pro virtual-output ram store
+*/
+void output_virtual_ram_store_clear(uint8_t idx)
+{
+  output_virtual_ram_store_set_used(idx, 0);
+  output_virtual_ram_store_set_id(idx, 255);
+  output_virtual_ram_store_set_type(idx, OUTPUT_REAL_MODE_NONE);
+  output_virtual_ram_store_update_name(idx, "FREE");
+  output_virtual_ram_store_set_state(idx, POWER_OUTPUT_ERR);
+}
+
+/*
+   funkce, zalozeni noveho cidla v ram store
+   funkce vraci ID pametoveho mista
+*/
+uint8_t output_virtual_ram_store_new(uint8_t virtual_id)
 {
   uint8_t ret_id = 255;
   uint8_t found = 0;
@@ -2750,10 +2795,10 @@ uint8_t output_virtual_crate_update_store_id(uint8_t virtual_id)
       {
         ret_id = idx;
         found = 1;
+        output_virtual_ram_store_set_last_update(idx, 0);
         break;
       }
   }
-
   if (found == 0)
   {
     for (uint8_t idx = 0; idx < ram_output_virtual_count; idx++)
@@ -2762,7 +2807,7 @@ uint8_t output_virtual_crate_update_store_id(uint8_t virtual_id)
       {
         output_virtual_ram_store_set_used(idx, 1);
         output_virtual_ram_store_set_id(idx, virtual_id);
-        output_virtual_ram_store_set_last_update(idx, 0);
+        output_virtual_ram_store_set_last_update(idx, 255);
         ret_id = idx;
         break;
       }
@@ -2771,6 +2816,9 @@ uint8_t output_virtual_crate_update_store_id(uint8_t virtual_id)
   return ret_id;
 }
 
+/*
+   listovani v ram store virtualnich vystupu
+*/
 uint8_t output_virtual_ram_store_list_store(uint8_t idx, char *name, uint8_t *state,  uint8_t *id, uint8_t *type, uint8_t *last_update)
 {
   uint8_t ret = 0;
@@ -2780,7 +2828,7 @@ uint8_t output_virtual_ram_store_list_store(uint8_t idx, char *name, uint8_t *st
     *type = output_virtual_ram_store_get_type(idx);
     *id = output_virtual_ram_store_get_id(idx);
     *last_update = output_virtual_ram_store_get_last_update(idx);
-    output_virtaul_ram_store_get_name(idx, name);
+    output_virtual_ram_store_get_name(idx, name);
     ret = 1;
   }
   return ret;
@@ -2789,12 +2837,12 @@ uint8_t output_virtual_ram_store_list_store(uint8_t idx, char *name, uint8_t *st
 
 
 
-void output_virtaul_ram_store_update_name(uint8_t idx, char *name)
+void output_virtual_ram_store_update_name(uint8_t idx, char *name)
 {
   sram_set_name(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_name, name, ram_output_virtual_name_len);
 }
 
-void output_virtaul_ram_store_get_name(uint8_t idx, char *name)
+void output_virtual_ram_store_get_name(uint8_t idx, char *name)
 {
   sram_get_name(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_name, name, ram_output_virtual_name_len);
 }
@@ -2979,8 +3027,8 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
     pch = strtok (str1, "/");
     while (pch != NULL)
     {
-      if (cnt == 0) id = output_virtual_crate_update_store_id(atoi(pch));
-      if ((cnt == 1) && (strcmp(pch, "name") == 0)) output_virtaul_ram_store_update_name(id, my_payload);
+      if (cnt == 0) id = output_virtual_ram_store_new(atoi(pch));
+      if ((cnt == 1) && (strcmp(pch, "name") == 0)) output_virtual_ram_store_update_name(id, my_payload);
       if ((cnt == 1) && (strcmp(pch, "type") == 0)) output_virtual_ram_store_set_type(id, atoi(my_payload));
       if ((cnt == 1) && (strcmp(pch, "state") == 0)) output_virtual_ram_store_set_state(id, atoi(my_payload));
       pch = strtok (NULL, "/");
@@ -3065,6 +3113,18 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
       pch = strtok (NULL, "/");
       cnt++;
     }
+  }
+  //////
+  /// nastavovani virtualnich vystupu - vymazani virtualniho vystupu z ram store
+  //// /thermctl-in/XXXX/virtual-output/clear
+  strcpy_P(str1, thermctl_header_in);
+  strcat(str1, device.nazev);
+  strcat(str1, "/virtual-output/ram/clear");
+  if (strcmp(str1, topic) == 0)
+  {
+    mqtt_process_message++;
+    id = atoi(my_payload);
+    output_virtual_ram_store_clear(id);
   }
 
   ///
@@ -4943,6 +5003,7 @@ void setup()
         remote_tds_set_last_update(idx, 255);
       }
       output_virtual_ram_store_init();
+      output_virtual_ram_store_load_from_persistent_store();
     }
     ///
     /// zobrazeni kalibracnich informaci touchscreenu
@@ -6374,6 +6435,46 @@ void button_deassociate_input_sensor_for_term_onclick(uint16_t args1, uint16_t a
   change_term_mode = 4;
 }
 
+
+/*
+ * funkce vymazani vazby ring a virtual output
+ */
+void button_deassociate_virtual_output_for_term_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  thermostat_ring_set_output(args2, POWER_OUTPUT_ERR);
+  change_virtual_output = 4;
+}
+void button_get_show_virtual_output(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
+{
+strcpy(line1, "Virtualni vystup");
+output_virtual_persistent_store_get_name(args1, line2);
+}
+
+/*
+ * args2 je ring_id
+ *  args3 je index polozky menu. Index polozky menu neznamena index vystupu, musi se to zjistit eepromky
+*/
+void button_select_term_ring_virtual_output_in_dialog_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+thermostat_ring_set_output(args2, output_virtual_persistent_store_get_id(args3));
+change_virtual_output = 4;
+}
+
+uint8_t button_get_virtual_output_max_items(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+return eeprom_know_output_virtual_count;
+}
+
+/// index polozky menu args3 neni cislo virtualniho vystupu musi se to zjistit z eeprmky
+uint8_t button_select_term_ring_virtual_output_in_dialog_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t rgt = thermostat_ring_get_output(args2);
+  uint8_t psg = output_virtual_persistent_store_get_id(args3);
+  uint8_t ret = 0;
+  if (rgt == psg && psg != 255)
+    ret = 1;
+  return ret;
+}
 
 
 /////

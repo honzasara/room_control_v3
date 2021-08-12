@@ -29,6 +29,15 @@ uint8_t display_enable_show_term_mode_prog(uint16_t args1, uint16_t args2, uint8
 
 void button_deassociate_input_sensor_for_term_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
 
+
+void button_deassociate_virtual_output_for_term_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
+void button_get_show_virtual_output(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2);
+void button_select_term_ring_virtual_output_in_dialog_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
+uint8_t button_select_term_ring_virtual_output_in_dialog_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3);
+uint8_t button_get_virtual_output_max_items(uint16_t args1, uint16_t args2, uint8_t args3);
+uint8_t menu_redraw_change_virtual_output(uint16_t args1, uint16_t args2, uint8_t args3);
+
+
 void button_get_show_default_temp_1(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2);
 uint8_t button_select_term_ring_input_in_dialog_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3);
 void button_select_term_ring_input_in_dialog_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
@@ -87,8 +96,8 @@ const Element_Button_1 button_nastaveni_ring_output PROGMEM = {
   .size_x = 190,
   .size_y = 40,
   .font_size = 1,
-  .args = 0,
-  .onclick = nullfce,
+  .args = MENU_NASTAVENI_SELECT_VIRTUAL_OUTPUT,
+  .onclick = MenuHistoryNextMenu,
   .redraw_class = (1 << REDRAW_ONCE),
   .enable_show = display_enable_show,
 };
@@ -401,6 +410,89 @@ const Element_Button_1 button_deassociate_input_sensor_for_term = {
 };
 
 
+/*
+ * definice polozek menu pro virtualni vystupy
+ */
+const Element_Function_1 f_vertical_slider_term_ring_virtual_output PROGMEM = {
+  .x = 410,
+  .y = 82,
+  .args = MENU_SLIDER_VIRTUAL_OUTPUT,
+  .fnt_coordinate_xy = display_element_vertical_slider,
+  .size_x = 40,
+  .size_y = 86,
+  .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_1),
+  .onclick = nullfce,
+  .enable_show = display_enable_show,
+  .name = char_NULL,
+};
+const Element_Symbol_1 slider_menu_plus_term_ring_virtual_output PROGMEM =  {
+  .znak = '+',
+  .x = 410,
+  .y = 40,
+  .size_x = 40,
+  .size_y = 40,
+  .znak_size = 2,
+  .args = MENU_SLIDER_VIRTUAL_OUTPUT,
+  .onclick = display_function_vertical_slider_dec,
+  .redraw_class = (1 << REDRAW_ONCE),
+  .enable_show = display_enable_show,
+};
+const Element_Symbol_1 slider_menu_minus_term_ring_virtual_output PROGMEM =  {
+  .znak = '-',
+  .x = 410,
+  .y = 170,
+  .size_x = 40,
+  .size_y = 40,
+  .znak_size = 2,
+  .args = MENU_SLIDER_VIRTUAL_OUTPUT,
+  .onclick = display_function_vertical_slider_inc,
+  .redraw_class = (1 << REDRAW_ONCE),
+  .enable_show = display_enable_show,
+};
+
+///////////////////////////
+const Element_Button_1 button_deassociate_virtual_output_for_term = {
+  .name = nastaveni_deassociate_virtual_output,
+  .x = 210,
+  .y = 220,
+  .size_x = 170,
+  .size_y = 40,
+  .font_size = 1,
+  .args = 0,
+  .onclick = button_deassociate_virtual_output_for_term_onclick,
+  .redraw_class = (1 << REDRAW_ONCE),
+  .enable_show = display_enable_show,
+};
+
+
+const Element_Dyn_Select_1 button_select_term_ring_virtual_output_in_dialog PROGMEM = {
+  .first_x = 10,
+  .first_y = 40,
+  .size_x = 120,
+  .size_y = 50,
+  .font_size_1 = 1,
+  .font_size_2 = 1,
+  .color_active = GREEN,
+  .color_inactive = WHITE,
+  .step_x = 130,
+  .step_y = 60,
+  .direction = HORIZONTAL_NEW_LINE,
+  .max_items_count = 3,
+  .max_row_count = 3,
+  .slider_args = MENU_SLIDER_VIRTUAL_OUTPUT,
+  .args = 0,
+  .get_status_string =  button_get_show_virtual_output,
+  .dyn_symbol_onclick =  button_select_term_ring_virtual_output_in_dialog_onclick,
+  .function_for_max_items =  button_get_virtual_output_max_items,
+  .get_status_fnt = button_select_term_ring_virtual_output_in_dialog_status_fnt,
+  .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_1 | 1<< REDRAW_CLASS_2),
+};
+
+
+
+
+
+
 /*********************************************************/
 /*
     slider pro vyber vstupniho cidla pro regulatory
@@ -692,5 +784,40 @@ const Menu1 MenuThermostat PROGMEM = {
 };
 
 
+
+
+
+const Menu1 DialogSelectVirtualOutputForTerm PROGMEM = {
+  .name = text_assocoivat_output,
+  .button_1 = {button_back, button_deassociate_virtual_output_for_term},
+  .button_2 = {NULL},
+  .function_1 = {f_vertical_slider_term_ring_virtual_output},
+  .switch_1 = {NULL},
+  .dyn_button = {NULL},
+  .symbol_button_1 = {slider_menu_plus_term_ring_virtual_output, slider_menu_minus_term_ring_virtual_output},
+  .dyn_symbol_1 = {NULL},
+  .dyn_select_box_1 = {button_select_term_ring_virtual_output_in_dialog},
+  .len_button_1 = 2,
+  .len_button_2 = 0,
+  .len_function_1 = 1,
+  .len_switch_1 = 0,
+  .len_dyn_button_1 = 0,
+  .len_symbol_button_1 = 2,
+  .len_dyn_symbol_1 = 0,
+  .len_dyn_select_box_1 = 1,
+  .idx = MENU_NASTAVENI_SELECT_VIRTUAL_OUTPUT,
+  .x = 10,
+  .y = 10,
+  .size_x = 460,
+  .size_y = 300,
+  .atributes = (1 << MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE | 1 << MENU_ATTRIBUTES_DECORATE_MENU),
+  .color_background = YELLOW,
+  .redraw_class = (1 << REDRAW_ONCE),
+  .redraw_class_0 = returnnullfceargs,
+  .redraw_class_1 = menu_redraw_slider,
+  .redraw_class_2 = menu_redraw_change_virtual_output,
+  .redraw_class_3 = returnnullfceargs,
+  .preload_function = returnnullfceargs,
+};
 
 #endif

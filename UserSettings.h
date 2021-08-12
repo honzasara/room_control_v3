@@ -139,6 +139,7 @@
 #define MENU_NASTAVENI_SITE 16
 #define NEW_MENU_NRF_SETTING 17
 #define NEW_MENU_VIRTUAL_OUTPUT_SETTING 18
+#define MENU_NASTAVENI_SELECT_VIRTUAL_OUTPUT 19
 
 
 #define MENU_DIALOG_YES_NO  100
@@ -175,11 +176,13 @@
 
 #define SWITCH_BUDIK 1
 
+#define MAX_SLIDERS 6
 #define MENU_SLIDER_ONE_WIRE 0
 #define MENU_SLIDER_RTDS 1
 #define MENU_SLIDER_DEFAULT_TEMP 2
 #define MENU_SLIDER_INPUT_TEMP 3
 #define MENU_SLIDER_ALL_THERMOSTAT 4
+#define MENU_SLIDER_VIRTUAL_OUTPUT 5
 #define MENU_SLIDER_OFF 255
 
 
@@ -306,6 +309,7 @@ const char text_nastaveni_programator[] PROGMEM = "Nastaveni programatoru";
 const char text_prog[] PROGMEM = "PROG";
 const char text_ntp_sync_time[] PROGMEM = "Aktualizace casu";
 
+const char nastaveni_deassociate_virtual_output[] PROGMEM = "Uvolnit vystup";
 
 const char text_upozorneni[] PROGMEM = "Upozorneni";
 const char text_klavesnice[] PROGMEM = "Klavesnice";
