@@ -11,6 +11,7 @@
       - nice have ukazat time diff
    9. moznost si nastavit time offset letni/zimni - vyreseno tim, ze si muzu posunout cas +- hodiny - HOTOVO
    10. tftp bootloader - OTESTOVAT prakticky
+      - jumper pro force boot, default hodnoty
    11. statistika pripojeni mqtt - HOTOVO
    12. vyber vychoziho teplomeru, kdyz je mrtvy/neaktivni zobrazit jinou barvou. Stav je nenalezene cidlo na sbernici
       - vraci online i kdyz neni online
@@ -44,6 +45,8 @@
     30. dialog s vysledkem scanovani NRF okoli
     31. obcas se ukaze zaporna teplota, nejspise problem ds18s20
     32. nefunguje odhlaseni mqtt rtds - OPRAVENO
+    33. overit vychozi hodnotu PWM vystupu
+    34. pokud neni nastaven vstup pro PID regulator, vystup je ERROR
 
 */
 
@@ -602,7 +605,7 @@ const MenuAll Menu_All PROGMEM = {
   .len_menu4 = 9,
 
   .ListMenu1 = {HlavniMenu, MenuNastaveniSite, OneWireMenu, MenuNastaveniCas, SelectMenuDefaultTemp, MenuNastaveniMQTT, Menu_Show_All_temp},
-  .ListMenu2 = {DialogYESNO, DialogSetVariable, DialogKyeboardAlfa, DialogKyeboardNumber , DialogOK, MenuThermostat,DialogSelectVirtualOutputForTerm},
+  .ListMenu2 = {DialogYESNO, DialogSetVariable, DialogKyeboardAlfa, DialogKyeboardNumber , DialogOK, MenuThermostat, DialogSelectVirtualOutputForTerm},
   .ListMenu3 = {TDSMenu, RTDS_Menu_Detail, List_RTDS_Menu, MenuThermostat_Setting, DialogSelectRing, MenuThermostatRingSetup, DialogSelectInputSensorsForTerm, DialogSelectTermMode, DialogSelectPIDSensor, New_ThermostatTimeMenu},
   .ListMenu4 = {SystemSettingsMenu, New_NastaveniMenu, PeriferieSettingsMenu, New_DisplaySettingMenu, New_DisplaySetting_Brigthness, AboutDeviceMenu, New_DisplaySetting_Auto_Shutdown, SetNRFMenu, VirtualOutputSettingsMenu},
 };
@@ -3076,6 +3079,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   if (strcmp(str1, topic) == 0)
   {
     mqtt_process_message++;
+    change_virtual_output = 4;
     id = atoi(my_payload);
     if (output_virtual_persistent_store_associate_from_ram_store(id) == 0)
       log_error(&mqtt_client, "E");
@@ -3088,7 +3092,9 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   if (strcmp(str1, topic) == 0)
   {
     mqtt_process_message++;
+    change_virtual_output = 4;
     id = atoi(my_payload);
+    thermostat_ring_clear_output_in_rings(output_virtual_persistent_store_get_id(id));
     output_virtual_persistent_store_clear(id);
   }
   ///
@@ -3101,6 +3107,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   if (strcmp(str1, topic) == 0)
   {
     mqtt_process_message++;
+    change_virtual_output = 4;
     mqtt_callback_prepare_topic_array(str1, topic);
     cnt = 0;
     pch = strtok (str1, "/");
@@ -3498,7 +3505,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
         }
         if ((cnt == 1) && (strcmp(pch, "text_mode") == 0))
         {
-          thermostat_mode_default_ring_last_state = thermostat_ring_get_mode(default_ring);
+          thermostat_mode_default_ring_last_state = thermostat_ring_get_mode(id);
           active = convert_text_mode(my_payload);
           thermostat_ring_set_mode(id, active);
           if (active == TERM_MODE_MAN_HEAT)
@@ -3510,7 +3517,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
         }
         if ((cnt == 1) && (strcmp(pch, "mode") == 0))
         {
-          thermostat_mode_default_ring_last_state = thermostat_ring_get_mode(default_ring);
+          thermostat_mode_default_ring_last_state = thermostat_ring_get_mode(id);
           active = atoi(my_payload);
           thermostat_ring_set_mode(id, active);
           if (active == TERM_MODE_MAN_HEAT)
@@ -3522,7 +3529,10 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
         if ((cnt == 1) && (strcmp(pch, "input") == 0)) thermostat_ring_set_asociate_tds(id, atoi(my_payload));
         //if ((cnt == 1) && (strcmp(pch, "rtds") == 0)) thermostat_ring_set_asociate_tds(id, atoi(my_payload) + TDS_MEMORY_MAP_RTDS);
         if ((cnt == 1) && (strcmp(pch, "active") == 0)) thermostat_ring_set_active(id, atoi(my_payload));
-        if ((cnt == 1) && (strcmp(pch, "output") == 0)) thermostat_ring_set_output(id, atoi(my_payload));
+        if ((cnt == 1) && (strcmp(pch, "output") == 0)) {
+          thermostat_ring_set_output(id, atoi(my_payload));
+          change_virtual_output = 4;
+        }
         if ((cnt == 1) && (strcmp(pch, "pid_kp") == 0)) thermostat_ring_pid_set_kp(id, atof(my_payload));
         if ((cnt == 1) && (strcmp(pch, "pid_ki") == 0)) thermostat_ring_pid_set_ki(id, atof(my_payload));
         if ((cnt == 1) && (strcmp(pch, "pid_kd") == 0)) thermostat_ring_pid_set_kd(id, atof(my_payload));
@@ -4439,7 +4449,7 @@ uint8_t convert_text_mode(char *str2)
   uint8_t mode = 0;
   if (strcmp(str2, "off") == 0) mode = TERM_MODE_OFF;
   if (strcmp(str2, "heat") == 0) mode = TERM_MODE_HEAT_MAX;
-  if (strcmp(str2, "manual") == 0) mode = TERM_MODE_MAN_HEAT;
+  if (strcmp(str2, "manual") == 0) mode = TERM_MODE_MAN;
   if (strcmp(str2, "auto") == 0) mode = TERM_MODE_PROG;
   if (strcmp(str2, "cool") == 0) mode = TERM_MODE_CLIMATE_MAX;
   if (strcmp(str2, "fan_only") == 0) mode = TERM_MODE_FAN;
@@ -4479,6 +4489,7 @@ void thermostat(void)
   uint8_t tmode = 0;
   uint8_t tout = 0;
   int16_t thresh = 0;
+  uint8_t tbites = 0;
   uint8_t pwm = 200; // start hodnota
   uint8_t te = 0;
   uint8_t prg = 0;
@@ -4493,6 +4504,7 @@ void thermostat(void)
     tmode = thermostat_ring_get_mode(tix);
     tout = thermostat_ring_get_output(tix);
     thresh = thermostat_ring_get_mezni(tix);
+    tbites = thermostat_ring_get_status_data(tix);
     if (tmode == TERM_MODE_PROG)
     {
       prg = thermostat_ring_get_program_id(tix);
@@ -4533,15 +4545,26 @@ void thermostat(void)
         default: break;
       }
     }
+
+    if (tmode == TERM_MODE_MAN)
+    {
+      if ((tbites & (1 << STATUS_BIT_HEAT_OR_COOL)) == 0)
+      {
+        tmode = TERM_MODE_MAN_HEAT;
+      }
+      else
+      {
+        tmode = TERM_MODE_MAN_COOL;
+      }
+    }
+
     if (tmode == TERM_MODE_MAN_HEAT)
     {
-
       thermostat_pid_setdirection_direct(tix);
     }
 
     if (tmode == TERM_MODE_MAN_COOL)
     {
-
       thermostat_pid_setdirection_reverse(tix);
     }
 
@@ -4616,7 +4639,7 @@ void thermostat(void)
       mqtt_publis_output(tout, POWER_OUTPUT_HEAT_MAX);
       thermostat_ring_set_power(tix, 255);
     }
-    if (tmode == TERM_MODE_CLIMATE_MAX)
+    if (tmode == TERM_MODE_MIN)
     {
       mqtt_publis_output(tout, POWER_OUTPUT_COOL_MAX);
       thermostat_ring_set_power(tix, 255);
@@ -4687,7 +4710,6 @@ void nrf_callback(nrf_message_t *nrf_message)
     new_parse_at((char*)nrf_message->data, str1, str2, ':');
     if (strcmp(str1, "TEP") == 0)
     {
-
       new_parse_at(str2, str1, str3, ':');
       nrf_add_update_meas_store(nrf_message->nodeid, NRF_MEAS_TYPE_TEMP, str1, atof(str3));
     }
@@ -4699,12 +4721,13 @@ void nrf_callback(nrf_message_t *nrf_message)
     if (strcmp(str1, "TL") == 0)
     {
       new_parse_at(str2, str1, str3, ':');
+      //printf("----> %s --> %s\n", str1, str3);
       nrf_add_update_meas_store(nrf_message->nodeid, NRF_MEAS_TYPE_PRESS, str1, atof(str3));
     }
     if (strcmp(str1, "IN") == 0)
     {
       new_parse_at(str2, str1, str3, ':');
-      nrf_add_update_meas_store(nrf_message->nodeid, NRF_MEAS_TYPE_BYTE, str1, atof(str3));
+      nrf_add_update_meas_store(nrf_message->nodeid, NRF_MEAS_TYPE_BYTE, str1, atoi(str3));
     }
     if (strcmp(str1, "VOLT") == 0)
     {
@@ -5325,7 +5348,8 @@ void loop() {
     //radio.printDetails();
   }
 
-
+  for (uint8_t idx = 0; idx < MAX_THERMOSTAT; idx++)
+    thermostat_pid_compute(idx);
 
   ////////////////////
   /// kazdych 10sec
@@ -5353,7 +5377,6 @@ void loop() {
     {
       send_mqtt_ring();
       send_mqtt_program();
-      thermostat();
       for (uint8_t idx = 0; idx < MAX_THERMOSTAT; idx++)
         if (thermostat_ring_get_active(idx) != RING_FREE)
           mqtt_send_pid_variable(idx);
@@ -5398,6 +5421,7 @@ void loop() {
         my_touch.TP_SetOnOff(LED_OFF);
     }
 
+    thermostat();
     mereni_hwwire(uptime);
     tds_extended_memory_store();
     remote_tds_update_last_update();
@@ -6437,8 +6461,9 @@ void button_deassociate_input_sensor_for_term_onclick(uint16_t args1, uint16_t a
 
 
 /*
- * funkce vymazani vazby ring a virtual output
- */
+   funkce vymazani vazby ring a virtual output
+   args2 ... ringid
+*/
 void button_deassociate_virtual_output_for_term_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   thermostat_ring_set_output(args2, POWER_OUTPUT_ERR);
@@ -6446,23 +6471,23 @@ void button_deassociate_virtual_output_for_term_onclick(uint16_t args1, uint16_t
 }
 void button_get_show_virtual_output(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
 {
-strcpy(line1, "Virtualni vystup");
-output_virtual_persistent_store_get_name(args1, line2);
+  strcpy(line1, "Virtualni vystup");
+  output_virtual_persistent_store_get_name(args1, line2);
 }
 
 /*
- * args2 je ring_id
- *  args3 je index polozky menu. Index polozky menu neznamena index vystupu, musi se to zjistit eepromky
+   args2 je ring_id
+    args3 je index polozky menu. Index polozky menu neznamena index vystupu, musi se to zjistit eepromky
 */
 void button_select_term_ring_virtual_output_in_dialog_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-thermostat_ring_set_output(args2, output_virtual_persistent_store_get_id(args3));
-change_virtual_output = 4;
+  thermostat_ring_set_output(args2, output_virtual_persistent_store_get_id(args3));
+  change_virtual_output = 4;
 }
 
 uint8_t button_get_virtual_output_max_items(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-return eeprom_know_output_virtual_count;
+  return eeprom_know_output_virtual_count;
 }
 
 /// index polozky menu args3 neni cislo virtualniho vystupu musi se to zjistit z eeprmky
@@ -6821,27 +6846,6 @@ void button_click_default_term_set_mode(uint16_t args1, uint16_t args2, uint8_t 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -7018,7 +7022,7 @@ void button_click_set_term_heat_or_cool(uint16_t args1, uint16_t args2, uint8_t 
 /*
    funkce vraci 1 kdyz mame vybrany z nasledujich modu, rucni rizeni a jeho alternativy
    kdyz 0 tak se nezobrazuji polozky v menu
-   args1, args2, args3 nejsou zatim potreba
+   args2 .. index ring
 */
 
 uint8_t display_enable_show_term_mode_man(uint16_t args1, uint16_t args2, uint8_t args3)
