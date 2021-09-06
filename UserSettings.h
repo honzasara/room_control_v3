@@ -166,6 +166,8 @@
 #define NEW_MENU_THERMOSTAT_TIME_MENU 160
 #define NEW_MENU_SHOW_ALL_TEMP 161
 #define NEW_MENU_THERMOSTAT 162
+#define NEW_MENU_THERMOSTAT_MAN_TEMP 163
+
 
 
 #define MENU_ATTRIBUTES_CLEAN_DISPLAY 0
@@ -306,6 +308,7 @@ const char text_select_term_default_ring[] PROGMEM = "Vyber vychoziho regulatoru
 const char text_nastaveni_ring_program[] PROGMEM = "Vyber programu";
 const char text_nastaveni_setup_program[] PROGMEM = "Nastaveni programu";
 const char text_nastaveni_programator[] PROGMEM = "Nastaveni programatoru";
+const char text_nastaveni_mezni_temp[] PROGMEM = "Nastaveni mezni teploty";
 const char text_prog[] PROGMEM = "PROG";
 const char text_ntp_sync_time[] PROGMEM = "Aktualizace casu";
 
@@ -541,7 +544,7 @@ typedef struct t_Menu1
   const char *name;
   Element_Button_1 button_1[10];
   Element_Button_2 button_2[5];
-  Element_Function_1 function_1[5];
+  Element_Function_1 function_1[6];
   Element_Switch_1 switch_1[3];
   Element_Dyn_Button_1 dyn_button[2];
   Element_Symbol_1 symbol_button_1[8];

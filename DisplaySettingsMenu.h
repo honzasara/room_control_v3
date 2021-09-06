@@ -35,7 +35,7 @@ void button_set_brightness_auto_shutdown_select_time_get_status_string(uint8_t a
 void button_set_brightness_auto_shutdown_select_time_dyn_symbol_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
 uint8_t button_set_brightness_auto_shutdown_select_time_get_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3);
 
-
+uint8_t menu_redraw_change_auto_brightness(uint16_t args1, uint16_t args2, uint8_t args3);
 
 const Element_Button_1 button_default_show_temp PROGMEM = {
   .name = text_select_default_temp,
@@ -66,7 +66,7 @@ const Element_Dyn_Button_1 button_change_brightness_display PROGMEM = {
   .get_status_string = button_change_brightness_display_get_status_string,
   .dyn_button_onclick = button_change_brightness_display_dyn_button_onclick,
   .function_for_max_items = get_function_return_args_1,
-  .redraw_class = (1 << REDRAW_FORCE)
+  .redraw_class = (1 << REDRAW_FORCE | 1 << REDRAW_CLASS_0)
 };
 
 const Element_Dyn_Select_1 button_set_brightness_auto_shutdown PROGMEM = {
@@ -209,7 +209,7 @@ const Element_Switch_1 switch_brightness_automode PROGMEM = {
   .onclick = switch_brightness_automode_onclick,
   .get_status_fnt = switch_brightness_automode_get_status_fnt,
   .get_status_string = switch_brightness_automode_get_status_string,
-  .redraw_class = REDRAW_BUTTON,
+  .redraw_class = (REDRAW_BUTTON | 1 << REDRAW_CLASS_0 ),
 };
 
 const Element_Function_1 f_dialog_set_variable_display_brightness PROGMEM = {
@@ -309,7 +309,7 @@ const Menu1 New_DisplaySettingMenu PROGMEM = {
   .atributes = (1 << MENU_ATTRIBUTES_CLEAN_DISPLAY),
   .color_background = WHITE,
   .redraw_class = (1 << REDRAW_FORCE),
-  .redraw_class_0 = returnnullfceargs,
+  .redraw_class_0 = menu_redraw_change_auto_brightness,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
   .redraw_class_3 = returnnullfceargs,
@@ -341,8 +341,8 @@ const Menu1 New_DisplaySetting_Brigthness PROGMEM = {
   .size_y = 280,
   .atributes = (1 << MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE | 1 << MENU_ATTRIBUTES_DECORATE_MENU),
   .color_background = YELLOW,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .redraw_class_0 = returnnullfceargs,
+  .redraw_class = (1 << REDRAW_FORCE | 1 << REDRAW_CLASS_0), ///saric test
+  .redraw_class_0 = menu_redraw_change_auto_brightness,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
   .redraw_class_3 = returnnullfceargs,

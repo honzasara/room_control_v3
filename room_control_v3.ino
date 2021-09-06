@@ -1,52 +1,53 @@
 /*
    TODO
    1. Prekreslovani elementu - zrychlit obsluhu displaye
-   2. Ikonka stav MQTT spojeni
-   3. Vyresit timeout na MQTT - vypada to dobre
-   4. Dialog menu vyberu - neaktivni nedostupne sede barvou
+   2. Zrychlit hlavni smycku
+   3.
+   4. Dialog menu vyberu - neaktivni nedostupne sede barvou - TODO slozitejsi problem
    5. Dialog klavesnice kurzor editace
-   6. Dialog klavesnice - rozvreni tlacitek jako je na klavesnici
+   6.
    7. Dialog editace PID - zobrazit krivku vypoctu
-   8. tlacitko synchronizace NTP casu -> dialog povedlo se/ nepovedlo se - HOTOVO
-      - nice have ukazat time diff
-   9. moznost si nastavit time offset letni/zimni - vyreseno tim, ze si muzu posunout cas +- hodiny - HOTOVO
-   10. tftp bootloader - OTESTOVAT prakticky
-      - jumper pro force boot, default hodnoty
-   11. statistika pripojeni mqtt - HOTOVO
-   12. vyber vychoziho teplomeru, kdyz je mrtvy/neaktivni zobrazit jinou barvou. Stav je nenalezene cidlo na sbernici
-      - vraci online i kdyz neni online
+   8.
+   9.
+   10.
+   11.
+   12.
    13. vytvorit menu seznam vsech teplomeru ukazovat hodnoty - HOTOVO
-   14. rtds pridat informaci o typu zpravy - HOTOVO
-      - teplota
-      - co2
-      - humadity
-      - vitr
-    15. umet nastavit promenou seznam_server pro ucel testovani konektivity, port
-    16. po upgrade casu udelat hned aktualizci obrazovky
-    17. validace zadanych hodnot pro cas a datum, nedovolit ulozit!
-    18. funkce pro validaci IP adres
-    19. tlacitko pro restart/bootloader -> dialog pro vyber moznosti
-    20.
-    21. po najeti rychle blika dvojtecka u casu - fixnuto - HOTOVO
-    22. change_term_mode - rozdelit po bitech
-    23. opravit posunuti datumu pri syncu - fixnuto
-    24. reload nastaveni site
-    25. build time:
-       - do menu - OK
-       - init display - OK
-       - mqtt status - OK
-    26. intenzita okolniho osvetleni na procenta - hotovo
-       - automticka regulace jasu, pomoci tabulky
-    27. funkce automaticke vypnuti displaye. - problem se config bit brigthness_display_mode
-        - automaticke vypnuti displaye vyresen prvni klik na zhasnuty display, pouze rozsviti, neni zadny event menu
+        + pridat NRF devices
+   14.
+   15. umet nastavit promenou seznam_server pro ucel testovani konektivity, port
+   16.
+   17. validace zadanych hodnot pro cas a datum, nedovolit ulozit!
+   18. funkce pro validaci IP adres
+   19. tlacitko pro restart/bootloader -> dialog pro vyber moznosti
+   20.
+   21.
+   22. change_term_mode - rozdelit po bitech
+   23.
+   24. reload nastaveni site, reload zmena nastaveni mqtt
+   25.
+   26. automticka regulace jasu, pomoci tabulky
+   27.
+   28.
+   29.
+   30. dialog s vysledkem scanovani NRF okoli
+   31.
+   32.
+   33.
+   34.
+   35. automaticka regulace osvetleni, refresh zobrazeni
 
-    28. posilat metriky jako json - nepouzitelne, pomale, narocne na misto
-    29. vyresit globalni problem tds start_at nesmi byt zaporne - opraveno, potreba sledovat
-    30. dialog s vysledkem scanovani NRF okoli
-    31. obcas se ukaze zaporna teplota, nejspise problem ds18s20
-    32. nefunguje odhlaseni mqtt rtds - OPRAVENO
-    33. overit vychozi hodnotu PWM vystupu
-    34. pokud neni nastaven vstup pro PID regulator, vystup je ERROR
+  ----
+  dokoncit overit mqqt spojeni
+  dialogum upravit hlavicku textu
+  dokoncit menu statistika regulatoru
+    - zde informace, aktualni stav, vykon akcniho clenu nastaveny, zpetna vazba od akcniho clenu
+    - posledni update od akcniho clenu
+    - vybrany mod
+    - vybrany program
+    - pid krivka
+  menu casove plany
+
 
 */
 
@@ -118,8 +119,9 @@ EEPROM_CAT25 SROM(&swSPI, STORAGE_EEPROM_CS , CAT25M02);
 
 long lastmqttconnect = 0;
 
-uint8_t last_output_update[MAX_THERMOSTAT];
+//uint8_t last_output_update[MAX_THERMOSTAT];
 uint8_t selftest_data = 0;
+uint8_t last_selftest_data = 0;
 
 uint16_t tritri = 0;
 uint16_t petnula = 0;
@@ -161,12 +163,14 @@ uint8_t watchdog_state = 0;
 
 uint8_t brigthness_display_values = 0;
 uint8_t brigthness_display_auto_values = 0;
+uint8_t last_brigthness_display_auto_values = 0;
 
 uint8_t brigthness_display_mode = 0;
 uint8_t display_auto_shutdown = 0;
 uint8_t display_auto_shutdown_now = 0;
 
 uint8_t use_rtds = 0;
+uint8_t use_rtds_type_temp = 0;
 uint8_t use_tds = 0;
 uint8_t use_nrf_temp = 0;
 
@@ -214,6 +218,7 @@ uint8_t menu_redraw05s = 0;
 uint8_t menu_redraw10s = 0;
 uint8_t change_term_mode = 0;
 uint8_t change_virtual_output = 0;
+uint8_t change_auto_brightness = 0;
 
 uint8_t MenuHistory[MENU_MAX_HISTORY];
 uint8_t Global_menu_args1[MENU_MAX_HISTORY];
@@ -602,12 +607,12 @@ const MenuAll Menu_All PROGMEM = {
   .len_menu1 = 7,
   .len_menu2 = 7,
   .len_menu3 = 10,
-  .len_menu4 = 9,
+  .len_menu4 = 10,
 
   .ListMenu1 = {HlavniMenu, MenuNastaveniSite, OneWireMenu, MenuNastaveniCas, SelectMenuDefaultTemp, MenuNastaveniMQTT, Menu_Show_All_temp},
   .ListMenu2 = {DialogYESNO, DialogSetVariable, DialogKyeboardAlfa, DialogKyeboardNumber , DialogOK, MenuThermostat, DialogSelectVirtualOutputForTerm},
   .ListMenu3 = {TDSMenu, RTDS_Menu_Detail, List_RTDS_Menu, MenuThermostat_Setting, DialogSelectRing, MenuThermostatRingSetup, DialogSelectInputSensorsForTerm, DialogSelectTermMode, DialogSelectPIDSensor, New_ThermostatTimeMenu},
-  .ListMenu4 = {SystemSettingsMenu, New_NastaveniMenu, PeriferieSettingsMenu, New_DisplaySettingMenu, New_DisplaySetting_Brigthness, AboutDeviceMenu, New_DisplaySetting_Auto_Shutdown, SetNRFMenu, VirtualOutputSettingsMenu},
+  .ListMenu4 = {SystemSettingsMenu, New_NastaveniMenu, PeriferieSettingsMenu, New_DisplaySettingMenu, New_DisplaySetting_Brigthness, AboutDeviceMenu, New_DisplaySetting_Auto_Shutdown, SetNRFMenu, VirtualOutputSettingsMenu, DialogSetManualyTemp},
 };
 
 
@@ -1085,7 +1090,7 @@ bool draw_menu(bool redraw, uint8_t click_type, uint16_t click_x, uint16_t click
         rfnt = (ret_fptr*)pgm_read_word(&dyn_select_box_1->get_status_fnt);
         state = ((ret_fptr)rfnt)(pgm_read_byte(&dyn_select_box_1->args), menu_args1, loop_i);
         /// pro REDRAW_ONCE, kdyz mi vyjde stev 2, to je neni na tlacitku zadna zmena, tak vykresli jako neaktivni, bez teto podminky, by se nic neukazalo
-        if ((enable_redraw(redraw_class, (1 << REDRAW_ONCE)) == true) && (state == 2)) state = 0;
+        if ((enable_redraw(redraw_class, (1 << REDRAW_ONCE)) == true) && (state == BUTTON_NO_SHOW)) state = BUTTON_NO_ACTIVE;
         button_click_2(new_x, new_y, pgm_read_word(&dyn_select_box_1->size_x), \
                        pgm_read_word(&dyn_select_box_1->size_y), pgm_read_byte(&dyn_select_box_1->font_size_1), pgm_read_byte(&dyn_select_box_1->font_size_2), \
                        pgm_read_word(&dyn_select_box_1->color_active), \
@@ -1479,11 +1484,10 @@ void display_menu_tds_set_period(uint16_t args1, uint16_t args2, uint8_t args3)
 /// funkce pro nastaveni nazvu cidla
 void display_menu_tds_set_name(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  char name[10];
+  char name[RTDS_DEVICE_STRING_LEN];
   tds_get_name(args2, name);
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, 0);
   display_element_set_string(name, 8, args2, &menu_tds_save_name, &valid_true);
-  //dialog_save_variable_function = ;
 }
 /// funkce pro nastaveni nazvu rtds
 void display_menu_rtds_update_name(uint16_t args1, uint16_t args2, uint8_t args3)
@@ -1493,7 +1497,7 @@ void display_menu_rtds_update_name(uint16_t args1, uint16_t args2, uint8_t args3
   remote_tds_get_complete(args2, &active, name);
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, 0);
   display_element_set_string(name, RTDS_DEVICE_STRING_LEN, args2, &menu_rtds_update_name, &valid_true);
-  //dialog_save_variable_function = ;
+  remote_tds_unsubscibe_topic(args2);
 }
 ////////////////////////////////////////////////////////
 
@@ -1502,7 +1506,7 @@ void display_menu_rtds_update_name(uint16_t args1, uint16_t args2, uint8_t args3
 */
 uint8_t get_function_budik_enabled(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  return 1;
+  return BUTTON_ACTIVE;
 }
 void get_function_budik_text_state(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
 {
@@ -1633,6 +1637,7 @@ uint8_t button_redraw(uint8_t args1, uint8_t args2)
 
 uint8_t menu_redraw_time05s(uint16_t args1, uint16_t args2, uint8_t args3)
 {
+  uint8_t ret = 0;
   /*
     if (menu_redraw05s == 1)
     {
@@ -1642,16 +1647,33 @@ uint8_t menu_redraw_time05s(uint16_t args1, uint16_t args2, uint8_t args3)
     return 0;
   */
 
+
+  if (selftest_data != last_selftest_data)
+  {
+    last_selftest_data = selftest_data;
+    ret = 1;
+  }
+
   if (last_time_hour != now.hour() || last_time_minute != now.minute())
   {
     last_time_hour = now.hour();
     last_time_minute = now.minute();
-    return 1;
+    ret = 1;
   }
-  return 0;
+
+  return ret;
 }
 
-
+uint8_t menu_redraw_change_auto_brightness(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t ret = 0;
+  if (change_auto_brightness == 1)
+  {
+    change_auto_brightness = 0;
+    ret = 1;
+  }
+  return ret;
+}
 
 uint8_t menu_redraw_change_term_mode(uint16_t args1, uint16_t args2, uint8_t args3)
 {
@@ -3627,11 +3649,12 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
     }
   }
   ///
-  /// zpetna vazba od vystupu
-  strcpy_P(str1, termbig_header_out);
-  strcat(str1, "output/");
-  if (strncmp(str1, topic, strlen(str1)) == 0)
-  {
+  /*
+    /// zpetna vazba od vystupu
+    strcpy_P(str1, termbig_header_out);
+    strcat(str1, "output/");
+    if (strncmp(str1, topic, strlen(str1)) == 0)
+    {
     mqtt_process_message++;
     mqtt_callback_prepare_topic_array(str1, topic);
     cnt = 0;
@@ -3652,8 +3675,8 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
       pch = strtok (NULL, "/");
       cnt++;
     }
-  }
-
+    }
+  */
   //// /thermctl-in/XXXX/rf/scan - 0|1 zapnuti/vypnuti scanovani rf site
   strcpy_P(str1, thermctl_header_in);
   strcat(str1, device.nazev);
@@ -3853,7 +3876,8 @@ void send_device_status(void)
   if (mqtt_client.connected())
   {
     strcpy(str_topic, "status/uptime");
-    sprintf(payload, "%ld", uptime);
+    //sprintf(payload, "%ld", uptime);
+    ltoa(uptime, payload, 10);
     send_mqtt_general_payload(&mqtt_client, str_topic, payload);
     ///
     strcpy(str_topic, "status/brigthness");
@@ -3963,8 +3987,8 @@ void send_mqtt_ring(void)
       itoa(thermostat_ring_get_status_data(idx), payload, 10);
       send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "ring", idx, "status_bites", payload);
 
-      itoa(last_output_update[idx], payload, 10);
-      send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "ring", idx, "output_update", payload);
+      //itoa(last_output_update[idx], payload, 10);
+      //send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "ring", idx, "output_update", payload);
     }
 }
 ///
@@ -3987,16 +4011,14 @@ void send_mqtt_tds(void)
     if (get_tds18s20(id, &tds) == 1)
       if (tds.used == 1 && status_tds18s20[id].online == True)
       {
-        tt = status_tds18s20[id].temp / 10;
+        tt = status_tds18s20[id].temp;
         itoa(tt, payload, 10);
         send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "temp", payload);
         avg = 0;
         for (uint8_t c = 0; c < MAX_AVG_TEMP; c++) avg = avg + status_tds18s20[id].average_temp[c];
         avg = avg / MAX_AVG_TEMP;
-        avg = avg / 10;
         itoa(avg, payload, 10);
         send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "temp_avg", payload);
-
         strcpy(payload, tds.name);
         send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "name", payload);
         tt = tds.offset;
@@ -4011,10 +4033,12 @@ void send_mqtt_tds(void)
         tt = tds.period;
         itoa(tt, payload, 10);
         send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "period", payload);
-
-        tt = (uptime & 0xff) - status_tds18s20[id].period_now;
+        tt = status_tds18s20[id].period_now;
         utoa(tt, payload, 10);
         send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "start_at", payload);
+        tt = status_tds18s20[id].crc_error;
+        itoa(tt, payload, 10);
+        send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "crc_error", payload);
       }
 }
 ///
@@ -4271,7 +4295,8 @@ void send_mesh_status(void)
       strcpy_P(str_space, mesh_device_nrf_last_seen_x);
       send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, str_space, payload);
 
-      sprintf(payload, "%ld", nrf_get_nei_store_service_info_uptime(idx));
+      //sprintf(payload, "%ld", nrf_get_nei_store_service_info_uptime(idx));
+      ltoa(nrf_get_nei_store_service_info_uptime(idx), payload, 10);
       strcpy_P(str_space, mesh_device_nrf_uptime_x);
       send_mqtt_message_prefix_id_topic_payload(&mqtt_client, str_topic, idx, str_space, payload);
 
@@ -4568,13 +4593,19 @@ void thermostat(void)
       thermostat_pid_setdirection_reverse(tix);
     }
 
+    if (tdsid == RING_NO_INPUT)
+    {
+      tmode = TERM_MODE_ERR;
+      pwm = 0;
+      thermostat_ring_set_power(tix, pwm);
+    }
 
     if (tdsid < HW_ONEWIRE_MAXROMS )
     {
       if (get_tds18s20(tdsid, &tds) == 1)
         if (tds.used == 1 && status_tds18s20[tdsid].online == True)
         {
-          thermostat_pid_input(tix, status_tds18s20[tdsid].temp / 100.0);
+          thermostat_pid_input(tix, status_tds18s20[tdsid].temp / 10.0);
           thermostat_pid_setpoint(tix, thresh);
           pwm = thermostat_pid_output(tix);
           thermostat_ring_set_power(tix, pwm);
@@ -4632,21 +4663,27 @@ void thermostat(void)
     if (tmode == TERM_MODE_OFF)
     {
       mqtt_publis_output(tout, POWER_OUTPUT_OFF);
-      thermostat_ring_set_power(tix, 0);
+      thermostat_ring_set_power(tix, POWER_OUTPUT_OFF);
     }
     if (tmode == TERM_MODE_HEAT_MAX)
     {
       mqtt_publis_output(tout, POWER_OUTPUT_HEAT_MAX);
-      thermostat_ring_set_power(tix, 255);
+      thermostat_ring_set_power(tix, POWER_OUTPUT_HEAT_MAX);
     }
     if (tmode == TERM_MODE_MIN)
     {
       mqtt_publis_output(tout, POWER_OUTPUT_COOL_MAX);
-      thermostat_ring_set_power(tix, 255);
+      thermostat_ring_set_power(tix, POWER_OUTPUT_COOL_MAX);
     }
-    if (tmode == TERM_MODE_MAN_HEAT || tmode == TERM_MODE_MAN_COOL || tmode == TERM_MODE_FAN || tmode == TERM_MODE_ERR)
+    if (tmode == TERM_MODE_MAN_HEAT || tmode == TERM_MODE_MAN_COOL || tmode == TERM_MODE_FAN )
     {
       mqtt_publis_output_pwm(tout, tmode, pwm);
+    }
+
+    if (tmode == TERM_MODE_ERR)
+    {
+      mqtt_publis_output_pwm(tout, tmode, pwm);
+      mqtt_publis_output(tout, POWER_OUTPUT_ERR);
     }
   }
 }
@@ -4799,7 +4836,7 @@ void setup()
     if (init == 0)
     {
       time_now = DateTime(__DATE__, __TIME__);
-      sprintf(str2, "build version %d.%02d.%02d %02d:%02d:%02d", time_now.year(), time_now.month(), time_now.day(), time_now.hour(), time_now.minute(), time_now.second());
+      sprintf_P(str2, text_build_version, time_now.year(), time_now.month(), time_now.day(), time_now.hour(), time_now.minute(), time_now.second());
       show_string(str2, 30, 50 + (init * 10), 1, BLUE, WHITE, 0 );
     }
     ///
@@ -4853,7 +4890,7 @@ void setup()
       dtostrf(prepocet_napeti(petnula, CONST_PREVOD_PETV), 4, 2, s_petnula);
       dtostrf(prepocet_napeti(dvanact, CONST_PREVOD_DVANACTV), 4, 2, s_dvanact);
       dtostrf(prepocet_proudu(proud), 4, 2, s_current);
-      sprintf(str2, "3.3V=%s; 5.0V=%s; IN=%s; I=%s", s_tritri, s_petnula, s_dvanact, s_current);
+      sprintf_P(str2, text_volt_consume_light_info, s_tritri, s_petnula, s_dvanact, s_current);
       show_string(str2, 160, 50 + (init * 10), 1, GREEN, WHITE, 0 );
       delay(1000);
     }
@@ -4938,7 +4975,7 @@ void setup()
         set_default_ring(default_ring);
         EEPROM.write(my_brightness_values, 50);
         EEPROM.write(my_brightness_mode, 0);
-        EEPROM.write(my_display_auto_shutdown, 60);
+        EEPROM.write(my_display_auto_shutdown, 0);
 
         nrf_save_channel(97);
         nrf_save_power(RF24_PA_LOW);
@@ -5013,11 +5050,14 @@ void setup()
       load_setup_network();
       //// kvuli lepsimu nabehu pocitani nastavim vychozi hodnotu na 2000 = 20 stupnu
       for (uint8_t idx = 0; idx < HW_ONEWIRE_MAXROMS; idx++)
+      {
         for (uint8_t cnt = 0; cnt < MAX_AVG_TEMP; cnt++)
-          status_tds18s20[idx].average_temp[cnt] = 20000;
+          status_tds18s20[idx].average_temp[cnt] = 200;
+        status_tds18s20[idx].crc_error = 0;
+      }
       ///
-      for (uint8_t idx = 0; idx < MAX_THERMOSTAT; idx++)
-        last_output_update[idx] = 255;
+      //for (uint8_t idx = 0; idx < MAX_THERMOSTAT; idx++)
+      // last_output_update[idx] = 255;
 
       for (uint8_t idx = 0; idx < MAX_RTDS; idx++)
       {
@@ -5049,6 +5089,7 @@ void setup()
       brigthness_display_values = EEPROM.read(my_brightness_values);
       brigthness_display_mode = EEPROM.read(my_brightness_mode);
       my_touch.TP_SetBacklight(brigthness_display_values * 2);
+      brigthness_display_auto_values = 5;
     }
     ///
     /// inicializace ds2482
@@ -5062,6 +5103,7 @@ void setup()
       for (uint8_t idx = 0; idx < HW_ONEWIRE_MAXROMS; idx++ )
       {
         status_tds18s20[idx].wait = false;
+        status_tds18s20[idx].online = false;
         status_tds18s20[idx].period_now = 0;
       }
       itoa(ds2482_address[0].i2c_addr, tmp1, 10);
@@ -5360,45 +5402,14 @@ void loop() {
     //device_get_name(str1);
     internal_temp = lm75_temp.readTemperatureC();
     brigthness_display_auto_values = (float) (light_curr - light_min) / (light_max - light_min) * 100;
-
-    if (status_send_counter == 0)
+    if (last_brigthness_display_auto_values != brigthness_display_auto_values)
     {
-      send_mqtt_onewire();
-      send_mqtt_tds();
+      last_brigthness_display_auto_values = brigthness_display_auto_values;
+      change_auto_brightness = 1;
     }
-    ///
-    if (status_send_counter == 1)
-    {
-      send_mqtt_status(&mqtt_client);
-      send_device_status();
-    }
-    ///
-    if (status_send_counter == 2)
-    {
-      send_mqtt_ring();
-      send_mqtt_program();
-      for (uint8_t idx = 0; idx < MAX_THERMOSTAT; idx++)
-        if (thermostat_ring_get_active(idx) != RING_FREE)
-          mqtt_send_pid_variable(idx);
-    }
-    ///
-    if (status_send_counter == 3)
-    {
-      send_mqtt_remote_tds_status();
-      //send_network_config(&mqtt_client);
-      //send_light_controler();
-      send_know_device();
-      send_mesh_status();
-      send_virtual_output();
-    }
-    ///
-
-    status_send_counter++;
-    if (status_send_counter == 4)
-      status_send_counter = 0;
 
 
-    if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) != 0) // Automatika
+    if ((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_BRIGHTNESS)) != 0) // Automatika
     {
       if (brigthness_display_auto_values > 100)
         brigthness_display_auto_values = 100;
@@ -5421,8 +5432,8 @@ void loop() {
         my_touch.TP_SetOnOff(LED_OFF);
     }
 
+    mereni_hwwire();
     thermostat();
-    mereni_hwwire(uptime);
     tds_extended_memory_store();
     remote_tds_update_last_update();
     nrf_inc_nei_last_update();
@@ -5434,6 +5445,62 @@ void loop() {
 
     update_know_mqtt_device();
     output_virtual_inc_last_update();
+
+    if (status_send_counter == 0)
+    {
+      send_mqtt_onewire();
+    }
+    if (status_send_counter == 1)
+    {
+      send_mqtt_tds();
+    }
+    ///
+    if (status_send_counter == 2)
+    {
+      send_mqtt_status(&mqtt_client);
+    }
+    if (status_send_counter == 3)
+    {
+      send_device_status();
+    }
+    ///
+    if (status_send_counter == 4)
+    {
+      send_mqtt_ring();
+    }
+    if (status_send_counter == 5)
+    {
+      send_mqtt_program();
+      for (uint8_t idx = 0; idx < MAX_THERMOSTAT; idx++)
+        if (thermostat_ring_get_active(idx) != RING_FREE)
+          mqtt_send_pid_variable(idx);
+    }
+    ///
+    if (status_send_counter == 6)
+    {
+      send_mqtt_remote_tds_status();
+    }
+    if (status_send_counter == 7)
+    {
+      //send_network_config(&mqtt_client);
+      //send_light_controler();
+      send_know_device();
+    }
+    if (status_send_counter == 8)
+    {
+      send_mesh_status();
+    }
+    ///
+    if (status_send_counter == 9)
+    {
+      send_virtual_output();
+    }
+    ///
+    status_send_counter++;
+    if (status_send_counter == 10)
+    {
+      status_send_counter = 0;
+    }
 
     /*
       for (int i = 0; i < mesh.addrListTop; i++)
@@ -5465,7 +5532,8 @@ void loop() {
     if (click_delay_enable_display < 250)
       click_delay_enable_display++;
 
-    use_rtds = count_use_rtds();
+    use_rtds_type_temp = 0;
+    use_rtds = count_use_rtds(&use_rtds_type_temp);
     use_tds = count_use_tds();
     use_nrf_temp = count_use_nrf_temp();
   }
@@ -5492,6 +5560,7 @@ void loop() {
     click_x = my_touch.x;
     click_y = my_touch.y;
     click_on_display = 1;
+    tone(PIEZO, 500, 50);
   }
   else
   {
@@ -5699,6 +5768,21 @@ void display_element_show_all_temp(uint16_t x, uint16_t y, uint16_t size_x, uint
 
 }
 ////////////////////////////////////////////////////
+void display_element_show_link_status(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
+{
+  char str1[16];
+  if (selftest_get_0(SELFTEST_MQTT_LINK) == 0 && selftest_get_0(SELFTEST_ETH_LINK) == 0 )
+  {
+    strcpy_P(str1, text_mqtt_connect);
+  }
+  else
+  {
+    strcpy_P(str1, text_mqtt_disconnect);
+  }
+  my_lcd.Set_Draw_color(WHITE); my_lcd.Draw_Fast_HLine(x, y, 142); my_lcd.Draw_Fast_HLine(x, y + 1, 142); show_string(str1, x, y + 2, 3, BLACK, WHITE, 0);
+}
+
+////////////////////////////////////////////////////
 void display_element_show_date_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
   char str1[16];
@@ -5727,7 +5811,7 @@ void display_element_show_tds_info_dynamics(uint16_t x, uint16_t y, uint16_t siz
   if (get_tds18s20(args2, &tds) == 1)
   {
     /// zobrazeni teploty
-    te = status_tds18s20[args2].temp / 1000.0;
+    te = status_tds18s20[args2].temp / 10.0;
     dtostrf(te, 4, 2, str1);
     strcat(str1, "C");
     strcpy_P(str2, current_temp_short);
@@ -5764,11 +5848,14 @@ void display_element_show_tds_info_static(uint16_t x, uint16_t y, uint16_t size_
     strcpy_P(str2, nastaveni_tds_period);
     sprintf(str1, "%s: %ds", str2, tds.period);
     show_string(str1, x + 10, y + 100 , 2, BLACK, WHITE, 0);
-
     ///
     strcpy_P(str2, text_online);
     sprintf(str1, "%s: %d", str2, status_tds18s20[args2].online);
     show_string(str1, x + 10, y + 120 , 2, BLACK, WHITE, 0);
+    ///
+    strcpy_P(str2, text_crc_error);
+    sprintf(str1, "%s: %d", str2, status_tds18s20[args2].crc_error);
+    show_string(str1, x + 10, y + 160 , 2, RED, WHITE, 0);
   }
   else
   {
@@ -5976,11 +6063,13 @@ void button_click_2(uint16_t x, uint16_t y, uint8_t size_x, uint8_t size_y, uint
   uint8_t prvni = 0;
   uint8_t druhy = 0;
   back_color = LIGHTGREY;
-  if (state == 0)
+  if (state == BUTTON_NO_ACTIVE)
     back_color = color_inactive;
-  if (state == 1)
+  if (state == BUTTON_ACTIVE)
     back_color = color_active;
-  if (state == 2)
+  if (state ==  BUTTON_INACTIVE)
+    back_color = LIGHTGREY;
+  if (state == BUTTON_NO_SHOW)
   {
     goto button_click_2_end ;
   }
@@ -6206,23 +6295,34 @@ void clik_button_onewire_scan_bus(uint16_t args1, uint16_t args2, uint8_t args3)
   tds_update_associate();
   MenuHistoryNextMenu(MENU_DIALOG_OK, 0, 0);
   /// TODO text
-  sprintf(str1, "Nalezeno: %d novych 1Wire", Global_HWwirenum);
+  sprintf_P(str1, text_find_new_onewire_devices, Global_HWwirenum);
   strcpy(dialog_text, str1);
 }
 //////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// vraci pocet pouzitych vzdalenych mqtt tds cidel
-uint8_t count_use_rtds(void)
+uint8_t count_use_rtds(uint8_t *count_type_temp)
 {
   uint8_t cnt = 0;
   uint8_t active = 0;
+  uint8_t cc = 0;
   for (uint8_t idx = 0; idx < MAX_RTDS; idx++)
   {
     remote_tds_get_active(idx, &active);
-    if (active == 1) cnt++;
+    if (active == 1)
+    {
+      cnt++;
+      if (remote_tds_get_type(idx) == RTDS_REMOTE_TYPE_TEMP)
+      {
+        cc = *count_type_temp;
+        cc++;
+        *count_type_temp = cc;
+      }
+    }
   }
   return cnt;
 }
+
 
 void click_rtds_add_sensor(uint16_t args1, uint16_t args2, uint8_t args3)
 {
@@ -6258,11 +6358,8 @@ void menu_rtds_update_name(uint16_t args1, uint16_t args2, uint8_t args3)
   uint8_t idx = display_element_get_string_args();
   display_element_get_string(name);
   //printf("update %s, %d\n", name, idx);
-  if (strlen(name) > 0)
-  {
-    if (remote_tds_name_exist(name) == 255)
-      remote_tds_set_name(idx, name);
-  }
+  remote_tds_set_name(idx, name);
+  remote_tds_subscibe_topic(idx);
 }
 
 /*
@@ -6301,9 +6398,9 @@ uint8_t get_global_temp(uint8_t device, char*name, float * temp)
         if (cri == device)
         {
           strcpy(name, tds.name);
-          if (status_tds18s20[idx].online == True)
+          if (status_tds18s20[idx].online == true)
           {
-            *temp = status_tds18s20[idx].temp / 1000.0;
+            *temp = status_tds18s20[idx].temp / 10.0;
             ret = 1;
             goto get_global_temp_end;
           }
@@ -6340,6 +6437,7 @@ get_global_temp_end:
    v args2 je bud vylistovat vsechny a nebo pouze aktivni, pouze neaktivni
    v args1 je index poradi prvku grafickeho menu
 */
+//saric1
 void button_get_show_default_temp(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
 {
   char name[20];
@@ -6347,7 +6445,6 @@ void button_get_show_default_temp(uint8_t args1, uint8_t args2, uint8_t args3, c
   uint8_t active;
   strcpy_P(line1, nastaveni_onewire);
   strcpy(line2, "");
-  //printf("gg %d %d %d\n", args1, args2, args3);
   /// pro tds cidla
   for (uint8_t idx = 0; idx < HW_ONEWIRE_MAXROMS; idx++)
   {
@@ -6390,7 +6487,6 @@ void button_get_show_default_temp_1(uint8_t args1, uint8_t args2, uint8_t args3,
 {
   button_get_show_default_temp(args1, args2, args3, line1, line2);
 }
-
 /////
 
 //////////////////////////////////////////////////////////////////////////////
@@ -6411,7 +6507,7 @@ void button_click_set_show_default_temp(uint16_t args1, uint16_t args2, uint8_t 
 uint8_t button_get_show_default_temp_max_items(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   if (args1 == INPUT_SENSOR_SHOW_ACTIVE)
-    return use_tds + use_rtds;
+    return use_tds + use_rtds_type_temp;
 
   if (args1 == INPUT_SENSOR_SHOW_ALL)
     return HW_ONEWIRE_MAXROMS + MAX_RTDS;
@@ -6423,9 +6519,12 @@ uint8_t button_get_show_default_temp_max_items(uint16_t args1, uint16_t args2, u
 */
 uint8_t button_get_show_default_temp_active(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  uint8_t ret = 0;
+  uint8_t ret = BUTTON_NO_ACTIVE;
   if (default_show_temp == args3)
-    ret = 1;
+    ret = BUTTON_ACTIVE;
+
+  // todo INPUT_SENSOR_SHOW_ACTIVE vs INPUT_SENSOR_SHOW_ALL
+
 
   return ret;
 }
@@ -6433,12 +6532,27 @@ uint8_t button_get_show_default_temp_active(uint16_t args1, uint16_t args2, uint
 /*
    funkce pro zobrazeni prizareneho vstupniho cidla k ringu
    args3 ... id polozky menu
+   args2 ... ring id
 */
 uint8_t button_select_term_ring_input_in_dialog_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  uint8_t ret = 0;
+  uint8_t rtds_active = 0;
+  uint8_t ret = BUTTON_NO_ACTIVE;
   if (thermostat_ring_get_asociate_tds(args2) == args3)
-    ret = 1;
+    ret = BUTTON_ACTIVE;
+
+  // todo INPUT_SENSOR_SHOW_ACTIVE vs INPUT_SENSOR_SHOW_ALL
+  if (args3 < HW_ONEWIRE_MAXROMS)
+  {
+    if (tds_used(args3) == 0) ret = BUTTON_INACTIVE;
+  }
+  else
+  {
+    remote_tds_get_active(args3 - HW_ONEWIRE_MAXROMS, &rtds_active);
+    if (rtds_active == 0) ret = BUTTON_INACTIVE;
+  }
+
+
   return ret;
 }
 ///
@@ -6493,11 +6607,15 @@ uint8_t button_get_virtual_output_max_items(uint16_t args1, uint16_t args2, uint
 /// index polozky menu args3 neni cislo virtualniho vystupu musi se to zjistit z eeprmky
 uint8_t button_select_term_ring_virtual_output_in_dialog_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3)
 {
+  //printf("%d %d %d\n", args1, args2, args3);
   uint8_t rgt = thermostat_ring_get_output(args2);
+
   uint8_t psg = output_virtual_persistent_store_get_id(args3);
-  uint8_t ret = 0;
+  uint8_t ret = BUTTON_NO_ACTIVE;
   if (rgt == psg && psg != 255)
-    ret = 1;
+    ret = BUTTON_ACTIVE;
+  if (output_virtual_persistent_store_get_used(args3) == 0)
+    ret = BUTTON_INACTIVE;
   return ret;
 }
 
@@ -6590,11 +6708,18 @@ void button_change_default_ring_via_dialog_onclick(uint16_t args1, uint16_t args
 */
 uint8_t button_get_term_ring_is_selected(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  uint8_t ret = 0;
+  uint8_t ret = BUTTON_NO_ACTIVE;
+  uint8_t active_ring = thermostat_ring_get_active(args3);
   if ((args3 == default_ring) && (thermostat_ring_get_active(default_ring) == 1))
-    ret = 1;
-  if ((args3 != default_ring) && (args3 != last_default_ring))
-    ret = 2;
+    ret = BUTTON_ACTIVE;
+
+  if ((active_ring == 1) && (args3 != default_ring) && (args3 != last_default_ring))
+    ret = BUTTON_NO_SHOW;
+
+  if (active_ring == RING_FREE)
+    ret = BUTTON_INACTIVE;
+
+  //printf("%d %d %d\n", args3, thermostat_ring_get_active(args3), ret);
   return ret;
 }
 ////
@@ -6695,7 +6820,10 @@ void dyn_button_show_all_thermostat_get_status_string(uint8_t args1, uint8_t arg
   char name[10];
   thermostat_ring_get_name(args1, name);
   sprintf(line1, "Regulator: %s", name);
-  strcpy_P(line2, text_dashdash);
+  if (thermostat_ring_get_active(args1) == 1)
+    convert_mode_text_1(thermostat_ring_get_mode(args1), line2);
+  else
+    strcpy_P(line2, text_dashdash);
 }
 
 /*
@@ -6812,13 +6940,13 @@ void thermostat_button_activate_ring_onclick(uint16_t args1, uint16_t args2, uin
 
 uint8_t button_status_default_ring_term_has_mode(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  uint8_t ret = 0;
+  uint8_t ret = BUTTON_NO_ACTIVE;
   if (thermostat_ring_get_active(default_ring) != RING_FREE)
   {
     if (thermostat_ring_get_mode_1(default_ring, args1) == true)
-      ret = 1;
+      ret = BUTTON_ACTIVE;
     if (thermostat_ring_get_mode(default_ring) != args1 && thermostat_mode_default_ring_last_state != args1)
-      ret = 2;
+      ret = BUTTON_NO_SHOW;
     //printf("last:%d, mode%d, idx%d\n", thermostat_mode_default_ring_last_state, thermostat_ring_get_mode(default_ring), args1);
   }
   //printf("ret %d\n\n", ret);
@@ -6837,6 +6965,12 @@ void button_click_default_term_set_mode(uint16_t args1, uint16_t args2, uint8_t 
   if (thermostat_ring_get_active(default_ring) != RING_FREE)
   {
     thermostat_mode_default_ring_last_state = thermostat_ring_get_mode(default_ring);
+
+    if (args1 == TERM_MODE_MAN && thermostat_mode_default_ring_last_state == TERM_MODE_MAN)
+    {
+      MenuHistoryNextMenu(NEW_MENU_THERMOSTAT_MAN_TEMP, default_ring, 0);
+    }
+
     thermostat_ring_set_mode(default_ring, args1);
     change_term_mode = 1;
   }
@@ -6893,16 +7027,16 @@ void button_click_default_term_set_mode(uint16_t args1, uint16_t args2, uint8_t 
 uint8_t button_select_term_mode_get_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   uint8_t mode;
-  uint8_t ret = 2;
+  uint8_t ret = BUTTON_NO_SHOW;
   if (thermostat_ring_get_active(args2) != RING_FREE)
   {
-    ret = 0;
+    ret = BUTTON_NO_ACTIVE;
     mode = thermostat_ring_get_mode(args2);
-    if (args3 == 0 && mode == TERM_MODE_OFF) ret = 1;
-    if (args3 == 1 && mode == TERM_MODE_HEAT_MAX) ret = 1;
-    if (args3 == 2 && mode == TERM_MODE_MIN) ret = 1;
-    if (args3 == 3 && mode == TERM_MODE_PROG) ret = 1;
-    if (args3 == 4 && (mode == TERM_MODE_MAN || mode == TERM_MODE_MAN_HEAT || mode == TERM_MODE_MAN_COOL)) ret = 1;
+    if (args3 == 0 && mode == TERM_MODE_OFF) ret = BUTTON_ACTIVE;
+    if (args3 == 1 && mode == TERM_MODE_HEAT_MAX) ret = BUTTON_ACTIVE;
+    if (args3 == 2 && mode == TERM_MODE_MIN) ret = BUTTON_ACTIVE;
+    if (args3 == 3 && mode == TERM_MODE_PROG) ret = BUTTON_ACTIVE;
+    if (args3 == 4 && (mode == TERM_MODE_MAN || mode == TERM_MODE_MAN_HEAT || mode == TERM_MODE_MAN_COOL)) ret = BUTTON_ACTIVE;
   }
   return ret;
 }
@@ -6984,18 +7118,20 @@ void button_select_term_mode_get_status_string(uint8_t args1, uint8_t args2, uin
    args3 ... index prvku v menu
 */
 
+
+
 uint8_t button_get_term_heat_or_cool(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  uint8_t ret = 2;
+  uint8_t ret = BUTTON_NO_SHOW;
   uint8_t b;
   if (thermostat_ring_get_active(args2) != RING_FREE)
   {
-    ret = 0;
+    ret = BUTTON_NO_ACTIVE;
     b = thermostat_ring_get_status_bites(args2, STATUS_BIT_HEAT_OR_COOL);
     if (b == 0 && args1 == TERM_MODE_MAN_HEAT)
-      ret = 1;
+      ret = BUTTON_ACTIVE;
     if (b != 0 && args1 == TERM_MODE_MAN_COOL)
-      ret = 1;
+      ret = BUTTON_ACTIVE;
   }
   return ret;
 }
@@ -7076,7 +7212,7 @@ void button_change_brightness_display_get_status_string(uint8_t args1, uint8_t a
 {
   char str2[8];
   strcpy_P(line1, new_text_jas_display);
-  if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) != 0 )
+  if ((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_BRIGHTNESS)) != 0 )
   {
     strcpy_P(line2, new_text_jas_display_automat);
     itoa(brigthness_display_auto_values , str2, 10);
@@ -7085,7 +7221,7 @@ void button_change_brightness_display_get_status_string(uint8_t args1, uint8_t a
     strcat(line2, " ");
     strcat(line2, "%");
   }
-  if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) == 0 )
+  if ((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_BRIGHTNESS)) == 0 )
   {
     strcpy_P(line2, new_text_jas_display_manual);
     itoa(brigthness_display_values, str2, 10);
@@ -7105,8 +7241,8 @@ void button_change_brightness_display_dyn_button_onclick(uint16_t args1, uint16_
 /// Funkce, ktera vrati jestli je zapnute automaticke rizeni podsvetleni
 uint8_t switch_brightness_automode_get_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  uint8_t ret = 0;
-  if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) != 0 ) ret = 1;
+  uint8_t ret = BUTTON_NO_ACTIVE;
+  if ((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_BRIGHTNESS)) != 0 ) ret = BUTTON_ACTIVE;
   return ret;
 }
 ////////
@@ -7114,7 +7250,7 @@ uint8_t switch_brightness_automode_get_status_fnt(uint16_t args1, uint16_t args2
 void switch_brightness_automode_get_status_string(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
 {
   char str2[8];
-  if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) != 0 )
+  if ((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_BRIGHTNESS)) != 0 )
   {
     strcpy_P(line1, new_text_jas_display_automat);
     itoa(brigthness_display_auto_values , str2, 10);
@@ -7123,7 +7259,7 @@ void switch_brightness_automode_get_status_string(uint8_t args1, uint8_t args2, 
     strcat(line1, " ");
     strcat(line1, "%");
   }
-  if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) == 0 )
+  if ((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_BRIGHTNESS)) == 0 )
   {
     strcpy_P(line1, new_text_jas_display_manual);
   }
@@ -7132,15 +7268,15 @@ void switch_brightness_automode_get_status_string(uint8_t args1, uint8_t args2, 
 /// Obsluzna funkce nastaveni rizeni podsvetleni
 void switch_brightness_automode_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) != 0 )
+  if ((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_BRIGHTNESS)) != 0 )
   {
-    cbi(brigthness_display_mode, DISPLAY_MODE_STATUS_BIT);
+    cbi(brigthness_display_mode, DISPLAY_MODE_AUTO_BRIGHTNESS);
     my_touch.TP_SetBacklight(brigthness_display_values * 2);
     goto switch_brightness_automode_onclick_end;
   }
-  if ((brigthness_display_mode & (1 << DISPLAY_MODE_STATUS_BIT)) == 0 )
+  if ((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_BRIGHTNESS)) == 0 )
   {
-    sbi(brigthness_display_mode, DISPLAY_MODE_STATUS_BIT);
+    sbi(brigthness_display_mode, DISPLAY_MODE_AUTO_BRIGHTNESS);
   }
 switch_brightness_automode_onclick_end:
   EEPROM.write(my_brightness_mode, brigthness_display_mode);
@@ -7194,9 +7330,9 @@ void button_set_brightness_auto_shutdown_dyn_symbol_onclick(uint16_t args1, uint
 
 uint8_t button_set_brightness_auto_shutdown_get_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  uint8_t ret = 0;
+  uint8_t ret = BUTTON_NO_ACTIVE;
   if ((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY)) != 0)
-    ret = 1;
+    ret = BUTTON_ACTIVE;
   return ret;
 }
 
@@ -7266,19 +7402,19 @@ void button_set_brightness_auto_shutdown_select_time_dyn_symbol_onclick(uint16_t
 
 uint8_t button_set_brightness_auto_shutdown_select_time_get_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  uint8_t ret = 0;
+  uint8_t ret = BUTTON_NO_ACTIVE;
   if (args3 == 0 && display_auto_shutdown == 0)
-    ret = 1;
+    ret = BUTTON_ACTIVE;
   if (args3 == 1 && display_auto_shutdown == 30)
-    ret = 1;
+    ret = BUTTON_ACTIVE;
   if (args3 == 2 && display_auto_shutdown == 60)
-    ret = 1;
+    ret = BUTTON_ACTIVE;
   if (args3 == 3 && display_auto_shutdown == 120)
-    ret = 1;
+    ret = BUTTON_ACTIVE;
   if (args3 == 4 && display_auto_shutdown == 180)
-    ret = 1;
+    ret = BUTTON_ACTIVE;
   if (args3 == 5 && display_auto_shutdown == 250)
-    ret = 1;
+    ret = BUTTON_ACTIVE;
   return ret;
 }
 
@@ -7693,7 +7829,7 @@ uint8_t check_connectivity_connection(void)
 */
 void display_element_show_about_device(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
-  char str1[32];
+  char str1[64];
   char str2[8];
   DateTime time_now;
   strcpy_P(str1, new_text_input_volt);
@@ -7733,27 +7869,27 @@ void display_element_show_about_device(uint16_t x, uint16_t y, uint16_t size_x, 
   show_string(str1, x + 5 , y + 85 , 1, BLACK, WHITE, 0);
 
   strcpy_P(str1, new_text_mqtt_send);
-  itoa(mqtt_send_message, str2, 10);
+  ltoa(mqtt_send_message, str2, 10);
   strcat(str1, str2);
   show_string(str1, x + 5 , y + 100 , 1, BLACK, WHITE, 0);
 
   strcpy_P(str1, new_text_mqtt_receive);
-  itoa(mqtt_receive_message, str2, 10);
+  ltoa(mqtt_receive_message, str2, 10);
   strcat(str1, str2);
   show_string(str1, x + 5 , y + 115 , 1, BLACK, WHITE, 0);
 
   strcpy_P(str1, new_text_mqtt_processed);
-  itoa(mqtt_process_message, str2, 10);
+  ltoa(mqtt_process_message, str2, 10);
   strcat(str1, str2);
   show_string(str1, x + 5 , y + 130 , 1, BLACK, WHITE, 0);
 
   strcpy_P(str1, new_text_mqtt_error);
-  itoa(mqtt_error, str2, 10);
+  ltoa(mqtt_error, str2, 10);
   strcat(str1, str2);
   show_string(str1, x + 5 , y + 145 , 1, BLACK, WHITE, 0);
 
   time_now = DateTime(__DATE__, __TIME__).unixtime();
-  sprintf(str1, "build version: %d.%02d.%02d %02d:%02d:%02d", time_now.year(), time_now.month(), time_now.day(), time_now.hour(), time_now.minute(), time_now.second());
+  sprintf_P(str1, text_build_version, time_now.year(), time_now.month(), time_now.day(), time_now.hour(), time_now.minute(), time_now.second());
   show_string(str1, x + 5 , y + 160 , 1, BLUE, WHITE, 0);
 }
 ////

@@ -80,7 +80,7 @@
 #define SELFTEST_ETH_LINK 6
 #define SELFTEST_RESTART_NEEDED 7
 
-#define DISPLAY_MODE_STATUS_BIT 7
+#define DISPLAY_MODE_AUTO_BRIGHTNESS 7
 #define DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY 6
 
 
@@ -106,7 +106,10 @@
 
 #define REDRAW_ONCE 5
 
-
+#define BUTTON_ACTIVE 1
+#define BUTTON_NO_ACTIVE 0
+#define BUTTON_NO_SHOW 2
+#define BUTTON_INACTIVE 3
 
 /// null fake funkce ///
 uint8_t returnnullfceargs(uint16_t args1, uint16_t args2, uint8_t args3);
@@ -129,7 +132,7 @@ uint8_t menu_redraw_date(uint16_t args1, uint16_t args2, uint8_t args3);
 
 
 void display_element_show_date_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text);
-
+void display_element_show_link_status(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text);
 
 void display_element_dialog_show_text(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text);
 void display_element_dialog_set_variable(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t idx, uint8_t args2, char *text);
@@ -400,6 +403,7 @@ const char text_value[] PROGMEM = "value";
 const char text_type[] PROGMEM = "type";
 const char text_device[] PROGMEM = "device";
 
+const char text_crc_error[] PROGMEM = "CRC chyby";
 
 const char global_time_set[] PROGMEM = "global/time/set";
 const char global_time_ntp[] PROGMEM = "global/time/ntp";
@@ -418,7 +422,12 @@ const char termbig_subscribe[] PROGMEM = "/ctl/termbig/subscribe";
 
 const char termbig_virtual_output[] PROGMEM = "/termbig-out/virtual-output/";
 
+const char text_mqtt_connect[] PROGMEM = " Spojeno ";
+const char text_mqtt_disconnect[] PROGMEM = "Nespojeno";
 
+const char text_find_new_onewire_devices[] PROGMEM = "Nalezeno: %d novych 1Wire";
+const char text_build_version[] PROGMEM = "build version: %d.%02d.%02d %02d:%02d:%02d";
+const char text_volt_consume_light_info[] PROGMEM = "3.3V=%s; 5.0V=%s; IN=%s; I=%s";
 /***************************************************************/
 /*
         spolecne display funkce
@@ -435,6 +444,19 @@ const Element_Function_1 f_show_date PROGMEM = {
   .size_x = 0,
   .size_y = 0,
   .redraw_class = (1 << REDRAW_CLASS_3 | 1 << REDRAW_FORCE),
+  .onclick = nullfce,
+  .enable_show = display_enable_show,
+  .name = char_NULL,
+};
+
+const Element_Function_1 f_show_link_status PROGMEM = {
+  .x = 10,
+  .y = 290,
+  .args = 0,
+  .fnt_coordinate_xy = display_element_show_link_status,
+  .size_x = 0,
+  .size_y = 0,
+  .redraw_class = (1 << REDRAW_CLASS_0 | 1 << REDRAW_FORCE),
   .onclick = nullfce,
   .enable_show = display_enable_show,
   .name = char_NULL,
