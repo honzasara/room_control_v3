@@ -55,7 +55,7 @@ void button_select_term_mode_get_status_string(uint8_t args1, uint8_t args2, uin
 
 
 uint8_t menu_redraw_change_default_ring(uint16_t args1, uint16_t args2, uint8_t args3);
-uint8_t menu_redraw_change_variable(uint16_t args1, uint16_t args2, uint8_t args3);
+
 uint8_t menu_redraw_change_term_mode(uint16_t args1, uint16_t args2, uint8_t args3);
 uint8_t menu_redraw_change_term_mode_cool_heat(uint16_t args1, uint16_t args2, uint8_t args3);
 uint8_t menu_redraw_change_term_input(uint16_t args1, uint16_t args2, uint8_t args3);

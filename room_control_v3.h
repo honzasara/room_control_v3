@@ -175,7 +175,7 @@ void display_function_vertical_slider_dec(uint16_t args1, uint16_t args2, uint8_
 void display_function_vertical_slider_get(uint8_t *start, uint8_t *stop);
 
 
-
+uint8_t menu_redraw_change_variable(uint16_t args1, uint16_t args2, uint8_t args3);
 
 
 

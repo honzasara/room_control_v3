@@ -26,7 +26,7 @@
    23.
    24. reload nastaveni site, reload zmena nastaveni mqtt
    25.
-   26. automticka regulace jasu, pomoci tabulky
+   26. 
    27.
    28.
    29.
@@ -35,7 +35,7 @@
    32.
    33.
    34.
-   35. automaticka regulace osvetleni, refresh zobrazeni
+   35. 
 
   ----
   dokoncit overit mqqt spojeni
@@ -166,6 +166,7 @@ uint8_t brigthness_display_auto_values = 0;
 uint8_t last_brigthness_display_auto_values = 0;
 
 uint8_t brigthness_display_mode = 0;
+uint8_t last_brigthness_display_mode = 0;
 uint8_t display_auto_shutdown = 0;
 uint8_t display_auto_shutdown_now = 0;
 
@@ -1770,6 +1771,17 @@ uint8_t menu_redraw_change_virtual_output(uint16_t args1, uint16_t args2, uint8_
     return 1;
   }
   return 0;
+}
+
+uint8_t menu_redraw_change_display_brightness_mode(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t ret = 0;
+  if (last_brigthness_display_mode != brigthness_display_mode)
+  {
+    last_brigthness_display_mode = brigthness_display_mode;
+    ret = 1;
+  }
+  return ret;
 }
 
 uint8_t get_function_return_args_1(uint16_t args1, uint16_t args2, uint8_t args3)
@@ -5088,6 +5100,7 @@ void setup()
       display_auto_shutdown = EEPROM.read(my_display_auto_shutdown);
       brigthness_display_values = EEPROM.read(my_brightness_values);
       brigthness_display_mode = EEPROM.read(my_brightness_mode);
+      last_brigthness_display_mode = brigthness_display_mode;
       my_touch.TP_SetBacklight(brigthness_display_values * 2);
       brigthness_display_auto_values = 5;
     }
@@ -5771,6 +5784,7 @@ void display_element_show_all_temp(uint16_t x, uint16_t y, uint16_t size_x, uint
 void display_element_show_link_status(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
   char str1[16];
+  uint16_t color = GREEN;
   if (selftest_get_0(SELFTEST_MQTT_LINK) == 0 && selftest_get_0(SELFTEST_ETH_LINK) == 0 )
   {
     strcpy_P(str1, text_mqtt_connect);
@@ -5778,8 +5792,9 @@ void display_element_show_link_status(uint16_t x, uint16_t y, uint16_t size_x, u
   else
   {
     strcpy_P(str1, text_mqtt_disconnect);
+    color= RED;
   }
-  my_lcd.Set_Draw_color(WHITE); my_lcd.Draw_Fast_HLine(x, y, 142); my_lcd.Draw_Fast_HLine(x, y + 1, 142); show_string(str1, x, y + 2, 3, BLACK, WHITE, 0);
+  my_lcd.Set_Draw_color(WHITE); my_lcd.Draw_Fast_HLine(x, y, 142); my_lcd.Draw_Fast_HLine(x, y + 1, 142); show_string(str1, x, y + 2, 3, color, WHITE, 0);
 }
 
 ////////////////////////////////////////////////////
@@ -7304,6 +7319,10 @@ uint8_t display_enable_show_brightness_manual_mode(uint16_t args1, uint16_t args
   return ret;
 }
 
+uint8_t display_enable_show_brightness_auto_mode(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+return !display_enable_show_brightness_manual_mode(args1, args2, args3);
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

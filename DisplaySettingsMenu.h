@@ -29,13 +29,14 @@ void switch_brightness_automode_onclick(uint16_t args1, uint16_t args2, uint8_t 
 uint8_t preload_display_setting_brightness(uint16_t args1, uint16_t args2, uint8_t args3);
 
 uint8_t display_enable_show_brightness_manual_mode(uint16_t args1, uint16_t args2, uint8_t args3);
-
+uint8_t display_enable_show_brightness_auto_mode(uint16_t args1, uint16_t args2, uint8_t args3);
 
 void button_set_brightness_auto_shutdown_select_time_get_status_string(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2);
 void button_set_brightness_auto_shutdown_select_time_dyn_symbol_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
 uint8_t button_set_brightness_auto_shutdown_select_time_get_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3);
 
 uint8_t menu_redraw_change_auto_brightness(uint16_t args1, uint16_t args2, uint8_t args3);
+uint8_t menu_redraw_change_display_brightness_mode(uint16_t args1, uint16_t args2, uint8_t args3);
 
 const Element_Button_1 button_default_show_temp PROGMEM = {
   .name = text_select_default_temp,
@@ -212,6 +213,19 @@ const Element_Switch_1 switch_brightness_automode PROGMEM = {
   .redraw_class = (REDRAW_BUTTON | 1 << REDRAW_CLASS_0 ),
 };
 
+const Element_Function_1 f_show_fill_rectangle_display_auto_brightness_mode PROGMEM = {
+  .x = 230,
+  .y = 40,
+  .args = YELLOW,
+  .fnt_coordinate_xy = display_element_fill_rectangle,
+  .size_x = 220,
+  .size_y = 40,
+  .redraw_class = ( 1 << REDRAW_CLASS_1),
+  .onclick = nullfce,
+  .enable_show = display_enable_show_brightness_auto_mode,
+  .name = char_NULL,
+};
+
 const Element_Function_1 f_dialog_set_variable_display_brightness PROGMEM = {
   .x = 270,
   .y = 40,
@@ -219,7 +233,7 @@ const Element_Function_1 f_dialog_set_variable_display_brightness PROGMEM = {
   .fnt_coordinate_xy = display_element_dialog_set_variable,
   .size_x = 140,
   .size_y = 40,
-  .redraw_class = REDRAW_BUTTON,
+  .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_1 | 1 << REDRAW_CLASS_2),
   .onclick = nullfce,
   .enable_show = display_enable_show_brightness_manual_mode,
   .name = char_NULL,
@@ -233,7 +247,7 @@ const Element_Symbol_1 dialog_set_variable_plus_display_brightness PROGMEM =  {
   .znak_size = 2,
   .args = 0,
   .onclick = display_function_set_variable_plus,
-  .redraw_class = REDRAW_BUTTON,
+  .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_1),
   .enable_show = display_enable_show_brightness_manual_mode,
 };
 const Element_Symbol_1 dialog_set_variable_minus_display_brightness PROGMEM =  {
@@ -245,7 +259,7 @@ const Element_Symbol_1 dialog_set_variable_minus_display_brightness PROGMEM =  {
   .znak_size = 2,
   .args = 0,
   .onclick = display_function_set_variable_minus,
-  .redraw_class = REDRAW_BUTTON,
+  .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_1),
   .enable_show = display_enable_show_brightness_manual_mode,
 };
 
@@ -320,7 +334,7 @@ const Menu1 New_DisplaySetting_Brigthness PROGMEM = {
   .name = new_text_nastaveni_zobrazeni_full,
   .button_1 = {button_back},
   .button_2 = {NULL},
-  .function_1 = {f_dialog_set_variable_display_brightness},
+  .function_1 = {f_show_fill_rectangle_display_auto_brightness_mode, f_dialog_set_variable_display_brightness},
   .switch_1 = {switch_brightness_automode},
   .dyn_button = {NULL},
   .symbol_button_1 = {dialog_set_variable_plus_display_brightness, dialog_set_variable_minus_display_brightness},
@@ -328,7 +342,7 @@ const Menu1 New_DisplaySetting_Brigthness PROGMEM = {
   .dyn_select_box_1 = {NULL},
   .len_button_1 = 1,
   .len_button_2 = 0,
-  .len_function_1 = 1,
+  .len_function_1 = 2,
   .len_switch_1 = 1,
   .len_dyn_button_1 = 0,
   .len_symbol_button_1 = 2,
@@ -341,10 +355,10 @@ const Menu1 New_DisplaySetting_Brigthness PROGMEM = {
   .size_y = 280,
   .atributes = (1 << MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE | 1 << MENU_ATTRIBUTES_DECORATE_MENU),
   .color_background = YELLOW,
-  .redraw_class = (1 << REDRAW_FORCE | 1 << REDRAW_CLASS_0), ///saric test
+  .redraw_class = (1 << REDRAW_ONCE),
   .redraw_class_0 = menu_redraw_change_auto_brightness,
-  .redraw_class_1 = returnnullfceargs,
-  .redraw_class_2 = returnnullfceargs,
+  .redraw_class_1 = menu_redraw_change_display_brightness_mode,
+  .redraw_class_2 = menu_redraw_change_variable,
   .redraw_class_3 = returnnullfceargs,
   .preload_function = preload_display_setting_brightness,
 };
