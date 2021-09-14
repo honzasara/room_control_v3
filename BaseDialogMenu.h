@@ -2,6 +2,8 @@
 #define __PROJECT_BASE_DIALOG_MENU_H
 #include "room_control_v3.h"
 
+uint8_t menu_redraw_dialog_ok(uint16_t args1, uint16_t args2, uint8_t args3);
+
 const Element_Button_1 dialog_yes PROGMEM = {
   .name = text_yes,
   .x = 30,
@@ -353,7 +355,7 @@ const Menu1 DialogOK PROGMEM = {
   .atributes = (1 << MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE | 1 << MENU_ATTRIBUTES_DECORATE_MENU),
   .color_background = YELLOW,
   .redraw_class = (1 << REDRAW_FORCE),
-  .redraw_class_0 = returnnullfceargs,
+  .redraw_class_0 = menu_redraw_dialog_ok,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
   .redraw_class_3 = returnnullfceargs,

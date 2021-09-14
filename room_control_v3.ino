@@ -26,7 +26,7 @@
    23.
    24. reload nastaveni site, reload zmena nastaveni mqtt
    25.
-   26. 
+   26.
    27.
    28.
    29.
@@ -35,10 +35,9 @@
    32.
    33.
    34.
-   35. 
+   35. automaticke rizeni jasu, nedelat skokove
 
   ----
-  dokoncit overit mqqt spojeni
   dialogum upravit hlavicku textu
   dokoncit menu statistika regulatoru
     - zde informace, aktualni stav, vykon akcniho clenu nastaveny, zpetna vazba od akcniho clenu
@@ -48,7 +47,8 @@
     - pid krivka
   menu casove plany
 
-
+  menu NRF
+  menu vystupni cleny
 */
 
 
@@ -153,6 +153,8 @@ uint8_t last_default_ring = 0;
 uint8_t default_show_temp = 0;
 uint8_t thermostat_mode_default_ring_last_state = 0;
 
+
+
 unsigned long load = 0;
 unsigned long load_max = 0;
 unsigned long load_min = 0xffffffff;
@@ -200,7 +202,7 @@ struct tt_menu_dialog_variable
   fptr_save_function save_function;
 } menu_dialog_variable[4];
 uint8_t menu_dialog_variable_change;
-
+uint8_t menu_dialog_change;
 
 
 
@@ -220,6 +222,7 @@ uint8_t menu_redraw10s = 0;
 uint8_t change_term_mode = 0;
 uint8_t change_virtual_output = 0;
 uint8_t change_auto_brightness = 0;
+
 
 uint8_t MenuHistory[MENU_MAX_HISTORY];
 uint8_t Global_menu_args1[MENU_MAX_HISTORY];
@@ -1442,7 +1445,7 @@ void display_element_set_string_del_char(uint16_t args1, uint16_t idx, uint8_t a
 */
 void menu_tds_save_offset(uint16_t args1, float args2, uint8_t args3)
 {
-  tds_set_offset(display_function_get_variable_args(args1), display_function_get_variable_float(args1) * 1000);
+  tds_set_offset(display_function_get_variable_args(args1), display_function_get_variable_float(args1) * 10);
 }
 
 void menu_tds_save_period(uint16_t args1, float args2, uint8_t args3)
@@ -1470,7 +1473,7 @@ void menu_tds_save_name(uint16_t args1, uint16_t args2, uint8_t args3)
 void display_menu_tds_set_offset(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   MenuHistoryNextMenu(MENU_DIALOG_SET_VARIABLE, 0, 0);
-  display_function_set_variable(tds_get_offset(args2) / 1000.0, -10, 10, 0.1, args2, NUMBER_TYPE_FLOAT, H_FALSE, args1, &menu_tds_save_offset);
+  display_function_set_variable(tds_get_offset(args2) / 10.0, -10, 10, 0.1, args2, NUMBER_TYPE_FLOAT, H_FALSE, args1, &menu_tds_save_offset);
   //dialog_save_variable_function = ;
 }
 
@@ -1781,6 +1784,18 @@ uint8_t menu_redraw_change_display_brightness_mode(uint16_t args1, uint16_t args
     last_brigthness_display_mode = brigthness_display_mode;
     ret = 1;
   }
+  return ret;
+}
+
+uint8_t menu_redraw_dialog_ok(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t ret = 0;
+  if (menu_dialog_change == 1)
+  {
+  ret = 1;
+  menu_dialog_change = 0;
+  }
+
   return ret;
 }
 
@@ -3167,7 +3182,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
     id = atoi(my_payload);
     output_virtual_ram_store_clear(id);
   }
-
+  /////
   ///
   /// nastavovani vlastnosti TDS
   //// /thermctl-in/XXXX/tds/associate - asociace do tds si pridam mac 1wire - odpoved je pod jakem ID to mam ulozeno
@@ -5430,7 +5445,6 @@ void loop() {
         brigthness_display_auto_values = 5;
       my_touch.TP_SetBacklight(brigthness_display_auto_values * 2);
     }
-
   }
 
   if ((millis() - milis_1s) >= 1000)
@@ -5616,20 +5630,7 @@ void loop() {
     {
       draw_menu(true, 0, 0, 0);
     }
-  /*
-    {
-    click_x = my_touch.x;
-    click_y = my_touch.y;
-    display_auto_shutdown_now = 0;
-    if (((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY)) != 0) && my_touch.TP_GetOnOff() == 0)
-      my_touch.TP_SetOnOff(LED_ON);
 
-    if (draw_menu(false) == true)
-    {
-      draw_menu(true);
-    }
-    }
-  */
 
   load = millis() - load_now;
   if (load < load_min) load_min = load;
@@ -5792,7 +5793,7 @@ void display_element_show_link_status(uint16_t x, uint16_t y, uint16_t size_x, u
   else
   {
     strcpy_P(str1, text_mqtt_disconnect);
-    color= RED;
+    color = RED;
   }
   my_lcd.Set_Draw_color(WHITE); my_lcd.Draw_Fast_HLine(x, y, 142); my_lcd.Draw_Fast_HLine(x, y + 1, 142); show_string(str1, x, y + 2, 3, color, WHITE, 0);
 }
@@ -5853,7 +5854,7 @@ void display_element_show_tds_info_static(uint16_t x, uint16_t y, uint16_t size_
     sprintf(str1, "%s: %s", str2, tds.name);
     show_string(str1, x + 10, y + 40, 2, BLACK, WHITE, 0);
     /// zobrazeni offsetu
-    te = tds.offset / 1000.0;
+    te = tds.offset / 10.0;
     dtostrf(te, 4, 2, str1);
     strcat(str1, "C");
     strcpy_P(str2, temp_offset_short);
@@ -7321,7 +7322,7 @@ uint8_t display_enable_show_brightness_manual_mode(uint16_t args1, uint16_t args
 
 uint8_t display_enable_show_brightness_auto_mode(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-return !display_enable_show_brightness_manual_mode(args1, args2, args3);
+  return !display_enable_show_brightness_manual_mode(args1, args2, args3);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -7748,7 +7749,11 @@ void button_set_mqtt_pass_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 //// funkce obsluha tlacitka check connection
 void button_check_mqtt_connection_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  /// TODO
+  char str1[16];
+  MenuHistoryNextMenu(MENU_DIALOG_OK, 0, 0);
+  mqtt_ping(&mqtt_client);
+  mqtt_text_status(str1);
+  strcpy(dialog_text, str1);
 }
 
 /*
@@ -7849,8 +7854,13 @@ uint8_t check_connectivity_connection(void)
 void display_element_show_about_device(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
   char str1[64];
-  char str2[8];
+  char str2[16];
   DateTime time_now;
+
+  time_now = rtc.now();
+  sprintf_P(str1, text_time_now, time_now.year(), time_now.month(), time_now.day(), time_now.hour(), time_now.minute(), time_now.second());
+  show_string(str1, x + 220 , y + 10 , 1, BLACK, WHITE, 0);
+
   strcpy_P(str1, new_text_input_volt);
   dtostrf(prepocet_napeti(dvanact, CONST_PREVOD_DVANACTV), 4, 2, str2);
   strcat(str1, str2);
@@ -7910,8 +7920,55 @@ void display_element_show_about_device(uint16_t x, uint16_t y, uint16_t size_x, 
   time_now = DateTime(__DATE__, __TIME__).unixtime();
   sprintf_P(str1, text_build_version, time_now.year(), time_now.month(), time_now.day(), time_now.hour(), time_now.minute(), time_now.second());
   show_string(str1, x + 5 , y + 160 , 1, BLUE, WHITE, 0);
+
+
+  mqtt_text_status(str2);
+  sprintf_P(str1, text_mqtt_last_error, str2);
+  show_string(str1, x + 220 , y + 25 , 1, BLACK, WHITE, 0);
+
+  sprintf_P(str1, new_text_uptime, uptime);
+  show_string(str1, x + 220 , y + 40 , 1, BLACK, WHITE, 0);
 }
 ////
+
+void mqtt_text_status(char *str2)
+{
+  switch (mqtt_client.state())
+  {
+    case 0:
+      strcpy_P(str2, text_connect_ok);
+      break;
+    case -4:
+      strcpy_P(str2, text_timeout);
+      break;
+    case -3:
+      strcpy_P(str2, text_connlost);
+      break;
+    case -2:
+      strcpy_P(str2, text_connfailed);
+      break;
+    case -1:
+      strcpy_P(str2, text_disconnect);
+      break;
+    case 1:
+      strcpy_P(str2, text_bad_proto);
+      break;
+    case 2:
+      strcpy_P(str2, text_bad_client);
+      break;
+    case 3:
+      strcpy_P(str2, text_con_refused);
+      break;
+    case 4:
+      strcpy_P(str2, text_bad_secret);
+      break;
+    case 5:
+      strcpy_P(str2, text_unauthorized);
+      break;
+  }
+}
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*

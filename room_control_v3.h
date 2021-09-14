@@ -265,6 +265,126 @@ uint8_t get_function_return_args_1(uint16_t args1, uint16_t args2, uint8_t args3
 
 ///////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+const char term_title[] PROGMEM = "Pokojovy regulator v3";
+const char text_touchscreen[] PROGMEM = "touchscreen";
+const char text_nastaveni_systemu[] PROGMEM = "nastaveni systemu";
+const char text_onewire_rozhrani[] PROGMEM = "1wire rozhrani";
+const char text_onewire_hledam[] PROGMEM = "1wire hledam";
+const char text_vnitrni_ochrany[] PROGMEM = "Vnitrni ochrany";
+const char text_ethernet_rozhrani[] PROGMEM = "Ethernet rozhrani";
+const char text_mqtt_rozhrani[] PROGMEM = "MQTT rozhrani";
+const char text_rest_rozhrani[] PROGMEM = "REST API rozhrani";
+const char text_nrf_rozhrani[] PROGMEM = "NRF rozhrani";
+const char text_pid_regulator[] PROGMEM = "PID regulator";
+const char text_ntp_cas[] PROGMEM = "NTP internetovy cas";
+const char text_rtc_cas[] PROGMEM = "RTC vnitrni hodiny";
+const char text_vychozi_nastaveni[] PROGMEM = "Vychozi nastaveni";
+const char text_bezny_start[] PROGMEM = "Bezny start";
+const char text_link_status[] PROGMEM = "Link status";
+const char text_test_ram[] PROGMEM = "Test SPI-RAM";
+const char text_test_eeprom[] PROGMEM = "Test SPI-EEPROM";
+const char current_time[] PROGMEM = "Aktualni cas";
+const char current_temp[] PROGMEM = "Aktualni teplota:";
+const char current_temp_short[] PROGMEM = "teplota:";
+const char temp_offset_short[] PROGMEM = "offset:";
+const char nastaveni_text[] PROGMEM = "Nastaveni";
+const char nastaveni_ring_text[] PROGMEM = "Nastaveni regulatoru";
+const char text_current_ring_mode[] PROGMEM =  "Aktualni mod regulatoru";
+const char text_change_default_ring[] PROGMEM = "Zmenit vychozi regulatoru";
+const char funkce_text[] PROGMEM = "Funkce";
+const char regulator_text[] PROGMEM = "Regulator";
+const char regulator_default_text[] PROGMEM = "Vychozi regulator:";
+const char ring_text_setup[] PROGMEM = "Nastaveni";
+const char text_set_default[] PROGMEM = "Vychozi hodnoty";
+
+const char budik_text[] PROGMEM = "Budik";
+const char button_zpet[] PROGMEM = "Zpet";
+
+const char text_button_term_off[] PROGMEM = "OFF";
+const char text_button_term_off_comment[] PROGMEM = "Vypnuto, ochranny mod";
+const char text_button_term_max[] PROGMEM = "MAX";
+const char text_button_term_max_comment[] PROGMEM = "Zapnuto, bez regulace";
+const char text_button_term_min[] PROGMEM = "MIN";
+const char text_button_term_min_comment[] PROGMEM = "Chlazeni, bez regulace";
+const char text_button_term_prog[] PROGMEM = "PROG";
+const char text_button_term_prog_comment[] PROGMEM = "Automaticky program";
+const char text_button_term_man[] PROGMEM = "MAN";
+const char text_button_term_man_comment[] PROGMEM = "Rucni ovladani";
+
+
+const char text_button_mode_heat[] PROGMEM = "Topeni";
+const char text_button_mode_cool[] PROGMEM = "Chlazeni";
+const char text_button_term_fan[] PROGMEM = "FAN";
+
+const char text_term_active[] PROGMEM = "Aktivni";
+const char text_term_deactive[] PROGMEM = "Neaktivni";
+const char text_term_do_activate[] PROGMEM = "Aktivovat novy regulator?";
+const char text_term_do_deactivate[] PROGMEM = "Deaktivovat reg.";
+const char text_term_do_activate1[] PROGMEM = "Aktivovat reg.";
+
+const char nastaveni_site[] PROGMEM = "Nastaveni site";
+const char nastaveni_nrf[] PROGMEM = "NRF pripojeni";
+const char nastaveni_default[] PROGMEM = "Reset nastaveni";
+const char nastaveni_onewire[] PROGMEM = "Lokalni cidla";
+const char nastaveni_rtds[] PROGMEM = "Vzdalene cidla";
+
+const char text_onewire_list[] PROGMEM = "Seznam nalezenych 1wire";
+const char text_tds_sensors[] PROGMEM = "Vlastnosti lokalniho cidla";
+const char text_associovat_tds[] PROGMEM = "Priradit nove cidlo";
+const char text_nastavit_tds[] PROGMEM = "Nastavit TDS cidlo";
+const char text_nastavit_rtds[] PROGMEM = "Nastavit vzdalene cidlo";
+const char text_assocoivat[] PROGMEM = "Nastavit cidlo";
+const char text_assocoivat_output[] PROGMEM = "Nastavit vystup";
+const char text_nastavit_pid[] PROGMEM = "PID volby";
+const char text_rtds_prefix[] PROGMEM = "/";
+const char text_not_used[] PROGMEM = "Neni pouzito";
+const char text_rtds_novy[] PROGMEM = "Pridat nove vzdalene cidlo";
+const char nastaveni_delete_sensor[] PROGMEM = "Vymazat cidlo";
+const char nastaveni_deassociate_sensor[] PROGMEM = "Uvolnit cidlo";
+const char nastaveni_deassociate_program[] PROGMEM = "Uvolnit program";
+const char nastaveni_tds_period[] PROGMEM = "Merici perioda";
+const char nastaveni_name_sensor[] PROGMEM = "Nastavit nazev";
+const char nastaveni_tds_offset[] PROGMEM = "Nastavit offset";
+const char nastaveni_rtds_subscribe[] PROGMEM = "MQTT prihlaseni";
+const char text_nazev[] PROGMEM = "Nazev:";
+const char text_online[] PROGMEM = "Online";
+const char text_last_update[] PROGMEM = "Posledni aktualizace:";
+const char text_select_default_temp[] PROGMEM = "Vyber zobrazeni teplomeru";
+const char text_select_term_mode[] PROGMEM = "Vyber modu regulatoru";
+const char text_select_term_default_ring[] PROGMEM = "Vyber vychoziho regulatoru";
+const char text_nastaveni_ring_program[] PROGMEM = "Vyber programu";
+const char text_nastaveni_setup_program[] PROGMEM = "Nastaveni programu";
+const char text_nastaveni_programator[] PROGMEM = "Nastaveni programatoru";
+const char text_nastaveni_mezni_temp[] PROGMEM = "Nastaveni mezni teploty";
+const char text_prog[] PROGMEM = "PROG";
+const char text_ntp_sync_time[] PROGMEM = "Aktualizace casu";
+
+const char nastaveni_deassociate_virtual_output[] PROGMEM = "Uvolnit vystup";
+
+const char text_upozorneni[] PROGMEM = "Upozorneni";
+const char text_klavesnice[] PROGMEM = "Klavesnice";
+
+const char text_yes[] PROGMEM = "Ano";
+const char text_no[] PROGMEM = "Ne";
+
+const char text_zrusit[] PROGMEM = "Zrusit";
+const char text_ulozit[] PROGMEM = "Ulozit";
+const char text_delete_char[] PROGMEM = "Smaz znak";
+const char text_err[] PROGMEM = "Error";
+const char text_ok[] PROGMEM = "OK";
+
+
+const char text_upper_case[] PROGMEM = "A";
+const char text_lower_case[] PROGMEM = "a";
+const char text_special_case[] PROGMEM = "@";
+const char text_dashdash[] PROGMEM = "---";
+
+const char char_P[] PROGMEM = "P";
+const char char_I[] PROGMEM = "I";
+const char char_D[] PROGMEM = "D";
+const char char_T[] PROGMEM = "T";
+const char char_K[] PROGMEM = "K";
+const char char_NULL[] PROGMEM = "";
 
 const char new_text_show_all_temp[] PROGMEM = "Zobrazeni vsech teplot";
 
@@ -427,7 +547,24 @@ const char text_mqtt_disconnect[] PROGMEM = "Nespojeno";
 
 const char text_find_new_onewire_devices[] PROGMEM = "Nalezeno: %d novych 1Wire";
 const char text_build_version[] PROGMEM = "build version: %d.%02d.%02d %02d:%02d:%02d";
+const char text_time_now[] PROGMEM = "aktualizace v %d.%02d.%02d %02d:%02d:%02d";
 const char text_volt_consume_light_info[] PROGMEM = "3.3V=%s; 5.0V=%s; IN=%s; I=%s";
+const char text_mqtt_last_error[] PROGMEM = "mqtt posledni chyba %s";
+
+
+const char text_connect_ok[] PROGMEM = " connect OK ";
+const char text_timeout[] PROGMEM =    "   timeout  ";
+const char text_connlost[] PROGMEM =   "connect lost";
+const char text_connfailed[] PROGMEM = "conn  failed";
+const char text_disconnect[] PROGMEM = "disconnected";
+const char text_bad_proto[] PROGMEM =  "bad   proto ";
+const char text_bad_client[] PROGMEM = "bad  client ";
+const char text_con_refused[] PROGMEM = "con refused";
+const char text_bad_secret[] PROGMEM = "unknow user ";
+const char text_unauthorized[] PROGMEM = " no auth  ";
+
+const char new_text_uptime[] PROGMEM = "uptime %ld sec";
+
 /***************************************************************/
 /*
         spolecne display funkce
@@ -469,7 +606,7 @@ const Element_Function_1 f_dialog_show_text PROGMEM = {
   .fnt_coordinate_xy = display_element_dialog_show_text,
   .size_x = 0,
   .size_y = 0,
-  .redraw_class = REDRAW_BUTTON,
+  .redraw_class = (REDRAW_BUTTON | 1 << REDRAW_CLASS_0),
   .onclick = nullfce,
   .enable_show = display_enable_show,
   .name = char_NULL,
