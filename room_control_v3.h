@@ -80,6 +80,8 @@
 #define SELFTEST_ETH_LINK 6
 #define SELFTEST_RESTART_NEEDED 7
 
+#define SELFTEST_N0_CONNECTIVITY 0
+
 #define DISPLAY_MODE_AUTO_BRIGHTNESS 7
 #define DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY 6
 
@@ -324,7 +326,7 @@ const char text_term_do_activate1[] PROGMEM = "Aktivovat reg.";
 
 const char nastaveni_site[] PROGMEM = "Nastaveni site";
 const char nastaveni_nrf[] PROGMEM = "NRF pripojeni";
-const char nastaveni_default[] PROGMEM = "Reset nastaveni";
+const char nastaveni_default[] PROGMEM = "Vychozi nastaveni";
 const char nastaveni_onewire[] PROGMEM = "Lokalni cidla";
 const char nastaveni_rtds[] PROGMEM = "Vzdalene cidla";
 
@@ -455,6 +457,7 @@ const char new_text_time_set_date_manualy[] PROGMEM = "Rucni nastaveni datumu";
 
 const char new_text_ok_connect_seznam[] PROGMEM = "Konektivita OK";
 const char new_text_err_connect_seznam[] PROGMEM = "Konektivita ERROR";
+const char new_text_connectivity[] PROGMEM = "Konektivita: ";
 
 const char new_text_switch_brightness_automode[] PROGMEM = "Automaticky jas";
 const char new_text_jas_display_automat[] PROGMEM = "Automaticke rizeni";
@@ -467,7 +470,7 @@ const char new_text_pet_volt[] PROGMEM = "Interni napeti 5.0 ";
 const char new_text_tritri_volt[] PROGMEM = "Interni napeti 3.3 ";
 const char new_text_consume_ampere[] PROGMEM = "Odber proudu: ";
 const char new_text_internal_temp[] PROGMEM = "Interni teplota: ";
-const char new_text_selfcheck_test[] PROGMEM = "Selfcheck: ";
+const char new_text_selfcheck_test[] PROGMEM = "Selfcheck %d: ";
 const char new_text_mqtt_send[] PROGMEM = "MQTT odeslanych: ";
 const char new_text_mqtt_receive[] PROGMEM = "MQTT prijatych: ";
 const char new_text_mqtt_processed[] PROGMEM = "MQTT zpracovanych: ";
@@ -565,6 +568,19 @@ const char text_unauthorized[] PROGMEM = " no auth  ";
 
 const char new_text_uptime[] PROGMEM = "uptime %ld sec";
 
+const char new_text_ip_format[] PROGMEM = "%d.%d.%d.%d";
+
+const char new_text_30sec[] PROGMEM = "30 sec";
+const char new_text_1min[] PROGMEM = "1 min";
+const char new_text_2min[] PROGMEM = "2 min";
+const char new_text_3min[] PROGMEM = "3 min";
+const char new_text_4min[] PROGMEM = "4 min";
+const char new_text_enabled_x_sec[] PROGMEM = "Povoleno: %d sec";
+
+const char new_text_virtual_output[] PROGMEM = "Virtualni vystup";
+
+
+const char new_text_internal_temp_value[] PROGMEM = "interni zarizeni: %sC";
 /***************************************************************/
 /*
         spolecne display funkce

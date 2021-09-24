@@ -19,7 +19,7 @@
    16.
    17. validace zadanych hodnot pro cas a datum, nedovolit ulozit!
    18. funkce pro validaci IP adres
-   19. tlacitko pro restart/bootloader -> dialog pro vyber moznosti
+   19. 
    20.
    21.
    22. change_term_mode - rozdelit po bitech
@@ -120,8 +120,11 @@ EEPROM_CAT25 SROM(&swSPI, STORAGE_EEPROM_CS , CAT25M02);
 long lastmqttconnect = 0;
 
 //uint8_t last_output_update[MAX_THERMOSTAT];
-uint8_t selftest_data = 0;
-uint8_t last_selftest_data = 0;
+uint8_t selftest_data_0 = 0;
+uint8_t last_selftest_data_0 = 0;
+
+uint8_t selftest_data_1 = 0;
+uint8_t last_selftest_data_1 = 0;
 
 uint16_t tritri = 0;
 uint16_t petnula = 0;
@@ -241,372 +244,6 @@ fptr_args dialog_yes_function;
 
 
 
-
-/*
-   definice menu pro vyber zobrazeni teplomeru na vychozi obrazovce
-*/
-
-/*
-
-
-
-
-
-
-
-
-
-
-
-
-
-  const Element_Dyn_Button_1 button_change_term_mode_via_dialog PROGMEM = {
-  .first_x = 10,
-  .first_y = 100,
-  .size_x = 190,
-  .size_y = 40,
-  .font_size = 1,
-  .step_x = 1,
-  .step_y = 1,
-  .direction = VERTICAL,
-  .max_items_count = 1,
-  .max_row_count = 1,
-  .slider_args = 0,
-  .args = 1,
-  .get_status_string = button_get_default_ring_term_mode_labels,
-  .dyn_button_onclick = button_click_term_set_mode_via_dialog,
-  .function_for_max_items = get_function_return_args_1,
-  .redraw_class = (1 << REDRAW_FORCE)
-  };
-
-
-
-
-
-
-
-
-  //saric
-
-
-
-  const Element_Dyn_Select_1 button_select_term_ring_program_in_dialog PROGMEM = {
-  .first_x = 10,
-  .first_y = 40,
-  .size_x = 120,
-  .size_y = 50,
-  .font_size_1 = 1,
-  .font_size_2 = 1,
-  .color_active = GREEN,
-  .color_inactive = WHITE,
-  .step_x = 130,
-  .step_y = 60,
-  .direction = HORIZONTAL_NEW_LINE,
-  .max_items_count = 3,
-  .max_row_count = 3,
-  .slider_args = MENU_SLIDER_OFF,
-  .args = 0,
-  .get_status_string =  button_get_show_default_ring_program,
-  .dyn_symbol_onclick =  button_click_set_show_default_ring_program,
-  .function_for_max_items =  button_get_show_default_ring_program_max_items,
-  .get_status_fnt = button_get_show_default_ring_program_active,
-  .redraw_class = REDRAW_BUTTON,
-  };
-
-
-  const Element_Button_2 button_term_ring_mode_heat PROGMEM = {.name = text_button_mode_heat, .x = 240, .y = 90, .size_x = 100, .size_y = 40, .font_size = 1, .color_active = RED, .color_inactive = WHITE, .args = TERM_MODE_MAN_HEAT, .onclick = button_click_set_term_heat_or_cool, .get_status_fnt = button_get_term_heat_or_cool,  .redraw_class = REDRAW_PROGRAM_BUTTON, .enable_show = display_enable_show_term_mode_man};
-  const Element_Button_2 button_term_ring_mode_cool PROGMEM = {.name = text_button_mode_cool, .x = 360, .y = 90, .size_x = 100, .size_y = 40, .font_size = 1, .color_active = BLUE, .color_inactive = WHITE, .args = TERM_MODE_MAN_COOL, .onclick = button_click_set_term_heat_or_cool, .get_status_fnt = button_get_term_heat_or_cool,  .redraw_class = REDRAW_PROGRAM_BUTTON, .enable_show = display_enable_show_term_mode_man};
-
-  const Element_Button_1 button_term_ring_select_program PROGMEM = {
-  .name = text_nastaveni_ring_program,
-  .x = 240,
-  .y = 40,
-  .size_x = 190,
-  .size_y = 40,
-  .font_size = 1,
-  .args = MENU_NASTAVENI_SELECT_PROGRAM_TERM,
-  .onclick = MenuHistoryNextMenu,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .enable_show = display_enable_show_term_mode_prog,
-  };
-
-  const Element_Button_1 button_term_ring_setup_program PROGMEM = {
-  .name = text_nastaveni_setup_program,
-  .x = 240,
-  .y = 90,
-  .size_x = 190,
-  .size_y = 40,
-  .font_size = 1,
-  .args = MENU_NASTAVENI_SETUP_PROGRAM_TERM,
-  .onclick = MenuHistoryNextMenu,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .enable_show = display_enable_show_term_mode_prog,
-  };
-
-  const Element_Button_1 button_term_ring_setting_menu PROGMEM = {
-  .name = nastaveni_ring_text,
-  .x = 10,
-  .y = 160,
-  .size_x = 190,
-  .size_y = 40,
-  .font_size = 1,
-  .args = MENU_NASTAVENI_RING_SCREEN,
-  .onclick = button_click_nastaveni_ring_screen,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .enable_show = display_enable_show,
-  };
-
-
-*/
-
-/*
-*/
-
-//const Element_Function_1 f_show_ring_therm_info PROGMEM = {.x = 20, .y = 20, .args = 0, .fnt_coordinate_xy = ,  .size_x = 0, .size_y = 0, .redraw_class = REDRAW_CLASS_SHOW, .onclick = nullfce, .enable_show = display_enable_show, .name = char_NULL,};
-
-/*
-
-
-
-
-  const Element_Button_1 button_deassociate_program_for_term = {
-  .name = nastaveni_deassociate_program,
-  .x = 210,
-  .y = 220,
-  .size_x = 190,
-  .size_y = 40,
-  .font_size = 2,
-  .args = 0,
-  .onclick = button_click_deassociate_default_ring_program_for_term,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .enable_show = display_enable_show,
-  };
-
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/////
-
-/////////
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-*/
-
-
-/******************************************************************************/
-/*
-    graficke prvky pro nastaveni rucni teploty
-    kdyz neni vybrany mod MAN prvky se nezobrazuji, resi funkce display_enable_show_term_mode_man
-*/
-/*
-
-*/
-
-
-
-/*********************************************************************************/
-/*
-   slider pro vyber one wire zarizeni
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-///////////
-
-
-///////////
-
-
-
-
-
-/*******************************************************************************/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-  const Menu1 RegulatorMenu PROGMEM = {
-  .name = regulator_text,
-  .button_1 = {button_back, button_term_ring_setting_menu, button_term_ring_select_program, button_term_ring_setup_program},
-  .button_2 = {button_term_ring_mode_heat, button_term_ring_mode_cool},
-  .function_1 = {f_show_date, f_show_default_ring, f_default_ring_set_temp},
-  .switch_1 = {NULL},
-  .dyn_button = {button_change_default_ring_via_dialog, button_change_term_mode_via_dialog},
-  .symbol_button_1 = {dialog_set_default_ring_temp_plus, dialog_set_default_ring_temp_minus},
-  .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {NULL},
-  .len_button_1 = 4,
-  .len_button_2 = 2,
-  .len_function_1 = 3,
-  .len_switch_1 = 0,
-  .len_dyn_button_1 = 2,
-  .len_symbol_button_1 = 2,
-  .len_dyn_symbol_1 = 0,
-  .len_dyn_select_box_1 = 0,
-  .idx = MENU_REGULATOR,
-  .x = 0,
-  .y = 0,
-  .size_x = 480,
-  .size_y = 320,
-  .atributes = (1 << MENU_ATTRIBUTES_CLEAN_DISPLAY),
-  .color_background = WHITE,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .redraw_class_0 = returnnullfceargs,
-  .redraw_class_1 = returnnullfceargs,
-  .redraw_class_2 = returnnullfceargs,
-  .preload_function = preload_regulator_menu,
-  };
-
-
-*/
-
-
-
-/*
-
-*/
-/*
-
-*/
-/*
-
-*/
-/*
-
-*/
-
-//saric
-
-/*
-  const Menu1 DialogSelectProgramForTerm PROGMEM = {
-  .name = text_nastaveni_ring_program,
-  .button_1 = {button_back, button_deassociate_program_for_term},
-  .button_2 = {NULL},
-  .function_1 = {NULL},
-  .switch_1 = {NULL},
-  .dyn_button = {NULL},
-  .symbol_button_1 = {NULL},
-  .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {button_select_term_ring_program_in_dialog},
-  .len_button_1 = 2,
-  .len_button_2 = 0,
-  .len_function_1 = 0,
-  .len_switch_1 = 0,
-  .len_dyn_button_1 = 0,
-  .len_symbol_button_1 = 0,
-  .len_dyn_symbol_1 = 0,
-  .len_dyn_select_box_1 = 1,
-  .idx = MENU_NASTAVENI_SELECT_PROGRAM_TERM,
-  .x = 10,
-  .y = 10,
-  .size_x = 460,
-  .size_y = 300,
-  .atributes = (1 << MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE | 1 << MENU_ATTRIBUTES_DECORATE_MENU),
-  .color_background = YELLOW,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .redraw_class_0 = returnnullfceargs,
-  .redraw_class_1 = returnnullfceargs,
-  .redraw_class_2 = returnnullfceargs,
-  .preload_function = returnnullfceargs,
-  };
-*/
-
-/*
-  const Menu1 DialogSetupProgramForTerm PROGMEM = {
-  .name = text_nastaveni_setup_program,
-  .button_1 = {button_back},
-  .button_2 = {NULL},
-  .function_1 = {NULL},
-  .switch_1 = {NULL},
-  .dyn_button = {NULL},
-  .symbol_button_1 = {NULL},
-  .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {NULL},
-  .len_button_1 = 1,
-  .len_button_2 = 0,
-  .len_function_1 = 0,
-  .len_switch_1 = 0,
-  .len_dyn_button_1 = 0,
-  .len_symbol_button_1 = 0,
-  .len_dyn_symbol_1 = 0,
-  .len_dyn_select_box_1 = 0,
-  .idx = MENU_NASTAVENI_SETUP_PROGRAM_TERM,
-  .x = 10,
-  .y = 10,
-  .size_x = 460,
-  .size_y = 300,
-  .atributes = (1 << MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE | 1 << MENU_ATTRIBUTES_DECORATE_MENU),
-  .color_background = YELLOW,
-  .redraw_class = (1 << REDRAW_FORCE),
-  .redraw_class_0 = returnnullfceargs,
-  .redraw_class_1 = returnnullfceargs,
-  .redraw_class_2 = returnnullfceargs,
-  .preload_function = returnnullfceargs,
-  };
-*/
-
-/*
-
-*/
-
-
 const MenuAll Menu_All PROGMEM = {
   .len_menu1 = 7,
   .len_menu2 = 7,
@@ -624,14 +261,6 @@ const MenuAll Menu_All PROGMEM = {
 
 
 
-
-
-
-
-
-
-
-
 void nullfce(uint16_t args1, uint16_t args2, uint8_t args3) {};
 void nullfceargs(uint16_t args1, uint16_t args2, uint8_t args3) {};
 uint8_t returnnullfceargs(uint16_t args1, uint16_t args2, uint8_t args3)
@@ -642,11 +271,6 @@ uint8_t display_enable_show(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   return 1;
 }
-
-
-
-
-
 
 
 
@@ -1652,9 +1276,15 @@ uint8_t menu_redraw_time05s(uint16_t args1, uint16_t args2, uint8_t args3)
   */
 
 
-  if (selftest_data != last_selftest_data)
+  if (selftest_data_0 != last_selftest_data_0)
   {
-    last_selftest_data = selftest_data;
+    last_selftest_data_0 = selftest_data_0;
+    ret = 1;
+  }
+
+  if (selftest_data_1 != last_selftest_data_1)
+  {
+    last_selftest_data_1 = selftest_data_1;
     ret = 1;
   }
 
@@ -1671,7 +1301,8 @@ uint8_t menu_redraw_time05s(uint16_t args1, uint16_t args2, uint8_t args3)
 uint8_t menu_redraw_change_auto_brightness(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   uint8_t ret = 0;
-  if (change_auto_brightness == 1)
+  /// refresh pouze kdyz je automaticky rezim
+  if ((change_auto_brightness == 1) && ((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_BRIGHTNESS)) != 0) )
   {
     change_auto_brightness = 0;
     ret = 1;
@@ -1792,8 +1423,8 @@ uint8_t menu_redraw_dialog_ok(uint16_t args1, uint16_t args2, uint8_t args3)
   uint8_t ret = 0;
   if (menu_dialog_change == 1)
   {
-  ret = 1;
-  menu_dialog_change = 0;
+    ret = 1;
+    menu_dialog_change = 0;
   }
 
   return ret;
@@ -3645,14 +3276,16 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
     mqtt_process_message++;
     mqtt_callback_prepare_topic_array(str1, topic);
     cnt = setting_network(str1, my_payload);
+    /// je zmena s ulozeni
     if (cnt == 1)
     {
       save_setup_network();
-      sbi(selftest_data, SELFTEST_RESTART_NEEDED); //TODO predelat na volani funkce
+      selftest_set_0(SELFTEST_RESTART_NEEDED);
     }
+    /// pouze zmena
     if (cnt == 2)
     {
-      sbi(selftest_data, SELFTEST_RESTART_NEEDED); //TODO predelat na volani funkce
+      selftest_set_0(SELFTEST_RESTART_NEEDED);
     }
   }
   //// priradi k menu pro rizeni intezity svetla vystup
@@ -3934,14 +3567,18 @@ void send_device_status(void)
     itoa(default_ring, payload, 10);
     send_mqtt_general_payload(&mqtt_client, str_topic, payload);
     ///
-    strcpy(str_topic, "status/selftest");
-    itoa(selftest_data, payload, 10);
+    strcpy(str_topic, "status/selftest/0");
+    itoa(selftest_data_0, payload, 10);
     send_mqtt_general_payload(&mqtt_client, str_topic, payload);
-
+    ///
+    strcpy(str_topic, "status/selftest/1");
+    itoa(selftest_data_1, payload, 10);
+    send_mqtt_general_payload(&mqtt_client, str_topic, payload);
+    ///
     strcpy(str_topic, "status/rtds/count");
     itoa(use_rtds, payload, 10);
     send_mqtt_general_payload(&mqtt_client, str_topic, payload);
-
+    ///
     strcpy(str_topic, "status/nrf/temp/count");
     itoa(use_nrf_temp, payload, 10);
     send_mqtt_general_payload(&mqtt_client, str_topic, payload);
@@ -4032,39 +3669,39 @@ void send_mqtt_tds(void)
   struct_DDS18s20 tds;
   char payload[64];
   char tmp1[4];
-  int tt;
-  long avg = 0;
+  //int tt;
+  //long avg = 0;
   for (uint8_t id = 0; id < HW_ONEWIRE_MAXROMS; id++)
     if (get_tds18s20(id, &tds) == 1)
       if (tds.used == 1 && status_tds18s20[id].online == True)
       {
-        tt = status_tds18s20[id].temp;
-        itoa(tt, payload, 10);
+        //tt = status_tds18s20[id].temp;
+        itoa(status_tds18s20[id].temp, payload, 10);
         send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "temp", payload);
-        avg = 0;
-        for (uint8_t c = 0; c < MAX_AVG_TEMP; c++) avg = avg + status_tds18s20[id].average_temp[c];
-        avg = avg / MAX_AVG_TEMP;
-        itoa(avg, payload, 10);
+        //avg = 0;
+        //for (uint8_t c = 0; c < MAX_AVG_TEMP; c++) avg = avg + status_tds18s20[id].average_temp[c];
+        //avg = avg / MAX_AVG_TEMP;
+        itoa(status_tds18s20[id].average_temp_now , payload, 10);
         send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "temp_avg", payload);
         strcpy(payload, tds.name);
         send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "name", payload);
-        tt = tds.offset;
-        itoa(tt, payload, 10);
+        //tt = tds.offset;
+        itoa(tds.offset, payload, 10);
         send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "offset", payload);
-        tt = status_tds18s20[id].online;
-        itoa(tt, payload, 10);
+        //tt = status_tds18s20[id].online;
+        itoa(status_tds18s20[id].online, payload, 10);
         send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "online", payload);
         payload[0] = 0;
         createString(payload, ':', tds.rom, 8, 16, 2);
         send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "rom", payload);
-        tt = tds.period;
-        itoa(tt, payload, 10);
+        //tt = tds.period;
+        itoa(tds.period, payload, 10);
         send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "period", payload);
-        tt = status_tds18s20[id].period_now;
-        utoa(tt, payload, 10);
+        //tt = status_tds18s20[id].period_now;
+        utoa(status_tds18s20[id].period_now, payload, 10);
         send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "start_at", payload);
-        tt = status_tds18s20[id].crc_error;
-        itoa(tt, payload, 10);
+        //tt = status_tds18s20[id].crc_error;
+        itoa(status_tds18s20[id].crc_error, payload, 10);
         send_mqtt_message_prefix_id_topic_payload(&mqtt_client, "tds", id, "crc_error", payload);
       }
 }
@@ -4393,7 +4030,12 @@ void a2d_complete(uint8_t channel, uint16_t data)
 */
 void selftest_set_0(uint8_t what)
 {
-  sbi(selftest_data, what) ;
+  sbi(selftest_data_0, what) ;
+}
+
+void selftest_set_1(uint8_t what)
+{
+  sbi(selftest_data_1, what) ;
 }
 ///
 /// selftest_clear_0 - vymazani chyboveho flagu, problem jiz neni
@@ -4402,7 +4044,11 @@ void selftest_set_0(uint8_t what)
 */
 void selftest_clear_0(uint8_t what)
 {
-  cbi(selftest_data, what) ;
+  cbi(selftest_data_0, what) ;
+}
+void selftest_clear_1(uint8_t what)
+{
+  cbi(selftest_data_1, what) ;
 }
 ///
 /// selftest_get_0 - flag je v jakem stavu
@@ -4415,21 +4061,29 @@ void selftest_clear_0(uint8_t what)
 */
 uint8_t selftest_get_0(uint8_t what)
 {
-  return selftest_data & (1 << what);
+  return selftest_data_0 & (1 << what);
+}
+uint8_t selftest_get_1(uint8_t what)
+{
+  return selftest_data_1 & (1 << what);
 }
 ///
 /// selftest - pusteni skupiny vlastnich selftestu
 void selftest(void)
 {
   if (!rtc.isrunning())
-    sbi(selftest_data, SELFTEST_ERR_RTC);
+    //sbi(selftest_data, SELFTEST_ERR_RTC);
+    selftest_set_0(SELFTEST_ERR_RTC);
   else
-    cbi(selftest_data, SELFTEST_ERR_RTC);
+    //cbi(selftest_data, SELFTEST_ERR_RTC);
+    selftest_clear_0(SELFTEST_ERR_RTC);
 
   if (Ethernet.link() == 1)
-    cbi(selftest_data, SELFTEST_ETH_LINK);
+    //cbi(selftest_data, SELFTEST_ETH_LINK);
+    selftest_clear_0(SELFTEST_ETH_LINK);
   else
-    sbi(selftest_data, SELFTEST_ETH_LINK);
+    //sbi(selftest_data, SELFTEST_ETH_LINK);
+    selftest_set_0(SELFTEST_ETH_LINK);
 }
 ///
 /// funkce pro prepocet napeti z ADC prevodniku na skutecnou hodnotu
@@ -4632,8 +4286,8 @@ void thermostat(void)
       if (get_tds18s20(tdsid, &tds) == 1)
         if (tds.used == 1 && status_tds18s20[tdsid].online == True)
         {
-          thermostat_pid_input(tix, status_tds18s20[tdsid].temp / 10.0);
-          thermostat_pid_setpoint(tix, thresh);
+          thermostat_pid_input(tix, status_tds18s20[tdsid].temp);
+          thermostat_pid_setpoint(tix, thresh); 
           pwm = thermostat_pid_output(tix);
           thermostat_ring_set_power(tix, pwm);
         }
@@ -5080,7 +4734,9 @@ void setup()
       {
         for (uint8_t cnt = 0; cnt < MAX_AVG_TEMP; cnt++)
           status_tds18s20[idx].average_temp[cnt] = 200;
+        status_tds18s20[idx].average_temp_now = 200;
         status_tds18s20[idx].crc_error = 0;
+        status_tds18s20[idx].avg_temp_cnt = 0;
       }
       ///
       //for (uint8_t idx = 0; idx < MAX_THERMOSTAT; idx++)
@@ -5485,6 +5141,7 @@ void loop() {
     if (status_send_counter == 2)
     {
       send_mqtt_status(&mqtt_client);
+      send_mqtt_status_critical_only(&mqtt_client);
     }
     if (status_send_counter == 3)
     {
@@ -5756,7 +5413,7 @@ void display_element_show_all_temp(uint16_t x, uint16_t y, uint16_t size_x, uint
   uint8_t cri = 0;
 
   dtostrf(internal_temp, 4, 2, str1);
-  sprintf(name, "interni zarizeni: %sC", str1);
+  sprintf_P(name, new_text_internal_temp_value, str1);
   show_string(name, x, y + (25 * cri), 2, BLACK, WHITE, 0);
 
   cri++;
@@ -6601,9 +6258,11 @@ void button_deassociate_virtual_output_for_term_onclick(uint16_t args1, uint16_t
 }
 void button_get_show_virtual_output(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
 {
-  strcpy(line1, "Virtualni vystup");
+  strcpy_P(line1, new_text_virtual_output);
   output_virtual_persistent_store_get_name(args1, line2);
 }
+
+
 
 /*
    args2 je ring_id
@@ -6812,7 +6471,8 @@ void button_get_default_ring_labels(uint8_t args1, uint8_t args2, uint8_t args3,
   if (default_ring != NO_DEFAULT_RING)
   {
     thermostat_ring_get_name(default_ring, name);
-    sprintf(line2, "Regulator: %s", name);
+    strcpy_P(line2, new_text_regulator);
+    strcat(line2, name);
   }
   else
   {
@@ -6835,7 +6495,8 @@ void dyn_button_show_all_thermostat_get_status_string(uint8_t args1, uint8_t arg
 {
   char name[10];
   thermostat_ring_get_name(args1, name);
-  sprintf(line1, "Regulator: %s", name);
+  strcpy_P(line1, new_text_regulator);
+  strcat(line1, name);
   if (thermostat_ring_get_active(args1) == 1)
     convert_mode_text_1(thermostat_ring_get_mode(args1), line2);
   else
@@ -7340,8 +7001,10 @@ void button_set_brightness_auto_shutdown_get_status_string(uint8_t args1, uint8_
   if ((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY)) == 0)
     strcpy_P(line2, new_text_vypnuto);
   else
-    sprintf(line2, "Povoleno: %d sec", display_auto_shutdown);
+    sprintf_P(line2, new_text_enabled_x_sec , display_auto_shutdown);
 }
+
+
 
 void button_set_brightness_auto_shutdown_dyn_symbol_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
@@ -7362,16 +7025,18 @@ void button_set_brightness_auto_shutdown_select_time_get_status_string(uint8_t a
   if (args1 == 0)
     strcpy_P(line1, new_text_vypnuto);
   if (args1 == 1)
-    strcpy(line1, "30 sec");
+    strcpy_P(line1, new_text_30sec);
   if (args1 == 2)
-    strcpy(line1, "1 min");
+    strcpy_P(line1, new_text_1min);
   if (args1 == 3)
-    strcpy(line1, "2 min");
+    strcpy_P(line1, new_text_2min);
   if (args1 == 4)
-    strcpy(line1, "3 min");
+    strcpy_P(line1, new_text_3min);
   if (args1 == 5)
-    strcpy(line1, "4 min");
+    strcpy_P(line1, new_text_4min);
 }
+
+
 
 void button_set_brightness_auto_shutdown_select_time_dyn_symbol_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
@@ -7544,7 +7209,7 @@ void button_ntp_set_server_onclick(uint16_t args1, uint16_t args2, uint8_t args3
 {
   char ip_text[16];
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
-  sprintf(ip_text, "%d.%d.%d.%d", device.ntp_server[0], device.ntp_server[1], device.ntp_server[2], device.ntp_server[3]);
+  sprintf_P(ip_text, new_text_ip_format, device.ntp_server[0], device.ntp_server[1], device.ntp_server[2], device.ntp_server[3]);
   display_element_set_string(ip_text, 16, 0, &helper_dialog_ntp_set_server, &valid_ipv4_address_element_string);
 }
 
@@ -7565,7 +7230,7 @@ void button_set_network_ip_onclick(uint16_t args1, uint16_t args2, uint8_t args3
 {
   char ip_text[16];
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
-  sprintf(ip_text, "%d.%d.%d.%d", device.myIP[0], device.myIP[1], device.myIP[2], device.myIP[3]);
+  sprintf_P(ip_text, new_text_ip_format, device.myIP[0], device.myIP[1], device.myIP[2], device.myIP[3]);
   display_element_set_string(ip_text, 16, 0, &helper_dialog_network_set_ip, &valid_ipv4_address_element_string);
 }
 void helper_dialog_network_set_ip(uint16_t args1, uint16_t args2, uint8_t args3)
@@ -7585,7 +7250,7 @@ void button_set_network_mask_onclick(uint16_t args1, uint16_t args2, uint8_t arg
 {
   char ip_text[16];
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
-  sprintf(ip_text, "%d.%d.%d.%d", device.myMASK[0], device.myMASK[1], device.myMASK[2], device.myMASK[3]);
+  sprintf_P(ip_text, new_text_ip_format, device.myMASK[0], device.myMASK[1], device.myMASK[2], device.myMASK[3]);
   display_element_set_string(ip_text, 16, 0, &helper_dialog_network_set_mask, &valid_ipv4_address_element_string);
 }
 void helper_dialog_network_set_mask(uint16_t args1, uint16_t args2, uint8_t args3)
@@ -7605,7 +7270,7 @@ void button_set_network_gw_onclick(uint16_t args1, uint16_t args2, uint8_t args3
 {
   char ip_text[16];
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
-  sprintf(ip_text, "%d.%d.%d.%d", device.myGW[0], device.myGW[1], device.myGW[2], device.myGW[3]);
+  sprintf_P(ip_text, new_text_ip_format, device.myGW[0], device.myGW[1], device.myGW[2], device.myGW[3]);
   display_element_set_string(ip_text, 16, 0, &helper_dialog_network_set_gw, &valid_ipv4_address_element_string);
 }
 void helper_dialog_network_set_gw(uint16_t args1, uint16_t args2, uint8_t args3)
@@ -7643,7 +7308,7 @@ void button_set_network_dns_onclick(uint16_t args1, uint16_t args2, uint8_t args
 {
   char ip_text[16];
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
-  sprintf(ip_text, "%d.%d.%d.%d", device.myDNS[0], device.myDNS[1], device.myDNS[2], device.myDNS[3]);
+  sprintf_P(ip_text, new_text_ip_format, device.myDNS[0], device.myDNS[1], device.myDNS[2], device.myDNS[3]);
   display_element_set_string(ip_text, 16, 0, &helper_dialog_network_set_dns, &valid_ipv4_address_element_string);
 }
 void helper_dialog_network_set_dns(uint16_t args1, uint16_t args2, uint8_t args3)
@@ -7661,7 +7326,7 @@ void helper_dialog_network_set_dns(uint16_t args1, uint16_t args2, uint8_t args3
 */
 void button_set_network_mac_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  device.mac[0] = 2; device.mac[1] = 1; device.mac[2] = 2; device.mac[3] =  dvanact >> 1; device.mac[4] =  proud >> 1; device.mac[5] =  light_curr >> 1;
+  device.mac[0] = 2; device.mac[1] = 1; device.mac[2] = 2; device.mac[3] =  dvanact; device.mac[4] = proud; device.mac[5] = light_curr;
 }
 
 
@@ -7793,16 +7458,31 @@ void helper_dialog_mqtt_set_pass(uint16_t args1, uint16_t args2, uint8_t args3)
 */
 void button_nastaveni_default_value(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  /// TODO dialog ANO/NE
+  //char str2[10];
+  MenuHistoryNextMenu(MENU_DIALOG_YES_NO, 0, 0);
+  dialog_yes_function = &helper_default_value;
+  dialog_yes_args1 = 0;
+  strcpy_P(dialog_text, nastaveni_default);
+}
+void helper_default_value(uint16_t args1, uint16_t args2, uint8_t args3)
+{
   EEPROM.write(set_default_values, 255);
   resetFunc();
 }
+
 /*
    funkce pro restartovani zarizeni
 */
 void button_nastaveni_reload_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   /// TODO dialog ANO/NE
+  MenuHistoryNextMenu(MENU_DIALOG_YES_NO, 0, 0);
+  dialog_yes_function = &helper_reload_restart;
+  dialog_yes_args1 = 0;
+  strcpy_P(dialog_text, new_text_nastaveni_reload);
+}
+void helper_reload_restart(uint16_t args1, uint16_t args2, uint8_t args3)
+{
   resetFunc();
 }
 ///////////////////////////////////////////////////////////////////
@@ -7811,8 +7491,10 @@ void button_nastaveni_reload_onclick(uint16_t args1, uint16_t args2, uint8_t arg
 */
 void button_network_test_connection_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  check_connectivity_connection();
-  /// TODO - pridat do selfcheck testu
+  if ( check_connectivity_connection() == 0)
+    selftest_set_1(SELFTEST_N0_CONNECTIVITY);
+  else
+    selftest_clear_1(SELFTEST_N0_CONNECTIVITY);
 }
 ///////////////////////////////////////////////////////////////////
 /*
@@ -7824,22 +7506,22 @@ void button_network_test_connection_onclick(uint16_t args1, uint16_t args2, uint
 uint8_t check_connectivity_connection(void)
 {
   char server[16];
+  char str2[16];
   uint8_t ret = 0;
+  int err;
   strcpy_P(server, seznam_server);
+  strcpy(str2, "");
   if (!ethClient1.connected())
   {
-    if (ethClient1.connect(server, 80))
-    {
-      MenuHistoryNextMenu(MENU_DIALOG_OK, 0, 0);
-      strcpy_P(dialog_text, new_text_ok_connect_seznam);
+    err = ethClient1.connect(server, 80);
+    ethclient_text_status(err, str2);
+    MenuHistoryNextMenu(MENU_DIALOG_OK, 0, 0);
+    strcpy_P(dialog_text, new_text_connectivity);
+    strcat(dialog_text, str2);
+    if ( err == 1)
       ret = 1;
-    }
     else
-    {
-      MenuHistoryNextMenu(MENU_DIALOG_OK, 0, 0);
-      strcpy_P(dialog_text, new_text_err_connect_seznam);
       ret = 0;
-    }
   }
   return ret;
 }
@@ -7892,34 +7574,39 @@ void display_element_show_about_device(uint16_t x, uint16_t y, uint16_t size_x, 
   strcat(str1, "C");
   show_string(str1, x + 5 , y + 70 , 1, BLACK, WHITE, 0);
 
-  strcpy_P(str1, new_text_selfcheck_test);
-  itoa(selftest_data, str2, 16);
+  sprintf_P(str1, new_text_selfcheck_test, 0);
+  itoa(selftest_data_0, str2, 16);
   strcat(str1, str2);
   show_string(str1, x + 5 , y + 85 , 1, BLACK, WHITE, 0);
+
+  sprintf_P(str1, new_text_selfcheck_test, 1);
+  itoa(selftest_data_1, str2, 16);
+  strcat(str1, str2);
+  show_string(str1, x + 5 , y + 100 , 1, BLACK, WHITE, 0);
 
   strcpy_P(str1, new_text_mqtt_send);
   ltoa(mqtt_send_message, str2, 10);
   strcat(str1, str2);
-  show_string(str1, x + 5 , y + 100 , 1, BLACK, WHITE, 0);
+  show_string(str1, x + 5 , y + 115 , 1, BLACK, WHITE, 0);
 
   strcpy_P(str1, new_text_mqtt_receive);
   ltoa(mqtt_receive_message, str2, 10);
   strcat(str1, str2);
-  show_string(str1, x + 5 , y + 115 , 1, BLACK, WHITE, 0);
+  show_string(str1, x + 5 , y + 130 , 1, BLACK, WHITE, 0);
 
   strcpy_P(str1, new_text_mqtt_processed);
   ltoa(mqtt_process_message, str2, 10);
   strcat(str1, str2);
-  show_string(str1, x + 5 , y + 130 , 1, BLACK, WHITE, 0);
+  show_string(str1, x + 5 , y + 145 , 1, BLACK, WHITE, 0);
 
   strcpy_P(str1, new_text_mqtt_error);
   ltoa(mqtt_error, str2, 10);
   strcat(str1, str2);
-  show_string(str1, x + 5 , y + 145 , 1, BLACK, WHITE, 0);
+  show_string(str1, x + 5 , y + 160 , 1, BLACK, WHITE, 0);
 
   time_now = DateTime(__DATE__, __TIME__).unixtime();
   sprintf_P(str1, text_build_version, time_now.year(), time_now.month(), time_now.day(), time_now.hour(), time_now.minute(), time_now.second());
-  show_string(str1, x + 5 , y + 160 , 1, BLUE, WHITE, 0);
+  show_string(str1, x + 5 , y + 175 , 1, BLUE, WHITE, 0);
 
 
   mqtt_text_status(str2);
@@ -7930,6 +7617,25 @@ void display_element_show_about_device(uint16_t x, uint16_t y, uint16_t size_x, 
   show_string(str1, x + 220 , y + 40 , 1, BLACK, WHITE, 0);
 }
 ////
+
+void ethclient_text_status(int err, char *str2)
+{
+  switch (err)
+  {
+    case 1:
+      strcpy_P(str2, text_connect_ok);
+      break;
+    case 0:
+      strcpy_P(str2, text_con_refused);
+      break;
+    case -1:
+    case -2:
+    case -3:
+      strcpy_P(str2, text_timeout);
+      break;
+  }
+  //printf("%d -> %s\n", err, str2);
+}
 
 void mqtt_text_status(char *str2)
 {
