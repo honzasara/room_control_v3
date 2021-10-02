@@ -19,7 +19,7 @@
    16.
    17. validace zadanych hodnot pro cas a datum, nedovolit ulozit!
    18. funkce pro validaci IP adres
-   19. 
+   19.
    20.
    21.
    22. change_term_mode - rozdelit po bitech
@@ -119,7 +119,6 @@ EEPROM_CAT25 SROM(&swSPI, STORAGE_EEPROM_CS , CAT25M02);
 
 long lastmqttconnect = 0;
 
-//uint8_t last_output_update[MAX_THERMOSTAT];
 uint8_t selftest_data_0 = 0;
 uint8_t last_selftest_data_0 = 0;
 
@@ -179,7 +178,8 @@ uint8_t use_rtds = 0;
 uint8_t use_rtds_type_temp = 0;
 uint8_t use_tds = 0;
 uint8_t use_nrf_temp = 0;
-
+uint8_t use_virtual_output = 0;
+uint8_t use_virtual_output_persistent = 0;
 
 uint8_t menu_slider_data_current[MAX_SLIDERS];
 uint8_t menu_slider_data_max;
@@ -314,7 +314,6 @@ bool draw_menu(bool redraw, uint8_t click_type, uint16_t click_x, uint16_t click
   fptr_coordinate_xy *fnt_coordinate_xy;
   ret_string_fptr *gss;
   const Menu1 *current;
-  //uint16_t click_x, click_y;
   uint8_t state;
   uint8_t loop_cnt, loop_i, loop_t, loop_r;
   uint8_t index_items;
@@ -2262,14 +2261,32 @@ void tds_extended_memory_store(void)
         }
 }
 /*
- **********************************************************************************************************************8
+ **********************************************************************************************************************
+ **********************************************************************************************************************
     SKUPINA FUNKCI pro obsluhu virtualnich vystupu
 */
 
-
+/// perzistentni ulozeni znamych associovanych virtualnich vystupu
 /*
    inicializovani dat v eeprom, vola se pouze pri volbe set_default
 */
+
+/*
+   funkce vraci pocet pouzitych/associovanych/znamych/aktivnich virtualnich vystupu
+*/
+uint8_t output_virtaul_persistent_store_active(void)
+{
+  uint8_t cnt = 0;
+  for (uint8_t idx = 0; idx < eeprom_know_output_virtual_count; idx++)
+  {
+    if (output_virtual_persistent_store_get_used(idx) == 1)
+    {
+      cnt++;
+    }
+  }
+  return cnt;
+}
+
 void output_virtual_persistent_store_init(void)
 {
   for (uint8_t idx = 0; idx < eeprom_know_output_virtual_count; idx++)
@@ -2575,12 +2592,18 @@ void output_virtual_ram_store_set_last_update(uint8_t idx, uint8_t last_update)
   SRAM.writeByte(ram_output_virtual_start_pos + (idx * ram_output_virtual_size) + ram_output_virtual_last_update, last_update);
 }
 
-void output_virtual_inc_last_update(void)
+/*
+   funkce inkrementuje cas od posledni aktualizace virtualniho vystupu
+   funkce vraci pocet aktivnich, pouzitych virtualnich vystupu
+*/
+uint8_t output_virtual_inc_last_update(void)
 {
   uint8_t last = 0;
+  uint8_t cnt = 0;
   for (uint8_t idx = 0; idx < ram_output_virtual_count; idx++)
     if (output_virtual_ram_store_get_used(idx) == 1)
     {
+      cnt++;
       last = output_virtual_ram_store_get_last_update(idx);
       if (last < 250)
       {
@@ -2588,6 +2611,7 @@ void output_virtual_inc_last_update(void)
         output_virtual_ram_store_set_last_update(idx, last);
       }
     }
+  return cnt;
 }
 
 
@@ -4287,7 +4311,7 @@ void thermostat(void)
         if (tds.used == 1 && status_tds18s20[tdsid].online == True)
         {
           thermostat_pid_input(tix, status_tds18s20[tdsid].temp);
-          thermostat_pid_setpoint(tix, thresh); 
+          thermostat_pid_setpoint(tix, thresh);
           pwm = thermostat_pid_output(tix);
           thermostat_ring_set_power(tix, pwm);
         }
@@ -5127,7 +5151,8 @@ void loop() {
     send_mqtt_payload(&mqtt_client, str2, str1);
 
     update_know_mqtt_device();
-    output_virtual_inc_last_update();
+    use_virtual_output = output_virtual_inc_last_update();
+    use_virtual_output_persistent = output_virtaul_persistent_store_active();
 
     if (status_send_counter == 0)
     {
@@ -6054,6 +6079,30 @@ void click_rtds_setting_sensor(uint16_t args1, uint16_t args2, uint8_t loop_idx)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/// saric
+/// funkce, ktera vraci pocet polozek aktivnich virtualnich vystupu
+uint8_t get_function_list_virtual_output_max_active_items(uint16_t idx, uint16_t args2, uint8_t args3)
+{
+  return use_virtual_output;
+}
+
+/// funkce obsluha kliknuti na tlacitko virtualniho vystupu
+void click_virtual_output_associate_action(uint16_t args1, uint16_t args2, uint8_t idx)
+{
+
+}
+
+/// funkce ktera vraci popisky pro tlacitko
+void get_function_list_virtual_output_labels(uint8_t args1, uint8_t args2 , uint8_t args3, char *line1, char *line2)
+{
+
+  if (output_virtual_ram_store_get_used(idx) == 1)
+ 
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// funkce ktera vraci hodnoty pro zobrazeni, vrazi nazev, teplotu, navratova hodnota, zda jsou cisla aktualne platna
 uint8_t get_global_temp(uint8_t device, char*name, float * temp)
 {
@@ -7634,7 +7683,6 @@ void ethclient_text_status(int err, char *str2)
       strcpy_P(str2, text_timeout);
       break;
   }
-  //printf("%d -> %s\n", err, str2);
 }
 
 void mqtt_text_status(char *str2)
