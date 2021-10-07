@@ -49,6 +49,8 @@
 
   menu NRF
   menu vystupni cleny
+    - dokoncit funkci test vystupniho clenu
+    - dokoncit rucni hodnota vystupu
 */
 
 
@@ -214,7 +216,8 @@ char dialog_text[32];
 
 char dialog_set_string[32];
 uint8_t dialog_set_string_max_length;
-uint8_t dialog_set_string_args;
+uint8_t dialog_set_string_args1;
+uint8_t dialog_set_string_args2;
 uint8_t dialog_set_string_keyboard_type = 0;
 fptr_args dialog_save_string_function;
 ret_fptr_no_args dialog_save_valid_function;
@@ -229,8 +232,8 @@ uint8_t change_auto_brightness = 0;
 
 uint8_t MenuHistory[MENU_MAX_HISTORY];
 uint8_t Global_menu_args1[MENU_MAX_HISTORY];
+uint8_t Global_menu_args2[MENU_MAX_HISTORY];
 uint8_t MenuHistoryIndex = 0;
-
 
 
 
@@ -245,13 +248,13 @@ fptr_args dialog_yes_function;
 
 
 const MenuAll Menu_All PROGMEM = {
-  .len_menu1 = 7,
-  .len_menu2 = 7,
+  .len_menu1 = 8,
+  .len_menu2 = 10,
   .len_menu3 = 10,
   .len_menu4 = 10,
 
-  .ListMenu1 = {HlavniMenu, MenuNastaveniSite, OneWireMenu, MenuNastaveniCas, SelectMenuDefaultTemp, MenuNastaveniMQTT, Menu_Show_All_temp},
-  .ListMenu2 = {DialogYESNO, DialogSetVariable, DialogKyeboardAlfa, DialogKyeboardNumber , DialogOK, MenuThermostat, DialogSelectVirtualOutputForTerm},
+  .ListMenu1 = {HlavniMenu, MenuNastaveniSite, OneWireMenu, MenuNastaveniCas, SelectMenuDefaultTemp, MenuNastaveniMQTT, Menu_Show_All_temp, New_ThermostatTimeProgramMenuDetail},
+  .ListMenu2 = {DialogYESNO, DialogSetVariable, DialogKyeboardAlfa, DialogKyeboardNumber , DialogOK, MenuThermostat, VirtualOutputSettingsDevice, DialogSelectVirtualOutputForTerm, DialogShowThermostatStatistics, New_ThermostatTimeProgramMenu },
   .ListMenu3 = {TDSMenu, RTDS_Menu_Detail, List_RTDS_Menu, MenuThermostat_Setting, DialogSelectRing, MenuThermostatRingSetup, DialogSelectInputSensorsForTerm, DialogSelectTermMode, DialogSelectPIDSensor, New_ThermostatTimeMenu},
   .ListMenu4 = {SystemSettingsMenu, New_NastaveniMenu, PeriferieSettingsMenu, New_DisplaySettingMenu, New_DisplaySetting_Brigthness, AboutDeviceMenu, New_DisplaySetting_Auto_Shutdown, SetNRFMenu, VirtualOutputSettingsMenu, DialogSetManualyTemp},
 };
@@ -300,7 +303,7 @@ bool draw_menu(bool redraw, uint8_t click_type, uint16_t click_x, uint16_t click
   bool ret = false;
   char str1[128];
   char str2[32];
-  char str3[16];
+  char str3[32];
   const Element_Button_1 *button_1;
   const Element_Button_2 *button_2;
   const Element_Function_1 *function_1;
@@ -844,13 +847,14 @@ void MenuHistoryPrevMenu(uint16_t args1, uint16_t args2, uint8_t args3)
   }
 }
 ///
-void MenuHistoryNextMenu(uint16_t id, uint16_t args1, uint8_t fake)
+void MenuHistoryNextMenu(uint16_t id, uint16_t args1, uint8_t args2)
 {
   if (MenuHistoryIndex < MENU_MAX_HISTORY)
   {
     MenuHistoryIndex++;
     MenuHistory[MenuHistoryIndex] = id;
     Global_menu_args1[MenuHistoryIndex] = args1;
+    Global_menu_args2[MenuHistoryIndex] = args2;
     MenuPrepareStyle();
   }
 }
@@ -858,6 +862,10 @@ void MenuHistoryNextMenu(uint16_t id, uint16_t args1, uint8_t fake)
 void MenuHistoryUpdateArgs1(uint8_t args1)
 {
   Global_menu_args1[MenuHistoryIndex] = args1;
+}
+void MenuHistoryUpdateArgs2(uint8_t args2)
+{
+  Global_menu_args2[MenuHistoryIndex] = args2;
 }
 ///
 void MenuHistoryInit(void)
@@ -1026,18 +1034,24 @@ void display_function_set_variable(float now, float min, float max, float step, 
   menu_dialog_variable[idx].save_function = save_function;
 }
 /////
-void display_element_set_string(char *str, uint8_t max_length, uint8_t idx, fptr_args save_function, ret_fptr_no_args valid_function)
+void display_element_set_string(char *str, uint8_t max_length, uint8_t args1, uint8_t args2, fptr_args save_function, ret_fptr_no_args valid_function)
 {
   strcpy(dialog_set_string, str);
   dialog_set_string_max_length = max_length;
-  dialog_set_string_args = idx;
+  dialog_set_string_args1 = args1;
+  dialog_set_string_args2 = args2;
   dialog_save_string_function = save_function;
   dialog_save_valid_function = valid_function;
 }
 
-uint8_t display_element_get_string_args(void)
+uint8_t display_element_get_string_args1(void)
 {
-  return dialog_set_string_args;
+  return dialog_set_string_args1;
+}
+
+uint8_t display_element_get_string_args2(void)
+{
+  return dialog_set_string_args2;
 }
 
 void display_element_get_string(char *str)
@@ -1081,7 +1095,7 @@ void menu_tds_save_name(uint16_t args1, uint16_t args2, uint8_t args3)
   char name[10];
   display_element_get_string(name);
   if (strlen(name) > 0)
-    tds_set_name(display_element_get_string_args(), name);
+    tds_set_name(display_element_get_string_args1(), name);
 }
 
 
@@ -1114,7 +1128,7 @@ void display_menu_tds_set_name(uint16_t args1, uint16_t args2, uint8_t args3)
   char name[RTDS_DEVICE_STRING_LEN];
   tds_get_name(args2, name);
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, 0);
-  display_element_set_string(name, 8, args2, &menu_tds_save_name, &valid_true);
+  display_element_set_string(name, 8, args2, 0, &menu_tds_save_name, &valid_true);
 }
 /// funkce pro nastaveni nazvu rtds
 void display_menu_rtds_update_name(uint16_t args1, uint16_t args2, uint8_t args3)
@@ -1123,7 +1137,7 @@ void display_menu_rtds_update_name(uint16_t args1, uint16_t args2, uint8_t args3
   uint8_t active;
   remote_tds_get_complete(args2, &active, name);
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, 0);
-  display_element_set_string(name, RTDS_DEVICE_STRING_LEN, args2, &menu_rtds_update_name, &valid_true);
+  display_element_set_string(name, RTDS_DEVICE_STRING_LEN, args2, 0, &menu_rtds_update_name, &valid_true);
   remote_tds_unsubscibe_topic(args2);
 }
 ////////////////////////////////////////////////////////
@@ -1363,6 +1377,7 @@ uint8_t menu_redraw_date(uint16_t args1, uint16_t args2, uint8_t args3)
   }
   return 0;
 }
+
 
 
 uint8_t menu_redraw_slider(uint16_t args1, uint16_t args2, uint8_t args3)
@@ -2287,6 +2302,9 @@ uint8_t output_virtaul_persistent_store_active(void)
   return cnt;
 }
 
+/*
+   nastaveni do vychozich hodnot, vsecny
+*/
 void output_virtual_persistent_store_init(void)
 {
   for (uint8_t idx = 0; idx < eeprom_know_output_virtual_count; idx++)
@@ -2294,12 +2312,12 @@ void output_virtual_persistent_store_init(void)
 }
 
 /*
-   nastaveni do vychozich hodnot
+   nastaveni do vychozich hodnot, pouze index
 */
 void output_virtual_persistent_store_clear(uint8_t idx)
 {
   output_virtual_persistent_store_set_name(idx, "FREE");
-  output_virtual_persistent_store_set_id(idx, POWER_OUTPUT_ERR);;
+  output_virtual_persistent_store_set_id(idx, POWER_OUTPUT_ERR);
   output_virtual_persistent_store_set_used(idx, 0);
 }
 
@@ -2351,7 +2369,6 @@ uint8_t output_virtual_persistent_store_associate(uint8_t virtual_id, char *name
   if (found == 0)
     for (uint8_t idx = 0; idx < eeprom_know_output_virtual_count; idx++)
     {
-      //printf("idx: %d used: %d\n", idx, output_virtual_persistent_store_get_used(idx));
       if (output_virtual_persistent_store_get_used(idx) == 0)
       {
         output_virtual_persistent_store_set_id(idx, virtual_id);
@@ -2361,7 +2378,6 @@ uint8_t output_virtual_persistent_store_associate(uint8_t virtual_id, char *name
         break;
       }
     }
-  //printf("ret_id %d, found %d", ret_id, found);
   return ret_id;
 }
 
@@ -2818,7 +2834,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
     while (pch != NULL)
     {
       if (cnt == 0) id = atoi(pch);
-      if ((cnt == 1) && (strcmp(pch, "name") == 0)) output_virtual_persistent_store_set_used(id, atoi(my_payload));
+      if ((cnt == 1) && (strcmp(pch, "used") == 0)) output_virtual_persistent_store_set_used(id, atoi(my_payload));
       if ((cnt == 1) && (strcmp(pch, "name") == 0)) output_virtual_persistent_store_set_name(id, my_payload);
       if ((cnt == 1) && (strcmp(pch, "virtual_output_id") == 0)) output_virtual_persistent_store_set_id(id, atoi(my_payload));
       pch = strtok (NULL, "/");
@@ -2836,6 +2852,8 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
     mqtt_process_message++;
     id = atoi(my_payload);
     output_virtual_ram_store_clear(id);
+    change_virtual_output = 4;
+    //TODO vymazat vcetne associace
   }
   /////
   ///
@@ -5500,6 +5518,46 @@ void display_element_dialog_show_text(uint16_t x, uint16_t y, uint16_t size_x, u
   show_string(dialog_text, x, y, 2, BLACK, WHITE, 0);
 }
 //////////////////////////////////////////////
+/////////////////////////////////////////////
+/// zobrazeni detailnich informaci o virtualnim vystupu
+/// args2 ... index virtualniho vystupu
+void display_element_show_virtual_output_detail(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
+{
+  char line1[12];
+  char str_tmp[26];
+  uint8_t state, id, type, last_update, persistent_id;
+  my_lcd.Set_Draw_color(BLACK);
+  my_lcd.Draw_Rectangle(x, y, x + size_x , y + size_y);
+
+  strcpy(str_tmp, "");
+  strcpy(line1, "");
+  if (output_virtual_ram_store_get_used(args2) == 1)
+  {
+    persistent_id = 255;
+    output_virtual_ram_store_list_store(args2, line1, &state, &id, &type, &last_update);
+    for (uint8_t idx = 0; idx < eeprom_know_output_virtual_count; idx++)
+      if (output_virtual_persistent_store_get_id(idx) == id)
+      {
+        persistent_id = idx;
+        strcpy(str_tmp, "* ");
+        strcat(str_tmp, line1);
+        strcpy(line1, str_tmp);
+        break;
+      }
+    show_string(line1, x + 10, y + 10 , 2, BLACK, WHITE, 0);
+    sprintf(str_tmp, "perzistence: %d", persistent_id);
+    show_string(str_tmp, x + 10, y + 40 , 1, BLACK, WHITE, 0);
+    sprintf(str_tmp, "stav: %d", state);
+    show_string(str_tmp, x + 10, y + 55 , 1, BLACK, WHITE, 0);
+    sprintf(str_tmp, "virtualni kanal: %d", id);
+    show_string(str_tmp, x + 10, y + 70 , 1, BLACK, WHITE, 0);
+    sprintf(str_tmp, "typ vystupu: %d", type);
+    show_string(str_tmp, x + 10, y + 95 , 1, BLACK, WHITE, 0);
+    sprintf(str_tmp, "posledni aktualizace: %d", last_update);
+    show_string(str_tmp, x + 10, y + 110 , 1, BLACK, WHITE, 0);
+  }
+}
+
 void display_element_show_tds_info_dynamics(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
 {
   struct_DDS18s20 tds;
@@ -5706,6 +5764,67 @@ void process_display_element_slider(uint8_t *start, uint8_t *stop, uint8_t args,
       *stop = menu_slider_data_max;
   }
 }
+////////////////////////////
+////////////////////////////
+void display_element_show_thermostat_statistics(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
+{
+  char str1[32];
+
+  my_lcd.Set_Draw_color(BLACK);
+  my_lcd.Draw_Rectangle(x, y, x + size_x , y + size_y);
+  if (thermostat_ring_get_active(args2) == 1)
+  {
+    thermostat_ring_get_name(args2, str1);
+    show_string(str1, x + 5, y + 30 , 2, BLACK, WHITE, 0);
+
+    thermostat_ring_get_power(args2);
+
+    thermostat_ring_get_output(args2);
+
+    thermostat_ring_get_mezni(args2);
+
+    thermostat_ring_get_asociate_tds(args2);
+
+    thermostat_ring_get_mode(args2);
+
+    thermostat_ring_get_program_id(args2);
+
+    thermostat_get_pid_p(args2);
+    thermostat_get_pid_i(args2);
+    thermostat_get_pid_d(args2);
+    thermostat_get_pid_time(args2);
+  }
+  else
+  {
+    strcpy_P(str1, text_term_deactive);
+    show_string(str1, x + 5, y + 40 , 3, BLACK, WHITE, 0);
+  }
+}
+
+/*
+   args2 je index intervalu
+   global_menu_args2 k jakemu programu je interval prizaren
+*/
+void display_element_show_program_interval_statistics(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text)
+{
+  char str1[16];
+  uint8_t program_id = Global_menu_args2[MenuHistoryIndex];
+  uint8_t interval_id = args2;
+  //printf("%d -> %d\n", interval_id, program_id);
+  my_lcd.Set_Draw_color(BLACK);
+  my_lcd.Draw_Rectangle(x, y, x + size_x , y + size_y);
+  if (thermostat_program_get_active(program_id) != PROG_FREE)
+  {
+    thermostat_program_get_name(program_id, str1);
+    show_string(str1, x + 5, y + 30 , 2, BLACK, WHITE, 0);
+  }
+  else
+  {
+    strcpy_P(str1, text_term_deactive);
+    show_string(str1, x + 5, y + 40 , 3, BLACK, WHITE, 0);
+  }
+}
+//saric
 //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -5934,7 +6053,6 @@ void get_function_one_wire_associate_or_setting_text_button(uint8_t args1, uint8
   {
     createString(str2, ':', w_rom[args1].rom, 8, 16, 2);
     sprintf(line1, "%d: %s", args1, str2);
-
     if (w_rom[args1].tds_idx != 255)
     {
       strcpy_P(line2, text_nastavit_tds);
@@ -5980,7 +6098,6 @@ void click_tds_associate_or_setting_onewire(uint16_t args1, uint16_t args2, uint
 /// zruseni associace
 void click_tds_deassociate_onewire(uint16_t args1, uint16_t idx, uint8_t args3)
 {
-
   tds_set_clear_wrom_id(idx);
   MenuHistoryPrevMenu(0, 0, 0);
 }
@@ -6031,7 +6148,7 @@ void click_rtds_add_sensor(uint16_t args1, uint16_t args2, uint8_t args3)
   {
     strcpy_P(rtds_topic, text_rtds_prefix);
     MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, 0);
-    display_element_set_string(rtds_topic, RTDS_DEVICE_STRING_LEN, idx, &menu_rtds_create_name, &valid_true);
+    display_element_set_string(rtds_topic, RTDS_DEVICE_STRING_LEN, idx, 0, &menu_rtds_create_name, &valid_true);
   }
 }
 
@@ -6039,7 +6156,7 @@ void menu_rtds_create_name(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   char name[RTDS_DEVICE_STRING_LEN];
   uint8_t active = 1;
-  uint8_t idx = display_element_get_string_args();
+  uint8_t idx = display_element_get_string_args1();
   display_element_get_string(name);
   //printf("create %s, %d\n", name, idx);
   if (strlen(name) > 0)
@@ -6053,7 +6170,7 @@ void menu_rtds_create_name(uint16_t args1, uint16_t args2, uint8_t args3)
 void menu_rtds_update_name(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   char name[RTDS_DEVICE_STRING_LEN];
-  uint8_t idx = display_element_get_string_args();
+  uint8_t idx = display_element_get_string_args1();
   display_element_get_string(name);
   //printf("update %s, %d\n", name, idx);
   remote_tds_set_name(idx, name);
@@ -6069,8 +6186,6 @@ void click_rtds_setting_sensor(uint16_t args1, uint16_t args2, uint8_t loop_idx)
 {
   char name[RTDS_DEVICE_STRING_LEN];
   uint8_t active;
-  //printf("pr %d %d %d\n", args1, args2, loop_idx);
-
   remote_tds_get_active(loop_idx, &active);
   if (active == 1)
   {
@@ -6079,28 +6194,70 @@ void click_rtds_setting_sensor(uint16_t args1, uint16_t args2, uint8_t loop_idx)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/// saric
-/// funkce, ktera vraci pocet polozek aktivnich virtualnich vystupu
+/// funkce, ktera vraci pocet vsech polozek virtualnich vystupu
 uint8_t get_function_list_virtual_output_max_active_items(uint16_t idx, uint16_t args2, uint8_t args3)
 {
-  return use_virtual_output;
+  return ram_output_virtual_count;
 }
 
 /// funkce obsluha kliknuti na tlacitko virtualniho vystupu
+/// idx ... index polozky menu = index v pameti
+/// args1 predani promene args, index dalsiho menu
 void click_virtual_output_associate_action(uint16_t args1, uint16_t args2, uint8_t idx)
 {
-
+  MenuHistoryNextMenu(args1, idx, 0);
 }
-
 /// funkce ktera vraci popisky pro tlacitko
-void get_function_list_virtual_output_labels(uint8_t args1, uint8_t args2 , uint8_t args3, char *line1, char *line2)
+/// args1 ... index polozky v menu
+void  get_function_list_virtual_output_labels(uint8_t args1, uint8_t args2 , uint8_t args3, char *line1, char *line2)
 {
-
-  if (output_virtual_ram_store_get_used(idx) == 1)
- 
+  char str_tmp[16];
+  uint8_t state, id, type, last_update, per_id;
+  strcpy_P(line1, text_dashdash);
+  strcpy(line2, "");
+  if (output_virtual_ram_store_get_used(args1) == 1)
+  {
+    per_id = 255;
+    output_virtual_ram_store_list_store(args1, line1, &state, &id, &type, &last_update);
+    for (uint8_t idx = 0; idx < eeprom_know_output_virtual_count; idx++)
+      if (output_virtual_persistent_store_get_id(idx) == id)
+      {
+        per_id = idx;
+        strcpy(str_tmp, "* ");
+        strcat(str_tmp, line1);
+        strcpy(line1, str_tmp);
+        break;
+      }
+    sprintf(line2, "S:%d,I:%d,T:%d,U:%d,P%d", state, id, type, last_update, per_id);
+  }
 }
-
+void clik_button_virtual_output_manual(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+}
+/// args1 ... index polozky v menu
+void clik_button_virtual_output_test(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+}
+///
+//. args2 ... index virtualniho vystupu
+void clik_button_virtual_output_associate(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  output_virtual_persistent_store_associate_from_ram_store(args2);
+}
+//. args2 ... index virtualniho vystupu
+void clik_button_virtual_output_unassociate(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  uint8_t vid;
+  if (output_virtual_persistent_store_get_used(args2) == 1)
+  {
+    vid  = output_virtual_persistent_store_get_id(args2);
+    if (vid != 255)
+    {
+      thermostat_ring_clear_output_in_rings(vid);
+      output_virtual_persistent_store_clear(args2);
+    }
+  }
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// funkce ktera vraci hodnoty pro zobrazeni, vrazi nazev, teplotu, navratova hodnota, zda jsou cisla aktualne platna
@@ -6246,8 +6403,6 @@ uint8_t button_get_show_default_temp_active(uint16_t args1, uint16_t args2, uint
     ret = BUTTON_ACTIVE;
 
   // todo INPUT_SENSOR_SHOW_ACTIVE vs INPUT_SENSOR_SHOW_ALL
-
-
   return ret;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -6331,9 +6486,7 @@ uint8_t button_get_virtual_output_max_items(uint16_t args1, uint16_t args2, uint
 /// index polozky menu args3 neni cislo virtualniho vystupu musi se to zjistit z eeprmky
 uint8_t button_select_term_ring_virtual_output_in_dialog_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3)
 {
-  //printf("%d %d %d\n", args1, args2, args3);
   uint8_t rgt = thermostat_ring_get_output(args2);
-
   uint8_t psg = output_virtual_persistent_store_get_id(args3);
   uint8_t ret = BUTTON_NO_ACTIVE;
   if (rgt == psg && psg != 255)
@@ -6579,7 +6732,7 @@ void helper_thermostat_button_set_ring_name(uint16_t args1, uint16_t args2, uint
 {
   char name[10];
   display_element_get_string(name);
-  args2 = display_element_get_string_args();
+  args2 = display_element_get_string_args1();
   thermostat_ring_set_name(args2, name);
 }
 ///////////////////////////////////
@@ -6595,10 +6748,9 @@ void helper_thermostat_button_set_ring_name(uint16_t args1, uint16_t args2, uint
 void thermostat_button_set_ring_name_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   char name[10];
-  //printf("%d -- %d -- %d\n", args1, args2, args3);
   thermostat_ring_get_name(args2, name);
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, 0);
-  display_element_set_string(name, 9, args2, &helper_thermostat_button_set_ring_name, &valid_true);
+  display_element_set_string(name, 9, args2, 0, &helper_thermostat_button_set_ring_name, &valid_true);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -6716,32 +6868,7 @@ void button_click_default_term_set_mode(uint16_t args1, uint16_t args2, uint8_t 
     Obsluha tlacitek
 */
 
-/*
-   funkce pro prepnuti na dialog vyberu modu
-*/
-/*
-  void button_click_term_set_mode_via_dialog(uint16_t args1, uint16_t args2, uint8_t args3)
-  {
-  if (default_ring != NO_DEFAULT_RING)
-    MenuHistoryNextMenu(MENU_DIALOG_SELECT_TERM_MODE, default_ring, args3);
-  }
-*/
 
-/*
-   prevodni funkce pro dynamicke tlacitko popisku vybraneho operacniho modu
-   prevede id modu na textovy popisek
-   zadne vstupni parametry
-*/
-/*
-  void button_get_default_ring_term_mode_labels(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2)
-  {
-  strcpy_P(line1, text_current_ring_mode);
-  if (default_ring != NO_DEFAULT_RING)
-    convert_mode_text_1(thermostat_ring_get_mode(default_ring), line2);
-  else
-    strcpy_P(line2, text_dashdash);
-  }
-*/
 
 ///
 /*
@@ -6886,7 +7013,6 @@ void button_click_set_term_heat_or_cool(uint16_t args1, uint16_t args2, uint8_t 
    kdyz 0 tak se nezobrazuji polozky v menu
    args2 .. index ring
 */
-
 uint8_t display_enable_show_term_mode_man(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   uint8_t mode = 0;
@@ -6898,17 +7024,6 @@ uint8_t display_enable_show_term_mode_man(uint16_t args1, uint16_t args2, uint8_
   }
   return 0;
 }
-
-
-/*
-  uint8_t display_enable_show_term_mode_prog(uint16_t args1, uint16_t args2, uint8_t args3)
-  {
-  uint8_t mode = thermostat_ring_get_mode(default_ring);
-  if (mode == TERM_MODE_PROG)
-    return 1;
-  return 0;
-  }
-*/
 
 
 uint8_t display_enable_show_thermostat_active_ring(uint16_t args1, uint16_t args2, uint8_t args3)
@@ -6925,6 +7040,167 @@ uint8_t display_enable_show_thermostat_deactive_ring(uint16_t args1, uint16_t ar
   if (thermostat_ring_get_active(args2) != RING_FREE)
     ret = 1;
   return ret;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/*
+    CASOVY TERMOSTAT
+
+*/
+
+void click_button_time_program_new(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  /// prvne najdu prvni volnou pametovou bunku
+  uint8_t free_id = 255;
+  char program_name[eeprom_thermostat_program_name_bytes_size];
+  for (uint8_t idx = 0; idx < AVAILABLE_PROGRAM; idx++)
+  {
+    if (thermostat_program_get_active(idx) == PROG_FREE)
+    {
+      free_id = idx;
+      break;
+    }
+  }
+  if (free_id != 255)
+  {
+    MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, 0);
+    strcpy(program_name, "PRG");
+    display_element_set_string(program_name, eeprom_thermostat_program_name_bytes_size, free_id, 0, &helper_dialog_new_time_program, &valid_thermostat_program_name);
+  }
+}
+
+void helper_dialog_new_time_program(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char program_name[eeprom_thermostat_program_name_bytes_size];
+  uint8_t new_id;
+  display_element_get_string(program_name);
+  new_id = display_element_get_string_args1();
+  thermostat_program_set_name(new_id, program_name);
+  thermostat_program_set_active(new_id, PROG_ACTIVE);
+}
+
+
+
+
+uint8_t get_function_list_all_program_max_items(uint16_t idx, uint16_t args2, uint8_t args3)
+{
+  return AVAILABLE_PROGRAM;
+}
+
+void click_list_all_program(uint16_t args1, uint16_t args2, uint8_t idx)
+{
+  MenuHistoryNextMenu(NEW_MENU_THERMOSTAT_TIME_PROGRAM_MENU, idx, 0);
+}
+
+void get_function_list_all_program_label(uint8_t args1, uint8_t args2 , uint8_t args3, char *line1, char *line2)
+{
+  char str_tmp1[16];
+  char str_tmp2[4];
+  strcpy(line2, "");
+  thermostat_program_get_name(args1, line1);
+  itoa(args1, str_tmp2, 10);
+  strcpy(str_tmp1, str_tmp2);
+  strcat(str_tmp1, ". ");
+  strcat(str_tmp1, line1);
+  strcpy(line1, str_tmp1);
+}
+
+/////////////////////////////
+
+
+void click_button_time_program_name(uint16_t args1, uint16_t args2, uint8_t idx)
+{
+  char program_name[16];
+  thermostat_program_get_name(args2, program_name);
+  MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, 0);
+  display_element_set_string(program_name, eeprom_thermostat_program_name_bytes_size, args2, 0, &helper_dialog_new_time_program, &valid_thermostat_program_name);
+}
+
+void click_button_time_program_remove(uint16_t args1, uint16_t args2, uint8_t idx)
+{
+  thermostat_program_set_active(args2, PROG_FREE);
+  thermostat_program_set_name(args2, "-");
+}
+
+
+void click_button_time_program_interval_remove(uint16_t args1, uint16_t args2, uint8_t idx)
+{
+  uint8_t program_id = Global_menu_args2[MenuHistoryIndex];
+  uint8_t interval_id = args2;
+  printf("programid: %d, interval %d\n", program_id,interval_id);
+  thermostat_program_set_time_active(program_id, interval_id, 0);
+}
+
+/*
+   args3 ... index tlacitka z menu
+   args2 ... index programu, pro ktery se ma vytvaret novy casovy interval
+   args1 ... staticka definice... nepotrebuji
+*/
+void click_button_time_program_new_interval(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char interval_string[2];
+  uint8_t new_id = 255;
+  for (uint8_t idx = 0; idx < MAX_PROGRAM_INTERVAL; idx++)
+  {
+    if (thermostat_program_get_time_active(args2, idx) == 0)
+    {
+      new_id = idx;
+      break;
+    }
+  }
+  if (new_id != 255)
+  {
+    interval_string[0] = 0;
+    MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, 0);
+    display_element_set_string(interval_string, 32, args2, new_id, &helper_dialog_new_program_interval, &valid_thermostat_program_time_interval);
+  }
+}
+
+//saric
+
+void helper_dialog_new_program_interval(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char interval_string[thermostat_program_time_interval_string_size];
+  uint8_t program_id = display_element_get_string_args1();
+  uint8_t interval_id = display_element_get_string_args2();
+  display_element_get_string(interval_string);
+  thermostat_program_set_parse_interval(program_id, interval_id, interval_string);
+}
+
+
+uint8_t get_function_list_program_interval_max_items(uint16_t idx, uint16_t args2, uint8_t args3)
+{
+  return MAX_PROGRAM_INTERVAL;
+}
+/*
+   args2 je index programu
+   idx je index casoveho intervalu
+*/
+void click_list_program_interval(uint16_t args1, uint16_t args2, uint8_t idx)
+{
+  MenuHistoryNextMenu(NEW_MENU_THERMOSTAT_TIME_PROGRAM_MENU_DETAIL, idx, args2);
+}
+/*
+   args1 je index tlacitka
+   args2 je index programu
+   args3 je argument staticke definice z menu
+*/
+void get_function_list_program_interval_label(uint8_t args1, uint8_t args2 , uint8_t args3, char *line1, char *line2)
+{
+  uint8_t start_hour, start_min, stop_hour, stop_min, active, week;
+  uint16_t threshold_temp;
+  thermostat_program_get_time(args2, args1, &start_hour, &start_min, &stop_hour, &stop_min, &active);
+  week = thermostat_program_get_week(args2, args1);
+  threshold_temp = thermostat_program_get_threshold(args2, args1);
+  strcpy(line1, "-");
+  strcpy(line2, "");
+  if (active)
+  {
+    sprintf(line1, "id:%d start:%d:%d stop:%d:%d", args1, start_hour, start_min, stop_hour, stop_min);
+    sprintf(line2, "tyden:%d, teplota:%d C", week, threshold_temp / 10);
+  }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -7259,7 +7535,7 @@ void button_ntp_set_server_onclick(uint16_t args1, uint16_t args2, uint8_t args3
   char ip_text[16];
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
   sprintf_P(ip_text, new_text_ip_format, device.ntp_server[0], device.ntp_server[1], device.ntp_server[2], device.ntp_server[3]);
-  display_element_set_string(ip_text, 16, 0, &helper_dialog_ntp_set_server, &valid_ipv4_address_element_string);
+  display_element_set_string(ip_text, 16, 0, 0, &helper_dialog_ntp_set_server, &valid_ipv4_address_element_string);
 }
 
 void helper_dialog_ntp_set_server(uint16_t args1, uint16_t args2, uint8_t args3)
@@ -7280,7 +7556,7 @@ void button_set_network_ip_onclick(uint16_t args1, uint16_t args2, uint8_t args3
   char ip_text[16];
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
   sprintf_P(ip_text, new_text_ip_format, device.myIP[0], device.myIP[1], device.myIP[2], device.myIP[3]);
-  display_element_set_string(ip_text, 16, 0, &helper_dialog_network_set_ip, &valid_ipv4_address_element_string);
+  display_element_set_string(ip_text, 16, 0, 0, &helper_dialog_network_set_ip, &valid_ipv4_address_element_string);
 }
 void helper_dialog_network_set_ip(uint16_t args1, uint16_t args2, uint8_t args3)
 {
@@ -7300,7 +7576,7 @@ void button_set_network_mask_onclick(uint16_t args1, uint16_t args2, uint8_t arg
   char ip_text[16];
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
   sprintf_P(ip_text, new_text_ip_format, device.myMASK[0], device.myMASK[1], device.myMASK[2], device.myMASK[3]);
-  display_element_set_string(ip_text, 16, 0, &helper_dialog_network_set_mask, &valid_ipv4_address_element_string);
+  display_element_set_string(ip_text, 16, 0, 0, &helper_dialog_network_set_mask, &valid_ipv4_address_element_string);
 }
 void helper_dialog_network_set_mask(uint16_t args1, uint16_t args2, uint8_t args3)
 {
@@ -7320,7 +7596,7 @@ void button_set_network_gw_onclick(uint16_t args1, uint16_t args2, uint8_t args3
   char ip_text[16];
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
   sprintf_P(ip_text, new_text_ip_format, device.myGW[0], device.myGW[1], device.myGW[2], device.myGW[3]);
-  display_element_set_string(ip_text, 16, 0, &helper_dialog_network_set_gw, &valid_ipv4_address_element_string);
+  display_element_set_string(ip_text, 16, 0, 0, &helper_dialog_network_set_gw, &valid_ipv4_address_element_string);
 }
 void helper_dialog_network_set_gw(uint16_t args1, uint16_t args2, uint8_t args3)
 {
@@ -7339,7 +7615,7 @@ void button_set_network_name_onclick(uint16_t args1, uint16_t args2, uint8_t arg
 {
   char ip_text[16];
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, 0);
-  display_element_set_string(device.nazev, 10, 0, &helper_dialog_network_set_name, &valid_true);
+  display_element_set_string(device.nazev, 10, 0, 0, &helper_dialog_network_set_name, &valid_true);
 }
 void helper_dialog_network_set_name(uint16_t args1, uint16_t args2, uint8_t args3)
 {
@@ -7358,7 +7634,7 @@ void button_set_network_dns_onclick(uint16_t args1, uint16_t args2, uint8_t args
   char ip_text[16];
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
   sprintf_P(ip_text, new_text_ip_format, device.myDNS[0], device.myDNS[1], device.myDNS[2], device.myDNS[3]);
-  display_element_set_string(ip_text, 16, 0, &helper_dialog_network_set_dns, &valid_ipv4_address_element_string);
+  display_element_set_string(ip_text, 16, 0, 0, &helper_dialog_network_set_dns, &valid_ipv4_address_element_string);
 }
 void helper_dialog_network_set_dns(uint16_t args1, uint16_t args2, uint8_t args3)
 {
@@ -7406,7 +7682,7 @@ void button_time_set_time_manualy_onclick(uint16_t args1, uint16_t args2, uint8_
   char cas_text[10];
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
   sprintf(cas_text, "%02d:%02d:%02d", now.hour(), now.minute(), now.second());
-  display_element_set_string(cas_text, 9, 0, &helper_set_time_manualy, &valid_true);
+  display_element_set_string(cas_text, 9, 0, 0, &helper_set_time_manualy, &valid_true);
 }
 void helper_set_time_manualy(uint16_t args1, uint16_t args2, uint8_t args3)
 {
@@ -7422,7 +7698,7 @@ void button_time_set_date_manualy_onclick(uint16_t args1, uint16_t args2, uint8_
   char datum_text[12];
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
   sprintf(datum_text, "%02d.%02d.%04d", now.day() , now.month() , now.year());
-  display_element_set_string(datum_text, 11, 0, &helper_set_date_manualy, &valid_true);
+  display_element_set_string(datum_text, 11, 0, 0, &helper_set_date_manualy, &valid_true);
 }
 void helper_set_date_manualy(uint16_t args1, uint16_t args2, uint8_t args3)
 {
@@ -7446,19 +7722,19 @@ void button_set_mqtt_broker_onclick(uint16_t args1, uint16_t args2, uint8_t args
   char ip_text[16];
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
   sprintf(ip_text, "%d.%d.%d.%d", device.mqtt_server[0], device.mqtt_server[1], device.mqtt_server[2], device.mqtt_server[3]);
-  display_element_set_string(ip_text, 16, 0, &helper_dialog_mqtt_set_server, &valid_ipv4_address_element_string);
+  display_element_set_string(ip_text, 16, 0, 0, &helper_dialog_mqtt_set_server, &valid_ipv4_address_element_string);
 }
 //// funkce obsluha tlacitka nastaveni mqtt uzivatele
 void button_set_mqtt_user_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, 0);
-  display_element_set_string(device.mqtt_user, 20, 0, &helper_dialog_mqtt_set_user, &valid_true);
+  display_element_set_string(device.mqtt_user, 20, 0, 0, &helper_dialog_mqtt_set_user, &valid_true);
 }
 //// funkce obsluha tlacika nastaveni mqtt klice
 void button_set_mqtt_pass_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
 {
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_ALFA, 0, 0);
-  display_element_set_string(device.mqtt_key, 20, 0, &helper_dialog_mqtt_set_pass, &valid_true);
+  display_element_set_string(device.mqtt_key, 20, 0, 0, &helper_dialog_mqtt_set_pass, &valid_true);
 }
 //// funkce obsluha tlacitka check connection
 void button_check_mqtt_connection_onclick(uint16_t args1, uint16_t args2, uint8_t args3)
@@ -7748,8 +8024,25 @@ uint8_t valid_true(void)
 }
 
 
+uint8_t valid_thermostat_program_name(void)
+{
+  char program_name[10];
+  display_element_get_string(program_name);
+  if (strlen(program_name) > 0)
+    return 1;
+  else
+    return 0;
+}
 
-
+uint8_t valid_thermostat_program_time_interval(void)
+{
+  char program_interval_name[thermostat_program_time_interval_string_size];
+  display_element_get_string(program_interval_name);
+  if (strlen(program_interval_name) > 0)
+    return 1;
+  else
+    return 0;
+}
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -63,6 +63,8 @@ uint8_t menu_redraw_change_term_input(uint16_t args1, uint16_t args2, uint8_t ar
 uint8_t preload_regulator_menu(uint16_t args1, uint16_t args2, uint8_t args3);
 
 
+void display_element_show_thermostat_statistics(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text);
+
 const Element_Function_1 f_show_fill_rectangle_term_mode_dialog PROGMEM = {
   .x = 10,
   .y = 40,
@@ -122,8 +124,8 @@ const Element_Button_1 thermostat_button_show_statistic PROGMEM = {
   .size_x = 190,
   .size_y = 40,
   .font_size = 1,
-  .args = 0,
-  .onclick = nullfce,//MenuHistoryNextMenu,
+  .args = NEW_MENU_THERMOSTAT_STATISTICS,
+  .onclick = MenuHistoryNextMenu,
   .redraw_class = (1 << REDRAW_ONCE),
   .enable_show = display_enable_show,
 };
@@ -411,8 +413,8 @@ const Element_Button_1 button_deassociate_input_sensor_for_term = {
 
 
 /*
- * definice polozek menu pro virtualni vystupy
- */
+   definice polozek menu pro virtualni vystupy
+*/
 const Element_Function_1 f_vertical_slider_term_ring_virtual_output PROGMEM = {
   .x = 410,
   .y = 82,
@@ -485,7 +487,7 @@ const Element_Dyn_Select_1 button_select_term_ring_virtual_output_in_dialog PROG
   .dyn_symbol_onclick =  button_select_term_ring_virtual_output_in_dialog_onclick,
   .function_for_max_items =  button_get_virtual_output_max_items,
   .get_status_fnt = button_select_term_ring_virtual_output_in_dialog_status_fnt,
-  .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_1 | 1<< REDRAW_CLASS_2),
+  .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_1 | 1 << REDRAW_CLASS_2),
 };
 
 
@@ -583,6 +585,19 @@ const Element_Dyn_Select_1 button_select_term_mode PROGMEM = {
   .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_1),
 };
 
+
+const Element_Function_1 f_show_thermostat_statistics PROGMEM = {
+  .x = 10,
+  .y = 30,
+  .args = 0,
+  .fnt_coordinate_xy = display_element_show_thermostat_statistics,
+  .size_x = 200,
+  .size_y = 170,
+  .redraw_class = 1 << REDRAW_ONCE,
+  .onclick = nullfce,
+  .enable_show = display_enable_show,
+  .name = char_NULL,
+};
 
 const Menu1 DialogSetManualyTemp PROGMEM = {
   .name = text_nastaveni_mezni_temp,
@@ -854,5 +869,41 @@ const Menu1 DialogSelectVirtualOutputForTerm PROGMEM = {
   .redraw_class_3 = returnnullfceargs,
   .preload_function = returnnullfceargs,
 };
+
+
+
+const Menu1 DialogShowThermostatStatistics PROGMEM = {
+  .name = new_text_termostat_statistika,
+  .button_1 = {button_back},
+  .button_2 = {NULL},
+  .function_1 = {f_show_date, f_show_thermostat_statistics},
+  .switch_1 = {NULL},
+  .dyn_button = {NULL},
+  .symbol_button_1 = {NULL},
+  .dyn_symbol_1 = {NULL},
+  .dyn_select_box_1 = {NULL},
+  .len_button_1 = 1,
+  .len_button_2 = 0,
+  .len_function_1 = 2,
+  .len_switch_1 = 0,
+  .len_dyn_button_1 = 0,
+  .len_symbol_button_1 = 0,
+  .len_dyn_symbol_1 = 0,
+  .len_dyn_select_box_1 = 0,
+  .idx = NEW_MENU_THERMOSTAT_STATISTICS,
+  .x = 10,
+  .y = 10,
+  .size_x = 480,
+  .size_y = 320,
+  .atributes = (1 << MENU_ATTRIBUTES_CLEAN_DISPLAY),
+  .color_background = WHITE,
+  .redraw_class = (1 << REDRAW_ONCE),
+  .redraw_class_0 = returnnullfceargs,
+  .redraw_class_1 = returnnullfceargs,
+  .redraw_class_2 = returnnullfceargs,
+  .redraw_class_3 =  menu_redraw_date,
+  .preload_function = returnnullfceargs,
+};
+
 
 #endif

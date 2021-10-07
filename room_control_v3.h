@@ -267,7 +267,7 @@ uint8_t get_function_return_args_1(uint16_t args1, uint16_t args2, uint8_t args3
 
 ///////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-const char term_title[] PROGMEM = "Pokojovy regulator v3";
+const char term_title[] PROGMEM = "Pokojovy regulator v3.2";
 const char text_touchscreen[] PROGMEM = "touchscreen";
 const char text_nastaveni_systemu[] PROGMEM = "nastaveni systemu";
 const char text_onewire_rozhrani[] PROGMEM = "1wire rozhrani";
@@ -344,6 +344,7 @@ const char text_rtds_novy[] PROGMEM = "Pridat nove vzdalene cidlo";
 const char nastaveni_delete_sensor[] PROGMEM = "Vymazat cidlo";
 const char nastaveni_deassociate_sensor[] PROGMEM = "Uvolnit cidlo";
 const char nastaveni_deassociate_program[] PROGMEM = "Uvolnit program";
+const char nastaveni_deassociate_program_interval[] PROGMEM = "Uvolnit interval";
 const char nastaveni_tds_period[] PROGMEM = "Merici perioda";
 const char nastaveni_name_sensor[] PROGMEM = "Nastavit nazev";
 const char nastaveni_tds_offset[] PROGMEM = "Nastavit offset";
@@ -390,7 +391,7 @@ const char char_NULL[] PROGMEM = "";
 
 const char new_text_show_all_temp[] PROGMEM = "Zobrazeni vsech teplot";
 
-const char new_text_zapnuto[] PROGMEM = "Zapnoto";
+const char new_text_zapnuto[] PROGMEM = "Zapnuto";
 const char new_text_vypnuto[] PROGMEM = "Vypnuto";
 
 const char seznam_server[] PROGMEM = "www.seznam.cz";
@@ -485,6 +486,7 @@ const char new_text_slash_rtds_control_list[] PROGMEM = "/rtds-control/list";
 
 const char new_text_set_time_program[] PROGMEM = "Casove plany";
 const char new_text_novy_time_plan[] PROGMEM = "Novy plan";
+const char new_text_novy_time_program[] PROGMEM = "Novy program";
 
 const char new_text_regulator[] PROGMEM = "Regulator: ";
 
@@ -570,6 +572,17 @@ const char new_text_uptime[] PROGMEM = "uptime %ld sec";
 
 const char new_text_ip_format[] PROGMEM = "%d.%d.%d.%d";
 
+
+
+const char new_text_virtual_output[] PROGMEM = "Virtualni vystup";
+
+const char new_text_login[] PROGMEM = "prihlasit";
+const char new_text_logout[] PROGMEM = "odhlasit";
+const char new_text_virtual_output_test[] PROGMEM = "testovat vystup";
+const char new_text_virtual_output_manual[] PROGMEM = "rucni hodnota";
+
+const char new_text_internal_temp_value[] PROGMEM = "interni zarizeni: %sC";
+
 const char new_text_30sec[] PROGMEM = "30 sec";
 const char new_text_1min[] PROGMEM = "1 min";
 const char new_text_2min[] PROGMEM = "2 min";
@@ -577,10 +590,8 @@ const char new_text_3min[] PROGMEM = "3 min";
 const char new_text_4min[] PROGMEM = "4 min";
 const char new_text_enabled_x_sec[] PROGMEM = "Povoleno: %d sec";
 
-const char new_text_virtual_output[] PROGMEM = "Virtualni vystup";
+const char new_text_program_interval[] PROGMEM = "Novy interval";
 
-
-const char new_text_internal_temp_value[] PROGMEM = "interni zarizeni: %sC";
 /***************************************************************/
 /*
         spolecne display funkce
