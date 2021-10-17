@@ -67,6 +67,7 @@ const Element_Dyn_Button_1 button_change_brightness_display PROGMEM = {
   .get_status_string = button_change_brightness_display_get_status_string,
   .dyn_button_onclick = button_change_brightness_display_dyn_button_onclick,
   .function_for_max_items = get_function_return_args_1,
+  .enable_show = display_enable_show,
   .redraw_class = (1 << REDRAW_FORCE | 1 << REDRAW_CLASS_0)
 };
 

@@ -134,6 +134,7 @@ const Element_Dyn_Button_1 list_all_virtual_output PROGMEM = {
   .get_status_string = get_function_list_virtual_output_labels,
   .dyn_button_onclick =  click_virtual_output_associate_action,
   .function_for_max_items = get_function_list_virtual_output_max_active_items,
+  .enable_show = display_enable_show,
   .redraw_class = 1 << REDRAW_ONCE | 1 << REDRAW_CLASS_2 | 1 << REDRAW_CLASS_1 | 1 << REDRAW_CLASS_0,
 };
 

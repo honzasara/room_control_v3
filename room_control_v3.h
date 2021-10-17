@@ -149,7 +149,7 @@ void display_element_fill_rectangle(uint16_t x, uint16_t y, uint16_t size_x, uin
 
 void display_element_dialog_set_string(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text);
 
-void display_function_set_variable(float now, float min, float max, float step, uint8_t args, uint8_t number_type, uint8_t update_now, uint8_t idx, fptr_save_function save_function);
+void display_function_set_variable(float now, float min, float max, float step, uint8_t args1, uint8_t args2, uint8_t number_type, uint8_t update_now, uint8_t idx, fptr_save_function save_function);
 
 
 float display_function_get_variable(uint8_t idx, uint8_t args2, uint8_t args3);
@@ -313,10 +313,18 @@ const char text_button_term_prog_comment[] PROGMEM = "Automaticky program";
 const char text_button_term_man[] PROGMEM = "MAN";
 const char text_button_term_man_comment[] PROGMEM = "Rucni ovladani";
 
+const char text_off[] PROGMEM = "off";
+const char text_heat[] PROGMEM = "heat";
+const char text_manual[] PROGMEM = "manual";
+const char text_auto[] PROGMEM = "auto";
+const char text_cool[] PROGMEM = "cool";
+const char text_fan_only[] PROGMEM = "fan_only";
+
 
 const char text_button_mode_heat[] PROGMEM = "Topeni";
 const char text_button_mode_cool[] PROGMEM = "Chlazeni";
 const char text_button_term_fan[] PROGMEM = "FAN";
+const char text_button_term_default[] PROGMEM = "Vychozi";
 
 const char text_term_active[] PROGMEM = "Aktivni";
 const char text_term_deactive[] PROGMEM = "Neaktivni";
@@ -357,7 +365,10 @@ const char text_select_term_mode[] PROGMEM = "Vyber modu regulatoru";
 const char text_select_term_default_ring[] PROGMEM = "Vyber vychoziho regulatoru";
 const char text_nastaveni_ring_program[] PROGMEM = "Vyber programu";
 const char text_nastaveni_setup_program[] PROGMEM = "Nastaveni programu";
+const char text_nastaveni_program_settings[] PROGMEM = "Volby programu";
+
 const char text_nastaveni_programator[] PROGMEM = "Nastaveni programatoru";
+const char text_nastaveni_time_program[] PROGMEM = "Vyber programu";
 const char text_nastaveni_mezni_temp[] PROGMEM = "Nastaveni mezni teploty";
 const char text_prog[] PROGMEM = "PROG";
 const char text_ntp_sync_time[] PROGMEM = "Aktualizace casu";
@@ -478,6 +489,9 @@ const char new_text_mqtt_processed[] PROGMEM = "MQTT zpracovanych: ";
 const char new_text_mqtt_error[] PROGMEM = "MQTT v chybe: ";
 const char new_text_date_error[] PROGMEM = "--.--.----";
 
+const char text_know_mqtt_device[] PROGMEM = "know_mqtt_device";
+
+
 const char new_text_rtds_type_temp[] PROGMEM = "Typ: vzdalena teplota";
 
 const char new_text_slash_rtds_slash[] PROGMEM = "/rtds/";
@@ -572,8 +586,12 @@ const char new_text_uptime[] PROGMEM = "uptime %ld sec";
 
 const char new_text_ip_format[] PROGMEM = "%d.%d.%d.%d";
 
+const char text_time_format[] PROGMEM = "%02d:%02d";
+const char text_time_second_format[] PROGMEM = "%02d:%02d:%02d";
+const char text_date_format[] PROGMEM = "%02d.%02d.%04d";
 
-
+const char text_virtual_output[] PROGMEM = "virtual-output";
+const char text_know_virtual_output[] PROGMEM = "virtual-output";
 const char new_text_virtual_output[] PROGMEM = "Virtualni vystup";
 
 const char new_text_login[] PROGMEM = "prihlasit";

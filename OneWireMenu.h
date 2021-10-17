@@ -150,6 +150,7 @@ const Element_Dyn_Button_1 onewire_associace_button PROGMEM = {
   .get_status_string = get_function_one_wire_associate_or_setting_text_button,
   .dyn_button_onclick =  click_tds_associate_or_setting_onewire,
   .function_for_max_items = get_function_one_wire_last_index_for_menu,
+  .enable_show = display_enable_show,
   .redraw_class = REDRAW_BUTTON,
 };
 

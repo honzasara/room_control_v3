@@ -141,6 +141,7 @@ const Element_Dyn_Button_1 rtds_stat_button PROGMEM = {
   .get_status_string = get_function_rtds_text_button,
   .dyn_button_onclick =  click_rtds_setting_sensor,
   .function_for_max_items = get_function_rtds_last_index_for_menu,
+  .enable_show = display_enable_show,
   .redraw_class = 1 << REDRAW_ONCE | 1 << REDRAW_CLASS_2,
 };
 

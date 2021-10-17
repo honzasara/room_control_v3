@@ -170,6 +170,8 @@
 #define NEW_MENU_THERMOSTAT_STATISTICS 164
 #define NEW_MENU_THERMOSTAT_TIME_PROGRAM_MENU 165
 #define NEW_MENU_THERMOSTAT_TIME_PROGRAM_MENU_DETAIL 166
+#define NEW_MENU_THERMOSTAT_TIME_PROGRAM_SETTING 167
+#define NEW_MENU_THERMOSTAT_SET_PROG 168
 
 
 #define MENU_ATTRIBUTES_CLEAN_DISPLAY 0
@@ -255,7 +257,7 @@ typedef void (*fptr_args)(uint16_t args1, uint16_t args2, uint8_t args3);
 typedef uint8_t (*ret_fptr)(uint16_t args1, uint16_t args2, uint8_t args3);
 typedef uint8_t (*ret_fptr_no_args)(void);
 
-typedef void (*fptr_save_function)(uint16_t args, float now, uint8_t now1);
+typedef void (*fptr_save_function)(uint16_t args1, uint8_t args2, float now, uint8_t now1);
 
 
 
@@ -294,6 +296,7 @@ typedef struct t_Element_Dyn_Button_1
   ret_string_fptr get_status_string;
   fptr_args dyn_button_onclick;
   ret_fptr function_for_max_items;
+  ret_fptr enable_show;
   uint8_t redraw_class;
 } Element_Dyn_Button_1;
 
@@ -316,6 +319,7 @@ typedef struct t_Element_Dyn_Symbol_1
   fptr_args dyn_symbol_onclick;
   ret_fptr function_for_max_items;
   uint8_t redraw_class;
+  ret_fptr enable_show;
 } Element_Dyn_Symbol_1;
 
 typedef struct t_Element_Dyn_Select_1
@@ -469,7 +473,7 @@ typedef struct t_MenuAll
   uint8_t len_menu2;
   uint8_t len_menu3;
   uint8_t len_menu4;
-  Menu1 ListMenu1[8];
+  Menu1 ListMenu1[10];
   Menu1 ListMenu2[10];
   Menu1 ListMenu3[10];
   Menu1 ListMenu4[10];
