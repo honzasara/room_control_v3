@@ -343,6 +343,7 @@ typedef struct t_Element_Dyn_Select_1
   fptr_args dyn_symbol_onclick;
   ret_fptr function_for_max_items;
   ret_fptr get_status_fnt;
+  ret_fptr enable_show;
   uint8_t redraw_class;
 } Element_Dyn_Select_1;
 
@@ -440,7 +441,7 @@ typedef struct t_Menu1
   Element_Dyn_Button_1 dyn_button[2];
   Element_Symbol_1 symbol_button_1[8];
   Element_Dyn_Symbol_1 dyn_symbol_1[3];
-  Element_Dyn_Select_1 dyn_select_box_1[1];
+  Element_Dyn_Select_1 dyn_select_box_1[2];
   uint8_t len_button_1;
   uint8_t len_button_2;
   uint8_t len_function_1;

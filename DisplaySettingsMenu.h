@@ -91,6 +91,7 @@ const Element_Dyn_Select_1 button_set_brightness_auto_shutdown PROGMEM = {
   .dyn_symbol_onclick =  button_set_brightness_auto_shutdown_dyn_symbol_onclick,
   .function_for_max_items = get_function_return_args_1,
   .get_status_fnt = button_set_brightness_auto_shutdown_get_status_fnt,
+  .enable_show = display_enable_show,
   .redraw_class = REDRAW_BUTTON,
 };
 
@@ -115,6 +116,7 @@ const Element_Dyn_Select_1 button_set_brightness_auto_shutdown_select_time PROGM
   .dyn_symbol_onclick =  button_set_brightness_auto_shutdown_select_time_dyn_symbol_onclick,
   .function_for_max_items = get_function_return_args_1,
   .get_status_fnt = button_set_brightness_auto_shutdown_select_time_get_status_fnt,
+  .enable_show = display_enable_show,
   .redraw_class = REDRAW_BUTTON,
 };
 
@@ -194,6 +196,7 @@ const Element_Dyn_Select_1 button_select_show_default_temp PROGMEM = {
   .dyn_symbol_onclick =  button_click_set_show_default_temp,
   .function_for_max_items = button_get_show_default_temp_max_items,
   .get_status_fnt = button_get_show_default_temp_active,
+  .enable_show = display_enable_show,
   .redraw_class = REDRAW_BUTTON,
 };
 

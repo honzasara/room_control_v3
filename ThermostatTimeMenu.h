@@ -43,6 +43,73 @@ void click_button_time_program_interval_remove(uint16_t args1, uint16_t args2, u
 
 uint8_t preload_program_interval_menu(uint16_t args1, uint16_t args2, uint8_t args3);
 
+
+const Element_Symbol_1 slider_menu_plus_thermostat_dialog_select_program PROGMEM =  {
+  .znak = '+',
+  .x = 380,
+  .y = 35,
+  .size_x = 40,
+  .size_y = 40,
+  .znak_size = 2,
+  .args = MENU_SLIDER_LIST_ALL_PROGRAM,
+  .onclick = display_function_vertical_slider_dec,
+  .redraw_class = 1 << REDRAW_ONCE ,
+  .enable_show = display_enable_show,
+};
+
+const Element_Symbol_1 slider_menu_minus_thermostat_dialog_select_program PROGMEM =  {
+  .znak = '-',
+  .x = 380,
+  .y = 170,
+  .size_x = 40,
+  .size_y = 40,
+  .znak_size = 2,
+  .args = MENU_SLIDER_LIST_ALL_PROGRAM,
+  .onclick = display_function_vertical_slider_inc,
+  .redraw_class = 1 << REDRAW_ONCE ,
+  .enable_show = display_enable_show,
+};
+
+const Element_Function_1 f_vertical_slider_dialog_select_program PROGMEM = {
+  .x = 380,
+  .y = 77,
+  .args = MENU_SLIDER_LIST_ALL_PROGRAM,
+  .fnt_coordinate_xy = display_element_vertical_slider,
+  .size_x = 40,
+  .size_y = 91,
+  .redraw_class = 1 << REDRAW_ONCE | 1 << REDRAW_CLASS_3,
+  .onclick = nullfce,
+  .enable_show = display_enable_show,
+  .name = char_NULL,
+};
+
+
+const Element_Dyn_Select_1 thermostat_dialog_select_program PROGMEM = {
+  .first_x = 230,
+  .first_y = 35,
+  .size_x = 140,
+  .size_y = 40,
+  .font_size_1 = 2,
+  .font_size_2 = 1,
+  .color_active = GREEN,
+  .color_inactive = WHITE,
+  .step_x = 45,
+  .step_y = 45,
+  .direction = VERTICAL,
+  .max_items_count = 4,
+  .max_row_count = 1,
+  .slider_args = MENU_SLIDER_LIST_ALL_PROGRAM,
+  .args = 0,
+  .get_status_string = get_function_active_program_label,
+  .dyn_symbol_onclick =  click_select_active_program,
+  .function_for_max_items = get_function_active_program_max_items,
+  .get_status_fnt = button_select_active_program_get_status_fnt,
+  .enable_show = display_enable_show,
+  .redraw_class = 1 << REDRAW_ONCE | 1 << REDRAW_CLASS_3 | 1 << REDRAW_CLASS_1,
+};
+
+
+
 const Element_Symbol_1 slider_menu_plus_all_program PROGMEM =  {
   .znak = '+',
   .x = 410,
@@ -469,24 +536,29 @@ const Menu1 New_ThermostatTimeProgramMenuDetail PROGMEM = {
 
 
 
+
+
+
+
+
 const Menu1 DialogSetSelectTimeProgram PROGMEM = {
   .name = text_nastaveni_time_program,
   .button_1 = {button_back},
   .button_2 = {NULL},
-  .function_1 = {NULL},
+  .function_1 = {f_vertical_slider_dialog_select_program},
   .switch_1 = {NULL},
   .dyn_button = {NULL},
-  .symbol_button_1 = {NULL},
+  .symbol_button_1 = {slider_menu_plus_thermostat_dialog_select_program, slider_menu_minus_thermostat_dialog_select_program},
   .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {NULL},
+  .dyn_select_box_1 = {thermostat_dialog_select_program},
   .len_button_1 = 1,
   .len_button_2 = 0,
-  .len_function_1 = 0,
+  .len_function_1 = 1,
   .len_switch_1 = 0,
   .len_dyn_button_1 = 0,
-  .len_symbol_button_1 = 0,
+  .len_symbol_button_1 = 2,
   .len_dyn_symbol_1 = 0,
-  .len_dyn_select_box_1 = 0,
+  .len_dyn_select_box_1 = 1,
   .idx = NEW_MENU_THERMOSTAT_SET_PROG,
   .x = 10,
   .y = 10,
@@ -496,9 +568,9 @@ const Menu1 DialogSetSelectTimeProgram PROGMEM = {
   .color_background = YELLOW,
   .redraw_class = (1 << REDRAW_ONCE),
   .redraw_class_0 = menu_redraw_change_variable,
-  .redraw_class_1 = returnnullfceargs,
+  .redraw_class_1 = menu_redraw_change_term_mode,
   .redraw_class_2 = returnnullfceargs,
-  .redraw_class_3 = returnnullfceargs,
+  .redraw_class_3 = menu_redraw_slider,
   .preload_function = preload_regulator_menu,
 };
 

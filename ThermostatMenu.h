@@ -65,9 +65,6 @@ uint8_t preload_regulator_menu(uint16_t args1, uint16_t args2, uint8_t args3);
 
 void display_element_show_thermostat_statistics(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text);
 
-uint8_t get_function_active_program_max_items(uint16_t idx, uint16_t args2, uint8_t args3);
-void click_select_active_program(uint16_t args1, uint16_t args2, uint8_t idx);
-void get_function_active_program_label(uint8_t args1, uint8_t args2 , uint8_t args3, char *line1, char *line2);
 
 
 const Element_Function_1 f_show_fill_rectangle_term_mode_dialog PROGMEM = {
@@ -273,6 +270,7 @@ const Element_Dyn_Select_1 button_change_default_ring_in_dialog PROGMEM = {
   .dyn_symbol_onclick =  button_click_set_new_default_ring_in_dialog,
   .function_for_max_items = get_function_return_args_1,
   .get_status_fnt = button_get_term_ring_is_selected,
+  .enable_show = display_enable_show,
   .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_0),
 };
 
@@ -494,6 +492,7 @@ const Element_Dyn_Select_1 button_select_term_ring_virtual_output_in_dialog PROG
   .dyn_symbol_onclick =  button_select_term_ring_virtual_output_in_dialog_onclick,
   .function_for_max_items =  button_get_virtual_output_max_items,
   .get_status_fnt = button_select_term_ring_virtual_output_in_dialog_status_fnt,
+  .enable_show = display_enable_show,
   .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_1 | 1 << REDRAW_CLASS_2),
 };
 
@@ -566,6 +565,7 @@ const Element_Dyn_Select_1 button_select_term_ring_input_in_dialog PROGMEM = {
   .dyn_symbol_onclick =  button_select_term_ring_input_in_dialog_onclick,
   .function_for_max_items =  button_get_show_default_temp_max_items,
   .get_status_fnt = button_select_term_ring_input_in_dialog_status_fnt,
+  .enable_show = display_enable_show,
   .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_1 | 1 << REDRAW_CLASS_2),
 };
 
@@ -589,6 +589,7 @@ const Element_Dyn_Select_1 button_select_term_mode PROGMEM = {
   .dyn_symbol_onclick =  button_select_term_mode_onclick,
   .function_for_max_items = get_function_return_args_1,
   .get_status_fnt = button_select_term_mode_get_status_fnt,
+  .enable_show = display_enable_show,
   .redraw_class = (1 << REDRAW_ONCE | 1 << REDRAW_CLASS_1),
 };
 
@@ -616,7 +617,7 @@ const Element_Symbol_1 slider_menu_plus_thermostat_select_program PROGMEM =  {
   .znak_size = 2,
   .args = MENU_SLIDER_LIST_ALL_PROGRAM,
   .onclick = display_function_vertical_slider_dec,
-  .redraw_class = 1 << REDRAW_ONCE| 1 << REDRAW_CLASS_1,
+  .redraw_class = 1 << REDRAW_ONCE | 1 << REDRAW_CLASS_1,
   .enable_show = display_enable_show_term_mode_prog,
 };
 
@@ -629,7 +630,7 @@ const Element_Symbol_1 slider_menu_minus_thermostat_select_program PROGMEM =  {
   .znak_size = 2,
   .args = MENU_SLIDER_LIST_ALL_PROGRAM,
   .onclick = display_function_vertical_slider_inc,
-  .redraw_class = 1 << REDRAW_ONCE| 1 << REDRAW_CLASS_1,
+  .redraw_class = 1 << REDRAW_ONCE | 1 << REDRAW_CLASS_1,
   .enable_show = display_enable_show_term_mode_prog,
 };
 
@@ -640,27 +641,33 @@ const Element_Function_1 f_vertical_slider_select_program PROGMEM = {
   .fnt_coordinate_xy = display_element_vertical_slider,
   .size_x = 40,
   .size_y = 91,
-  .redraw_class = 1 << REDRAW_ONCE | 1 << REDRAW_CLASS_3| 1 << REDRAW_CLASS_1,
+  .redraw_class = 1 << REDRAW_ONCE | 1 << REDRAW_CLASS_3 | 1 << REDRAW_CLASS_1,
   .onclick = nullfce,
   .enable_show = display_enable_show_term_mode_prog,
   .name = char_NULL,
 };
 
-const Element_Dyn_Button_1 thermostat_select_program PROGMEM = {
+
+const Element_Dyn_Select_1 thermostat_select_program PROGMEM = {
   .first_x = 10,
   .first_y = 35,
   .size_x = 140,
   .size_y = 40,
-  .font_size = 1,
-  .step_x = 45, .step_y = 45,
+  .font_size_1 = 2,
+  .font_size_2 = 1,
+  .color_active = GREEN,
+  .color_inactive = WHITE,
+  .step_x = 45,
+  .step_y = 45,
   .direction = VERTICAL,
   .max_items_count = 4,
   .max_row_count = 1,
   .slider_args = MENU_SLIDER_LIST_ALL_PROGRAM,
   .args = 0,
   .get_status_string = get_function_active_program_label,
-  .dyn_button_onclick =  click_select_active_program,
+  .dyn_symbol_onclick =  click_select_active_program,
   .function_for_max_items = get_function_active_program_max_items,
+  .get_status_fnt = button_select_active_program_get_status_fnt,
   .enable_show = display_enable_show_term_mode_prog,
   .redraw_class = 1 << REDRAW_ONCE | 1 << REDRAW_CLASS_3 | 1 << REDRAW_CLASS_1,
 };
@@ -705,18 +712,18 @@ const Menu1 DialogSelectTermMode PROGMEM = {
   .button_2 = {button_term_ring_mode_heat, button_term_ring_mode_cool},
   .function_1 = {f_show_fill_rectangle_term_mode_dialog, f_default_ring_set_temp, f_vertical_slider_select_program},
   .switch_1 = {NULL},
-  .dyn_button = {thermostat_select_program},
+  .dyn_button = {},
   .symbol_button_1 = {dialog_set_default_ring_temp_plus, dialog_set_default_ring_temp_minus, slider_menu_plus_thermostat_select_program, slider_menu_minus_thermostat_select_program},
   .dyn_symbol_1 = {NULL},
-  .dyn_select_box_1 = {button_select_term_mode},
+  .dyn_select_box_1 = {button_select_term_mode, thermostat_select_program},
   .len_button_1 = 1,
   .len_button_2 = 2,
   .len_function_1 = 3,
   .len_switch_1 = 0,
-  .len_dyn_button_1 = 1,
+  .len_dyn_button_1 = 0,
   .len_symbol_button_1 = 4,
   .len_dyn_symbol_1 = 0,
-  .len_dyn_select_box_1 = 1,
+  .len_dyn_select_box_1 = 2,
   .idx = NEW_MENU_DIALOG_SELECT_TERM_MODE,
   .x = 10,
   .y = 10,

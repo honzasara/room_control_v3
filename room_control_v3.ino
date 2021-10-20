@@ -39,15 +39,19 @@
 
   ----
   dialogum upravit hlavicku textu
+
   dokoncit menu statistika regulatoru
     - zde informace, aktualni stav, vykon akcniho clenu nastaveny, zpetna vazba od akcniho clenu
     - posledni update od akcniho clenu
     - vybrany mod
     - vybrany program
     - pid krivka
+
   menu casove plany
+    - souhrny nahled
 
   menu NRF
+
   menu vystupni cleny
     - dokoncit funkci test vystupniho clenu
     - dokoncit rucni hodnota vystupu
@@ -683,6 +687,9 @@ bool draw_menu(bool redraw, uint8_t click_type, uint16_t click_x, uint16_t click
   for (uint8_t idx = 0; idx < pgm_read_byte(&current->len_dyn_select_box_1); idx++)
   {
     dyn_select_box_1 = &current->dyn_select_box_1[idx];
+    rfnt = (ret_fptr*)pgm_read_word(&dyn_select_box_1->enable_show);
+    active = (ret_fptr(rfnt))(pgm_read_byte(&dyn_select_box_1->args), menu_args1, idx);
+    if (active == 0) continue;
     rdr = pgm_read_byte(&dyn_select_box_1->redraw_class);
     if (enable_redraw(rdr, redraw_class) == true)
     {
@@ -2536,6 +2543,7 @@ void output_virtual_ram_store_clear(uint8_t idx)
 
 /*
    funkce, zalozeni noveho cidla v ram store
+   nebo hledani pametoveho mista podle virtual_id
    funkce vraci ID pametoveho mista
 */
 uint8_t output_virtual_ram_store_new(uint8_t virtual_id)
@@ -2549,7 +2557,6 @@ uint8_t output_virtual_ram_store_new(uint8_t virtual_id)
       {
         ret_id = idx;
         found = 1;
-        output_virtual_ram_store_set_last_update(idx, 0);
         break;
       }
   }
@@ -2788,7 +2795,11 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
     pch = strtok (str1, "/");
     while (pch != NULL)
     {
-      if (cnt == 0) id = output_virtual_ram_store_new(atoi(pch));
+      if (cnt == 0)
+      {
+        id = output_virtual_ram_store_new(atoi(pch));
+        output_virtual_ram_store_set_last_update(id, 0);
+      }
       if ((cnt == 1) && (strcmp(pch, "name") == 0)) output_virtual_ram_store_update_name(id, my_payload);
       if ((cnt == 1) && (strcmp(pch, "type") == 0)) output_virtual_ram_store_set_type(id, atoi(my_payload));
       if ((cnt == 1) && (strcmp(pch, "state") == 0)) output_virtual_ram_store_set_state(id, atoi(my_payload));
@@ -6291,9 +6302,32 @@ void  get_function_list_virtual_output_labels(uint8_t args1, uint8_t args2 , uin
     sprintf(line2, "S:%d,I:%d,T:%d,U:%d,P%d", state, id, type, last_update, per_id);
   }
 }
+
 void clik_button_virtual_output_manual(uint16_t args1, uint16_t args2, uint8_t args3)
 {
+  char text_power[10];
+  uint8_t virtual_id;
+  //output_virtual_ram_store_get_name(args2, text_power);
+  virtual_id = output_virtual_ram_store_get_id(args2);
+  ////state jako posledni nastavena hodnota na vystupu, muze byt MAX,OFF,PWM cislo
+  //itoa(output_virtual_ram_store_get_state(args2), text_power, 10);
+  itoa(0, text_power, 10);
+  MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
+  display_element_set_string(text_power, 4, virtual_id, 0, &helper_dialog_set_value_virtual_output, &valid_true);
 }
+
+void helper_dialog_set_value_virtual_output(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  char value[4];
+  uint8_t virtual_id;
+  uint8_t val;
+  display_element_get_string(value);
+  virtual_id = display_element_get_string_args1();
+  val = atoi(value);
+  //output_virtual_ram_store_set_state(output_virtual_ram_store_new(virtual_id), val);
+  mqtt_publis_output(virtual_id, val);
+}
+
 /// args1 ... index polozky v menu
 void clik_button_virtual_output_test(uint16_t args1, uint16_t args2, uint8_t args3)
 {
@@ -6886,6 +6920,7 @@ uint8_t button_select_term_mode_get_status_fnt(uint16_t args1, uint16_t args2, u
   }
   return ret;
 }
+
 ///
 /*
    ulozeni vybraneho modu, pozor na pevne stanovene poradi
@@ -7099,7 +7134,20 @@ uint8_t get_function_active_program_max_items(uint16_t idx, uint16_t args2, uint
 
 void click_select_active_program(uint16_t args1, uint16_t args2, uint8_t idx)
 {
+  thermostat_program_set_active(args2, menu_dialog_mappings[idx]);
+  display_update_slider = 1;
+}
 
+/*
+   args2 .... index regulatoru
+   args3 .... index polozky z menu
+*/
+uint8_t button_select_active_program_get_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3)
+{
+  if (thermostat_program_get_active(args2) == menu_dialog_mappings[args3])
+    return BUTTON_ACTIVE;
+  else
+    return BUTTON_NO_ACTIVE;
 }
 
 void get_function_active_program_label(uint8_t args1, uint8_t args2 , uint8_t args3, char *line1, char *line2)

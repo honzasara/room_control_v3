@@ -234,8 +234,13 @@ void button_get_default_ring_term_mode_labels(uint8_t args1, uint8_t args2, uint
 
 
 
-
-
+/*
+ * funkce vyberu programu pro regulator
+ */
+uint8_t get_function_active_program_max_items(uint16_t idx, uint16_t args2, uint8_t args3);
+void click_select_active_program(uint16_t args1, uint16_t args2, uint8_t idx);
+void get_function_active_program_label(uint8_t args1, uint8_t args2 , uint8_t args3, char *line1, char *line2);
+uint8_t button_select_active_program_get_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3);
 
 
 
@@ -591,7 +596,7 @@ const char text_time_second_format[] PROGMEM = "%02d:%02d:%02d";
 const char text_date_format[] PROGMEM = "%02d.%02d.%04d";
 
 const char text_virtual_output[] PROGMEM = "virtual-output";
-const char text_know_virtual_output[] PROGMEM = "virtual-output";
+const char text_know_virtual_output[] PROGMEM = "store-virtual-output";
 const char new_text_virtual_output[] PROGMEM = "Virtualni vystup";
 
 const char new_text_login[] PROGMEM = "prihlasit";
