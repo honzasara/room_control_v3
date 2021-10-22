@@ -47,14 +47,12 @@
     - vybrany program
     - pid krivka
 
+
   menu casove plany
     - souhrny nahled
 
-  menu NRF
 
-  menu vystupni cleny
-    - dokoncit funkci test vystupniho clenu
-    - dokoncit rucni hodnota vystupu
+  menu NRF
 */
 
 
@@ -184,6 +182,7 @@ uint8_t use_rtds = 0;
 uint8_t use_rtds_type_temp = 0;
 uint8_t use_tds = 0;
 uint8_t use_nrf_temp = 0;
+uint8_t use_nrf = 0;
 uint8_t use_virtual_output = 0;
 uint8_t use_virtual_output_persistent = 0;
 
@@ -252,19 +251,26 @@ fptr_args dialog_yes_function;
 
 
 
-const MenuAll Menu_All PROGMEM = {
+const MenuAll Menu_All_1 PROGMEM = {
   .len_menu1 = 10,
   .len_menu2 = 10,
-  .len_menu3 = 10,
-  .len_menu4 = 10,
-
   .ListMenu1 = {HlavniMenu, MenuNastaveniSite, OneWireMenu, MenuNastaveniCas, SelectMenuDefaultTemp, MenuNastaveniMQTT, Menu_Show_All_temp, New_ThermostatTimeProgramMenuDetail, New_ThermostatTimeProgramSetting, DialogSetSelectTimeProgram},
   .ListMenu2 = {DialogYESNO, DialogSetVariable, DialogKyeboardAlfa, DialogKyeboardNumber , DialogOK, MenuThermostat, VirtualOutputSettingsDevice, DialogSelectVirtualOutputForTerm, DialogShowThermostatStatistics, New_ThermostatTimeProgramMenu },
-  .ListMenu3 = {TDSMenu, RTDS_Menu_Detail, List_RTDS_Menu, MenuThermostat_Setting, DialogSelectRing, MenuThermostatRingSetup, DialogSelectInputSensorsForTerm, DialogSelectTermMode, DialogSelectPIDSensor, New_ThermostatTimeMenu},
-  .ListMenu4 = {SystemSettingsMenu, New_NastaveniMenu, PeriferieSettingsMenu, New_DisplaySettingMenu, New_DisplaySetting_Brigthness, AboutDeviceMenu, New_DisplaySetting_Auto_Shutdown, SetNRFMenu, VirtualOutputSettingsMenu, DialogSetManualyTemp},
 };
 
+const MenuAll Menu_All_2 PROGMEM = {
+  .len_menu1 = 10,
+  .len_menu2 = 10,
+  .ListMenu1 = {TDSMenu, RTDS_Menu_Detail, List_RTDS_Menu, MenuThermostat_Setting, DialogSelectRing, MenuThermostatRingSetup, DialogSelectInputSensorsForTerm, DialogSelectTermMode, DialogSelectPIDSensor, New_ThermostatTimeMenu},
+  .ListMenu2 = {SystemSettingsMenu, New_NastaveniMenu, PeriferieSettingsMenu, New_DisplaySettingMenu, New_DisplaySetting_Brigthness, AboutDeviceMenu, New_DisplaySetting_Auto_Shutdown, SetNRFMenu, VirtualOutputSettingsMenu, DialogSetManualyTemp},
+};
 
+const MenuAll Menu_All_3 PROGMEM = {
+  .len_menu1 = 1,
+  .len_menu2 = 0,
+  .ListMenu1 = {PeriferieNRFInput},
+  .ListMenu2 = {},
+};
 
 
 
@@ -887,28 +893,18 @@ void MenuHistoryInit(void)
 const Menu1 *MenuHistoryGetMenu(uint8_t *args1)
 {
   const Menu1 *menus;
-  for (uint8_t idx = 0; idx < pgm_read_byte(&Menu_All.len_menu1); idx++)
+  for (uint8_t idx = 0; idx < pgm_read_byte(&Menu_All_1.len_menu1); idx++)
   {
-    menus = &Menu_All.ListMenu1[idx];
+    menus = &Menu_All_1.ListMenu1[idx];
     if (pgm_read_byte(&menus->idx) == MenuHistory[MenuHistoryIndex])
     {
       *args1 = Global_menu_args1[MenuHistoryIndex];
       return menus;
     }
   }
-  for (uint8_t idx = 0; idx < pgm_read_byte(&Menu_All.len_menu2); idx++)
+  for (uint8_t idx = 0; idx < pgm_read_byte(&Menu_All_1.len_menu2); idx++)
   {
-    menus = &Menu_All.ListMenu2[idx];
-    if (pgm_read_byte(&menus->idx) == MenuHistory[MenuHistoryIndex])
-    {
-      *args1 = Global_menu_args1[MenuHistoryIndex];
-      return menus;
-    }
-  }
-
-  for (uint8_t idx = 0; idx < pgm_read_byte(&Menu_All.len_menu3); idx++)
-  {
-    menus = &Menu_All.ListMenu3[idx];
+    menus = &Menu_All_1.ListMenu2[idx];
     if (pgm_read_byte(&menus->idx) == MenuHistory[MenuHistoryIndex])
     {
       *args1 = Global_menu_args1[MenuHistoryIndex];
@@ -916,9 +912,29 @@ const Menu1 *MenuHistoryGetMenu(uint8_t *args1)
     }
   }
 
-  for (uint8_t idx = 0; idx < pgm_read_byte(&Menu_All.len_menu4); idx++)
+  for (uint8_t idx = 0; idx < pgm_read_byte(&Menu_All_2.len_menu1); idx++)
   {
-    menus = &Menu_All.ListMenu4[idx];
+    menus = &Menu_All_2.ListMenu1[idx];
+    if (pgm_read_byte(&menus->idx) == MenuHistory[MenuHistoryIndex])
+    {
+      *args1 = Global_menu_args1[MenuHistoryIndex];
+      return menus;
+    }
+  }
+
+  for (uint8_t idx = 0; idx < pgm_read_byte(&Menu_All_2.len_menu2); idx++)
+  {
+    menus = &Menu_All_2.ListMenu2[idx];
+    if (pgm_read_byte(&menus->idx) == MenuHistory[MenuHistoryIndex])
+    {
+      *args1 = Global_menu_args1[MenuHistoryIndex];
+      return menus;
+    }
+  }
+
+  for (uint8_t idx = 0; idx < pgm_read_byte(&Menu_All_3.len_menu1); idx++)
+  {
+    menus = &Menu_All_3.ListMenu1[idx];
     if (pgm_read_byte(&menus->idx) == MenuHistory[MenuHistoryIndex])
     {
       *args1 = Global_menu_args1[MenuHistoryIndex];
@@ -1835,6 +1851,20 @@ uint8_t nrf_set_default_device(uint8_t idx)
 }
 
 /*
+ * funkce nam vraci pocet znamych, prihlasenych nrf zarizeni
+ */
+uint8_t nrf_count_active_store(void)
+{
+  uint8_t active = 0;
+  for (uint8_t idx = 0; idx < ram_nrf_devices; idx++)
+  {
+    if (nrf_get_nei_device_used(idx) == 1)
+      active++;
+  }
+  return active;
+}
+
+/*
    zobrazeni ulozenych NRF pripojenych zarizeni
 */
 uint8_t nrf_list_nei_store(uint8_t idx, char *name, uint8_t *device_index, uint8_t *last_seen)
@@ -1902,7 +1932,7 @@ uint8_t nrf_get_nei_last_update(uint8_t idx)
 void nrf_inc_nei_last_update(void)
 {
   uint8_t cnt = 0;
-  for (uint8_t idx = 0; idx < ram_nrf_name_length; idx++)
+  for (uint8_t idx = 0; idx < ram_nrf_devices; idx++)
     if (nrf_get_nei_device_used(idx) == 1)
     {
       cnt = nrf_get_nei_last_update(idx);
@@ -1937,7 +1967,7 @@ uint8_t nrf_get_nei_device_index(uint8_t idx)
 uint8_t nrf_find_store_index(uint8_t device_index, uint8_t *store_index)
 {
   uint8_t ret = 0;
-  for (uint8_t idx = 0; idx < ram_nrf_name_length; idx++)
+  for (uint8_t idx = 0; idx < ram_nrf_devices; idx++) //// bylo ram_nrf_name_length
   {
     if (nrf_get_nei_device_index(idx) == device_index)
     {
@@ -1967,7 +1997,7 @@ uint8_t nrf_get_nei_device_used(uint8_t idx)
 
 
 
-void nrf_add_nei_store_service_info_uptime(uint8_t device_index, long uptime)
+void nrf_add_nei_store_service_info_uptime(uint8_t device_index, uint32_t uptime)
 {
   uint8_t idx;
   if (nrf_find_store_index(device_index, &idx) == 1)
@@ -1979,9 +2009,9 @@ void nrf_add_nei_store_service_info_uptime(uint8_t device_index, long uptime)
   }
 }
 
-long nrf_get_nei_store_service_info_uptime(uint8_t idx)
+uint32_t nrf_get_nei_store_service_info_uptime(uint8_t idx)
 {
-  long uptime = 0;
+  uint32_t uptime = 0;
   uptime = SRAM.readByte(ram_nrf_device_info_start + (idx * ram_nrf_device_len) + ram_nrf_device_info_uptime + 0) << 24;
   uptime = uptime + SRAM.readByte(ram_nrf_device_info_start + (idx * ram_nrf_device_len) + ram_nrf_device_info_uptime + 1) << 16;
   uptime = uptime + SRAM.readByte(ram_nrf_device_info_start + (idx * ram_nrf_device_len) + ram_nrf_device_info_uptime + 2) << 8;
@@ -4430,7 +4460,6 @@ void thermostat(void)
         pwm = 0;
         thermostat_ring_set_power(tix, pwm);
       }
-
     }
 
     if (tmode == TERM_MODE_MAN_HEAT)
@@ -5334,6 +5363,7 @@ void loop() {
     use_rtds = count_use_rtds(&use_rtds_type_temp);
     use_tds = count_use_tds();
     use_nrf_temp = count_use_nrf_temp();
+    use_nrf = nrf_count_active_store();
   }
 
 
@@ -5375,7 +5405,6 @@ void loop() {
     if (((brigthness_display_mode & (1 << DISPLAY_MODE_AUTO_SHUTDOWN_DISPLAY)) != 0) && my_touch.TP_GetOnOff() == 0)
     {
       my_touch.TP_SetOnOff(LED_ON);
-      //printf("zapinam display\n");
       click_delay_enable_display = 0;
     }
   }
@@ -6310,7 +6339,6 @@ void clik_button_virtual_output_manual(uint16_t args1, uint16_t args2, uint8_t a
   //output_virtual_ram_store_get_name(args2, text_power);
   virtual_id = output_virtual_ram_store_get_id(args2);
   ////state jako posledni nastavena hodnota na vystupu, muze byt MAX,OFF,PWM cislo
-  //itoa(output_virtual_ram_store_get_state(args2), text_power, 10);
   itoa(0, text_power, 10);
   MenuHistoryNextMenu(MENU_DIALOG_KEYBOARD_NUMBER, 0, 0);
   display_element_set_string(text_power, 4, virtual_id, 0, &helper_dialog_set_value_virtual_output, &valid_true);
@@ -6331,6 +6359,9 @@ void helper_dialog_set_value_virtual_output(uint16_t args1, uint16_t args2, uint
 /// args1 ... index polozky v menu
 void clik_button_virtual_output_test(uint16_t args1, uint16_t args2, uint8_t args3)
 {
+  uint8_t virtual_id;
+  virtual_id = output_virtual_ram_store_get_id(args2);
+  mqtt_publis_output(virtual_id, POWER_OUTPUT_TEST);
 }
 ///
 //. args2 ... index virtualniho vystupu
@@ -6354,6 +6385,7 @@ void clik_button_virtual_output_unassociate(uint16_t args1, uint16_t args2, uint
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// saric
 /// funkce ktera vraci hodnoty pro zobrazeni, vrazi nazev, teplotu, navratova hodnota, zda jsou cisla aktualne platna
 uint8_t get_global_temp(uint8_t device, char*name, float * temp)
 {

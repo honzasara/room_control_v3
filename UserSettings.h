@@ -172,7 +172,7 @@
 #define NEW_MENU_THERMOSTAT_TIME_PROGRAM_MENU_DETAIL 166
 #define NEW_MENU_THERMOSTAT_TIME_PROGRAM_SETTING 167
 #define NEW_MENU_THERMOSTAT_SET_PROG 168
-
+#define NEW_MENU_NRF_REMOTE_DEVICES 169
 
 #define MENU_ATTRIBUTES_CLEAN_DISPLAY 0
 #define MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE 1
@@ -472,12 +472,12 @@ typedef struct t_MenuAll
 {
   uint8_t len_menu1;
   uint8_t len_menu2;
-  uint8_t len_menu3;
-  uint8_t len_menu4;
+  //uint8_t len_menu3;
+  //uint8_t len_menu4;
   Menu1 ListMenu1[10];
   Menu1 ListMenu2[10];
-  Menu1 ListMenu3[10];
-  Menu1 ListMenu4[10];
+  //Menu1 ListMenu3[10];
+  //Menu1 ListMenu4[10];
 } MenuAll;
 
 
