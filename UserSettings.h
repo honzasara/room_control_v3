@@ -54,50 +54,23 @@
 #define remote_tds_name8  1630
 #define remote_tds_name9  1650
 
+
+///#define ram_remote_tds_store_first 100
 #define ram_remote_tds_store_size 4
 #define ram_remote_tds_store_data_low 100
 #define ram_remote_tds_store_data_high 101
 #define ram_remote_tds_store_last_update 102
 #define ram_remote_tds_store_type 103
-
-
-#define ram_remote_tds_store_last (ram_remote_tds_store_data_low+(ram_remote_tds_store_size*MAX_RTDS))
+#define ram_remote_tds_store_last (ram_remote_tds_store_data_low + (ram_remote_tds_store_size * MAX_RTDS))
 ///#define ram_remote_tds_store_last 140
 
 
 
-#define ram_nrf_device_start 150
-#define ram_nrf_name_length 10
-#define ram_nrf_devices 20
-#define ram_nrf_device_store_size 14
-#define ram_nrf_device_index 0
-#define ram_nrf_device_used 1
-#define ram_nrf_last_update 2
-#define ram_nrf_device_name 3
-///ram_nrf_device_last 430
-
-#define ram_nrf_device_info_start 430
-#define ram_nrf_device_len 12
-#define ram_nrf_device_info_uptime 0
-#define ram_nrf_device_info_send 4
-#define ram_nrf_device_info_recv 6
-#define ram_nrf_device_info_err 8
-#define ram_nrf_device_info_renew 10
-///#define ram_nrf_device_info_last 670
 
 
 
-#define ram_nrf_meas_store_start 670
-#define ram_nrf_meas_store_size 18
-#define ram_nrf_meas_store_count 20
-#define ram_nrf_meas_name_length 10
 
-#define ram_nrf_meas_store_associate_device 0
-#define ram_nrf_meas_store_last_update 1
-#define ram_nrf_meas_store_name 2
-#define ram_nrf_meas_store_value 12
-#define ram_nrf_meas_store_value_type 16
-#define ram_nrf_meas_store_used 17
+
 
 
 
@@ -178,6 +151,7 @@
 #define MENU_ATTRIBUTES_FILL_COLOR_RECTANGLE 1
 #define MENU_ATTRIBUTES_DECORATE_MENU 2
 #define MENU_REFRESH_ALL_SCREEN 3
+#define MENU_HEADER_TEXT 4
 
 
 #define SWITCH_BUDIK 1
@@ -199,6 +173,7 @@
 #define INPUT_SENSOR_SHOW_ALL 1
 #define INPUT_SENSOR_SHOW_ACTIVE 0
 #define INPUT_SENSOR_SHOW_DEACTIVE 2
+#define INPUT_SENSOR_SHOW_ACTIVE_ONLINE 3
 
 #define NUMBER_TYPE_FLOAT 0
 #define NUMBER_TYPE_INT 1
@@ -240,14 +215,14 @@
 
 #define KEYBOARD_SIZE_CHAR_UPPER 26
 #define KEYBOARD_SIZE_CHAR_LOWER 26
-#define KEYBOARD_SIZE_CHAR_SPECIAL 26
+#define KEYBOARD_SIZE_CHAR_SPECIAL 27
 #define KEYBOARD_TYPE_UPPER 0
 #define KEYBOARD_TYPE_LOWER 1
 #define KEYBOARD_TYPE_SPECIAL 2
 
 const char keyboad_number_char_upper[KEYBOARD_SIZE_CHAR_UPPER] PROGMEM =     {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
 const char keyboad_number_char_lower[KEYBOARD_SIZE_CHAR_LOWER] PROGMEM =     {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
-const char keyboad_number_char_special[KEYBOARD_SIZE_CHAR_SPECIAL] PROGMEM = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '!', '@', '#', '$', '%', '^', '&', '*', '|', '+', '-', '_', '?', ',', '.', '/'};
+const char keyboad_number_char_special[KEYBOARD_SIZE_CHAR_SPECIAL] PROGMEM = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '!', '@', '#', '$', '%', '^', '&', '*', '|', '+', '-', '_', '?', ',', '.', '/', ' '};
 
 
 

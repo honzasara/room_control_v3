@@ -4,7 +4,7 @@
 #include "UserSettings.h"
 
 uint8_t get_function_list_virtual_output_max_active_items(uint16_t idx, uint16_t args2, uint8_t args3);
-void click_virtual_output_associate_action(uint16_t args1, uint16_t args2, uint8_t idx);
+void click_virtual_output_associate_next_menu_action(uint16_t args1, uint16_t args2, uint8_t idx);
 void get_function_list_virtual_output_labels(uint8_t args1, uint8_t args2 , uint8_t args3, char *line1, char *line2);
 
 void display_element_show_virtual_output_detail(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text);
@@ -132,7 +132,7 @@ const Element_Dyn_Button_1 list_all_virtual_output PROGMEM = {
   .slider_args = MENU_SLIDER_LIST_VIRTUAL_OUTPUT,
   .args = NEW_MENU_VIRTUAL_OUTPUT_CONFIG,
   .get_status_string = get_function_list_virtual_output_labels,
-  .dyn_button_onclick =  click_virtual_output_associate_action,
+  .dyn_button_onclick =  click_virtual_output_associate_next_menu_action,
   .function_for_max_items = get_function_list_virtual_output_max_active_items,
   .enable_show = display_enable_show,
   .redraw_class = 1 << REDRAW_ONCE | 1 << REDRAW_CLASS_2 | 1 << REDRAW_CLASS_1 | 1 << REDRAW_CLASS_0,

@@ -16,6 +16,9 @@ uint8_t button_get_term_ring_is_selected(uint16_t args1, uint16_t args2, uint8_t
 void dyn_button_show_all_thermostat_get_status_string(uint8_t args1, uint8_t args2, uint8_t args3, char *line1, char *line2);
 void dyn_button_show_all_thermostat_dyn_button_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
 
+void click_select_ring_active_program(uint16_t args1, uint16_t args2, uint8_t args3);
+uint8_t button_select_active_ring_program_get_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3);
+
 void thermostat_button_set_ring_name_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
 void display_element_dialog_default_ring(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text);
 void thermostat_button_deactivate_ring_onclick(uint16_t args1, uint16_t args2, uint8_t args3);
@@ -559,8 +562,8 @@ const Element_Dyn_Select_1 button_select_term_ring_input_in_dialog PROGMEM = {
   .max_items_count = 3,
   .max_row_count = 3,
   .slider_args = MENU_SLIDER_INPUT_TEMP,
-  //.args = INPUT_SENSOR_SHOW_ACTIVE,
-  .args = INPUT_SENSOR_SHOW_ALL,
+  .args = INPUT_SENSOR_SHOW_ACTIVE,
+  //.args = INPUT_SENSOR_SHOW_ALL,
   .get_status_string =  button_get_show_default_temp_1,
   .dyn_symbol_onclick =  button_select_term_ring_input_in_dialog_onclick,
   .function_for_max_items =  button_get_show_default_temp_max_items,
@@ -596,12 +599,12 @@ const Element_Dyn_Select_1 button_select_term_mode PROGMEM = {
 
 const Element_Function_1 f_show_thermostat_statistics PROGMEM = {
   .x = 10,
-  .y = 30,
+  .y = 20,
   .args = 0,
   .fnt_coordinate_xy = display_element_show_thermostat_statistics,
-  .size_x = 200,
-  .size_y = 170,
-  .redraw_class = 1 << REDRAW_ONCE,
+  .size_x = 460,
+  .size_y = 180,
+  .redraw_class = 1 << REDRAW_ONCE | 1 << REDRAW_CLASS_3,
   .onclick = nullfce,
   .enable_show = display_enable_show,
   .name = char_NULL,
@@ -665,9 +668,9 @@ const Element_Dyn_Select_1 thermostat_select_program PROGMEM = {
   .slider_args = MENU_SLIDER_LIST_ALL_PROGRAM,
   .args = 0,
   .get_status_string = get_function_active_program_label,
-  .dyn_symbol_onclick =  click_select_active_program,
+  .dyn_symbol_onclick =  click_select_ring_active_program,
   .function_for_max_items = get_function_active_program_max_items,
-  .get_status_fnt = button_select_active_program_get_status_fnt,
+  .get_status_fnt = button_select_active_ring_program_get_status_fnt,
   .enable_show = display_enable_show_term_mode_prog,
   .redraw_class = 1 << REDRAW_ONCE | 1 << REDRAW_CLASS_3 | 1 << REDRAW_CLASS_1,
 };
@@ -964,8 +967,8 @@ const Menu1 DialogShowThermostatStatistics PROGMEM = {
   .len_dyn_symbol_1 = 0,
   .len_dyn_select_box_1 = 0,
   .idx = NEW_MENU_THERMOSTAT_STATISTICS,
-  .x = 10,
-  .y = 10,
+  .x = 0,
+  .y = 0,
   .size_x = 480,
   .size_y = 320,
   .atributes = (1 << MENU_ATTRIBUTES_CLEAN_DISPLAY),
@@ -974,7 +977,7 @@ const Menu1 DialogShowThermostatStatistics PROGMEM = {
   .redraw_class_0 = returnnullfceargs,
   .redraw_class_1 = returnnullfceargs,
   .redraw_class_2 = returnnullfceargs,
-  .redraw_class_3 =  menu_redraw_date,
+  .redraw_class_3 =  menu_redraw_update_temp,
   .preload_function = returnnullfceargs,
 };
 

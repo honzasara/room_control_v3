@@ -9,7 +9,7 @@ uint8_t button_status_default_ring_term_has_mode(uint16_t args1, uint16_t args2,
 /// tato funkce nastavi termostat do pozadovaneho modu
 void button_click_default_term_set_mode(uint16_t args1, uint16_t args2, uint8_t args3);
 
-
+uint8_t button_get_default_ring_term_heat_or_cool(uint16_t args1, uint16_t args2, uint8_t args3);
 
 
 void display_element_show_time_1(uint16_t x, uint16_t y, uint16_t size_x, uint16_t size_y, uint16_t args1, uint8_t args2, char *text);
@@ -129,23 +129,23 @@ const Element_Button_2 button_term_state_max PROGMEM = {
   .onclick = button_click_default_term_set_mode,
   .get_status_fnt = button_status_default_ring_term_has_mode,
   .redraw_class = (1 << REDRAW_CLASS_1 | 1 << REDRAW_ONCE ),
-  .enable_show = display_enable_show,
+  .enable_show = button_get_default_ring_term_heat_or_cool, ///display_enable_show,
 };
 
 const Element_Button_2 button_term_state_min PROGMEM = {
   .name = text_button_term_min,
-  .x = 190,
+  .x = 100,
   .y = 220,
   .size_x = 82,
   .size_y = 60,
   .font_size = 3,
   .color_active = BLUE,
   .color_inactive = WHITE,
-  .args = TERM_MODE_MIN,
+  .args = TERM_MODE_CLIMATE_MAX,
   .onclick = button_click_default_term_set_mode,
   .get_status_fnt = button_status_default_ring_term_has_mode,
   .redraw_class = (1 << REDRAW_CLASS_1  | 1 << REDRAW_ONCE ),
-  .enable_show = display_enable_show,
+  .enable_show = button_get_default_ring_term_heat_or_cool, ///display_enable_show,
 };
 
 const Element_Button_2 button_term_state_prog PROGMEM = {

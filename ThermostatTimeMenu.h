@@ -101,9 +101,9 @@ const Element_Dyn_Select_1 thermostat_dialog_select_program PROGMEM = {
   .slider_args = MENU_SLIDER_LIST_ALL_PROGRAM,
   .args = 0,
   .get_status_string = get_function_active_program_label,
-  .dyn_symbol_onclick =  click_select_active_program,
+  .dyn_symbol_onclick =  click_select_ring_active_program,
   .function_for_max_items = get_function_active_program_max_items,
-  .get_status_fnt = button_select_active_program_get_status_fnt,
+  .get_status_fnt = button_select_active_ring_program_get_status_fnt,
   .enable_show = display_enable_show,
   .redraw_class = 1 << REDRAW_ONCE | 1 << REDRAW_CLASS_3 | 1 << REDRAW_CLASS_1,
 };

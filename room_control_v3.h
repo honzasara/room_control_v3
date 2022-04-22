@@ -244,7 +244,8 @@ uint8_t button_select_active_program_get_status_fnt(uint16_t args1, uint16_t arg
 
 
 
-
+void click_select_ring_active_program(uint16_t args1, uint16_t args2, uint8_t args3);
+uint8_t button_select_active_ring_program_get_status_fnt(uint16_t args1, uint16_t args2, uint8_t args3);
 
 
 
@@ -431,6 +432,8 @@ const char new_text_o_zarizeni[] PROGMEM = "O zarizeni";
 
 const char new_nastaveni_mqtt_topic[] PROGMEM = "MQTT topic";
 const char new_nastaveni_nrf_input[] PROGMEM = "NRF vstup";
+const char new_nastaveni_nrf_temp[] PROGMEM = "NRF teplota";
+
 
 const char new_text_scan_onewire_bus[] PROGMEM = "Scan sbernice";
 
@@ -542,6 +545,7 @@ const char mesh_device_nrf_err_x[] PROGMEM = "send_err";
 const char mesh_device_nrf_renew_x[] PROGMEM = "mesh_renew";
 const char text_name[] PROGMEM = "name";
 const char mesh_device_nrf_last_seen_x[] PROGMEM = "last_seen";
+const char text_persistent[] PROGMEM = "persistence";
 
 const char text_value[] PROGMEM = "value";
 const char text_type[] PROGMEM = "type";
@@ -604,7 +608,9 @@ const char new_text_logout[] PROGMEM = "odhlasit";
 const char new_text_virtual_output_test[] PROGMEM = "testovat vystup";
 const char new_text_virtual_output_manual[] PROGMEM = "rucni hodnota";
 
-const char new_text_internal_temp_value[] PROGMEM = "interni zarizeni: %sC";
+//const char new_text_internal_temp_value[] PROGMEM = "interni zarizeni: %sC";
+const char new_text_internal[] PROGMEM = "interni";
+
 
 const char new_text_30sec[] PROGMEM = "30 sec";
 const char new_text_1min[] PROGMEM = "1 min";
@@ -615,6 +621,8 @@ const char new_text_enabled_x_sec[] PROGMEM = "Povoleno: %d sec";
 
 const char new_text_program_interval[] PROGMEM = "Novy interval";
 
+const char new_text_program_time_interval_format[] PROGMEM = "id:%d start:%d:%d stop:%d:%d";
+const char new_text_program_time_week_temp_format[] PROGMEM = "tyden:%d, teplota:%d C";
 /***************************************************************/
 /*
         spolecne display funkce
