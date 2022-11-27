@@ -3132,7 +3132,7 @@ void mqtt_callback(char* topic, byte * payload, unsigned int length)
   //// /thermctl-in/XXXX/virtual-output/set/IDX/used
   strcpy_P(str1, thermctl_header_in);
   strcat(str1, device.nazev);
-  strcat(str1, "/virtual-output/set");
+  strcat(str1, "/virtual-output/set/");
   if (strcmp(str1, topic) == 0)
   {
     mqtt_process_message++;
